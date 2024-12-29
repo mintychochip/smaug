@@ -1,0 +1,10 @@
+name: Smaug
+version: '1.1'
+main: org.aincraft.Smaug
+api-version: '1.21'
+authors: [ mintychochip ]
+commands:
+  smith:
+    description: test
+  test:
+    description: test

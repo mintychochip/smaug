@@ -1,0 +1,9 @@
+[versions]
+adventure = "4.17.0"
+adventure-bukkit = "4.3.4"
+[libraries]
+adventureBom = { group = "net.kyori", name = "adventure-bom", version.ref = "adventure" }
+adventureApi = { group = "net.kyori", name = "adventure-api" }
+adventureMinimessage = { group = "net.kyori", name = "adventure-text-minimessage", version.ref="adventure" }
+adventureBukkit = { group = "net.kyori", name ="adventure-platform-bukkit", version.ref="adventure-bukkit"}
+adventureLegacy = { group="net.kyori", name="adventure-text-serializer-legacy", version.ref="adventure"}
