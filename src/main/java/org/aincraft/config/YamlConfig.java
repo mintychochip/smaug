@@ -47,6 +47,11 @@ public class YamlConfig implements PluginConfiguration {
   }
 
   @Override
+  public boolean contains(String path) {
+    return config.contains(path);
+  }
+
+  @Override
   public Set<String> getKeys(boolean deep) {
     return config.getKeys(deep);
   }

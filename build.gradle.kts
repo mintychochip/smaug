@@ -2,6 +2,7 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("com.gradleup.shadow") version "8.3.5"
+    id("io.papermc.paperweight.userdev") version "1.7.7"
 }
 
 group = "org.aincraft"
@@ -13,6 +14,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        gradlePluginPortal()
         maven("https://oss.sonatype.org/content/repositories/snapshots/")
         maven {
             name="papermc"
@@ -47,6 +49,7 @@ allprojects {
 
 }
 dependencies {
+    paperweight.paperDevBundle("1.21.1-R0.1-SNAPSHOT")
 
     implementation("org.fusesource.jansi:jansi:2.4.0")
     implementation("com.google.inject:guice:7.0.0")
@@ -56,7 +59,6 @@ dependencies {
     implementation(libs.adventureLegacy)
     compileOnly("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:23.0.0")
-    // testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.20.0")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }

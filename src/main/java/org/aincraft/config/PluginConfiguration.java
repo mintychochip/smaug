@@ -7,6 +7,7 @@ import org.bukkit.configuration.ConfigurationSection;
 public interface PluginConfiguration {
   void reload();
   void save();
+  boolean contains(String path);
   Set<String> getKeys(boolean deep);
   ConfigurationSection getConfigurationSection(String path);
   String getString(String path);

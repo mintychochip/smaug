@@ -1,6 +1,6 @@
 name: Smaug
 version: '1.1'
-main: org.aincraft.Smaug
+main: org.aincraft.SmaugBootstrap
 api-version: '1.21'
 authors: [ mintychochip ]
 commands:

@@ -8,11 +8,15 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public record SmaugRecipe(KeyedItem output, List<Ingredient> ingredients,
-                          NamespacedKey recipeKey, NamespacedKey stationKey) implements Keyed {
+                          NamespacedKey recipeKey, NamespacedKey stationKey, @Nullable String permission) implements Keyed {
 
   public boolean isSubset(Player player, Inventory inventory) {
+    if(permission != null && !player.hasPermission(permission)) {
+      return false;
+    }
     for (Ingredient ingredient : ingredients) {
       if (!ingredient.isSubset(player, inventory)) {
         return false;

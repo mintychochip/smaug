@@ -20,6 +20,7 @@ final class RecipeParserImpl implements IParser<SmaugRecipe, IRecipeRegistry> {
   private final IIngredientParser ingredientParser;
   private final IItemRegistry itemRegistry;
   private final KeyFactory keyFactory;
+
   @Inject
   RecipeParserImpl(
       IIngredientParser ingredientParser, IItemRegistry itemRegistry, KeyFactory keyFactory) {
@@ -31,26 +32,29 @@ final class RecipeParserImpl implements IParser<SmaugRecipe, IRecipeRegistry> {
   @Override
   public @Nullable SmaugRecipe parse(@Nullable ConfigurationSection section,
       @NotNull IRecipeRegistry registry) {
-    if(section == null || !(section.contains("output") && section.contains("ingredients") && section.contains("type"))) {
+    if (section == null || !(section.contains("output") && section.contains("ingredients")
+        && section.contains("type"))) {
       return null;
     }
     Optional<NamespacedKey> recipeKeyOptional = keyFactory.getKeyFromString(section.getName());
-    if(recipeKeyOptional.isEmpty()) {
+    if (recipeKeyOptional.isEmpty()) {
       return null;
     }
     KeyedItem output = itemRegistry.resolve(section.getString("output"), true);
-    if(output == null) {
+    if (output == null) {
       return null;
     }
     List<Ingredient> ingredients = ingredientParser.parse(
         section.getConfigurationSection("ingredients"));
-    if(ingredients.isEmpty()) {
+    if (ingredients.isEmpty()) {
       return null;
     }
     String typeString = section.getString("type");
     Optional<NamespacedKey> stationKeyOptional = keyFactory.getKeyFromString(typeString);
+    String permissionString =
+        section.contains("permission") ? section.getString("permission") : null;
     return stationKeyOptional.map(
         namespacedKey -> new SmaugRecipe(output, ingredients, recipeKeyOptional.get(),
-            namespacedKey)).orElse(null);
+            namespacedKey, permissionString)).orElse(null);
   }
 }
