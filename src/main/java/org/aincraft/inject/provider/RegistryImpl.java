@@ -3,13 +3,11 @@ package org.aincraft.inject.provider;
 import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.aincraft.container.IRegistry;
-import org.aincraft.container.SmaugRecipe;
-import org.aincraft.container.item.KeyedItem;
+import org.aincraft.container.item.IKeyedItem;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -42,28 +40,28 @@ class RegistryImpl<T extends Keyed> implements IRegistry<T> {
   }
 
   @Singleton
-  static final class ItemRegistryImpl extends RegistryImpl<KeyedItem> implements
+  static final class ItemRegistryImpl extends RegistryImpl<IKeyedItem> implements
       IItemRegistry {
 
     private final KeyFactory keyFactory;
-    private final KeyedItemFactory keyedItemFactory;
-    ItemRegistryImpl(KeyFactory keyFactory, KeyedItemFactory keyedItemFactory) {
+    private final KeyedItemFactoryImpl keyedItemFactory;
+    ItemRegistryImpl(KeyFactory keyFactory, KeyedItemFactoryImpl keyedItemFactory) {
       this.keyFactory = keyFactory;
       this.keyedItemFactory = keyedItemFactory;
     }
 
     @Override
-    public @Nullable KeyedItem resolve(String key, boolean minecraft) {
-      Optional<NamespacedKey> keyOptional = keyFactory.getKeyFromString(key);
+    public @Nullable IKeyedItem resolve(String key, boolean minecraft) {
+      Optional<NamespacedKey> keyOptional = keyFactory.getKeyFromString(key, minecraft);
       return keyOptional.map(namespacedKey -> resolve(namespacedKey, minecraft)).orElse(null);
     }
 
     @Override
-    public KeyedItem resolve(NamespacedKey key, boolean minecraft) {
+    public IKeyedItem resolve(NamespacedKey key, boolean minecraft) {
       if (key == null) {
         return null;
       }
-      Optional<KeyedItem> keyedItem = this.get(key);
+      Optional<IKeyedItem> keyedItem = this.get(key);
       if (keyedItem.isPresent()) {
         return keyedItem.get();
       }
@@ -74,16 +72,6 @@ class RegistryImpl<T extends Keyed> implements IRegistry<T> {
         }
       }
       return null;
-    }
-  }
-
-  @Singleton
-  static final class RecipeRegistryImpl extends RegistryImpl<SmaugRecipe> implements
-      IRecipeRegistry {
-
-    @Override
-    public List<SmaugRecipe> findAll(NamespacedKey stationKey) {
-      return List.of();
     }
   }
 }

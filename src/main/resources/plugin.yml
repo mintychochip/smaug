@@ -8,3 +8,5 @@ commands:
     description: test
   test:
     description: test
+  sreload:
+    description: reloads

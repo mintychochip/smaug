@@ -1,8 +1,9 @@
 package org.aincraft.container;
 
-import java.util.List;
+import org.aincraft.container.SmaugRecipe.RecipeResult.Status;
 import org.aincraft.container.ingredient.Ingredient;
-import org.aincraft.container.item.KeyedItem;
+import org.aincraft.container.ingredient.IngredientList;
+import org.aincraft.container.item.IKeyedItem;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -10,19 +11,21 @@ import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record SmaugRecipe(KeyedItem output, List<Ingredient> ingredients,
-                          NamespacedKey recipeKey, NamespacedKey stationKey, @Nullable String permission) implements Keyed {
+public record SmaugRecipe(IKeyedItem output, IngredientList ingredientList,
+                          NamespacedKey recipeKey, NamespacedKey stationKey,
+                          @Nullable String permission) implements Keyed {
 
-  public boolean isSubset(Player player, Inventory inventory) {
-    if(permission != null && !player.hasPermission(permission)) {
-      return false;
+  public RecipeResult test(Player player, Inventory inventory) {
+    if (permission != null && !player.hasPermission(permission)) {
+      return new RecipeResult(Status.FAILURE, null, "permission failure");
     }
-    for (Ingredient ingredient : ingredients) {
+    for (Ingredient ingredient : ingredientList) {
       if (!ingredient.isSubset(player, inventory)) {
-        return false;
+        return new RecipeResult(Status.FAILURE, ingredientList.findMissing(player, inventory),
+            null);
       }
     }
-    return true;
+    return new RecipeResult(Status.SUCCESS, null, null);
   }
 
   @Override
@@ -30,11 +33,21 @@ public record SmaugRecipe(KeyedItem output, List<Ingredient> ingredients,
     return recipeKey;
   }
 
-  public List<Ingredient> getIngredients() {
-    return ingredients;
+  public IngredientList getIngredientList() {
+    return ingredientList;
   }
 
-  public KeyedItem getOutput() {
+  public IKeyedItem getOutput() {
     return output;
+  }
+
+  public record RecipeResult(@NotNull SmaugRecipe.RecipeResult.Status status,
+                             @Nullable IngredientList missing,
+                             @Nullable String errorMessage) {
+
+    public enum Status {
+      SUCCESS,
+      FAILURE
+    }
   }
 }

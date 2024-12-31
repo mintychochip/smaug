@@ -14,7 +14,7 @@ final class HikariConfigProvider implements Provider<HikariConfig> {
 
   @Inject
   public HikariConfigProvider(
-      @Named("main-configuration") PluginConfiguration pluginConfiguration) {
+      @Named("main") PluginConfiguration pluginConfiguration) {
     this.pluginConfiguration = pluginConfiguration;
   }
 

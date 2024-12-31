@@ -1,11 +1,11 @@
-CREATE TABLE IF NOT EXISTS tables
+CREATE TABLE IF NOT EXISTS stations
 (
-    id         TEXT PRIMARY KEY,
-    type       TEXT    NOT NULL,
-    world_name TEXT    NOT NULL,
-    x          INTEGER NOT NULL,
-    y          INTEGER NOT NULL,
-    z          INTEGER NOT NULL
+    id          TEXT PRIMARY KEY,
+    station_key TEXT    NOT NULL,
+    world_name  TEXT    NOT NULL,
+    x           INTEGER NOT NULL,
+    y           INTEGER NOT NULL,
+    z           INTEGER NOT NULL
 );
 
 CREATE TABLE table_inventory
@@ -14,7 +14,7 @@ CREATE TABLE table_inventory
     table_id         TEXT NOT NULL,
     input_inventory  TEXT NOT NULL,
     output_inventory TEXT NOT NULL,
-    FOREIGN KEY (table_id) REFERENCES tables (id) ON DELETE CASCADE
+    FOREIGN KEY (table_id) REFERENCES stations (id) ON DELETE CASCADE
 );
 
 CREATE TABLE table_recipe_progress
@@ -23,7 +23,7 @@ CREATE TABLE table_recipe_progress
     table_id  TEXT    NOT NULL,
     recipe_id TEXT    NOT NULL,
     progress  INTEGER NOT NULL,
-    FOREIGN KEY (table_id) REFERENCES tables (id) ON DELETE CASCADE
+    FOREIGN KEY (table_id) REFERENCES stations (id) ON DELETE CASCADE
 );
 
 CREATE TABLE station_user
@@ -39,6 +39,6 @@ CREATE TABLE table_permissions
     user_id    TEXT    NOT NULL,
     permission INTEGER NOT NULL,
     PRIMARY KEY (table_id, user_id),
-    FOREIGN KEY (table_id) REFERENCES tables (id) ON DELETE CASCADE,
+    FOREIGN KEY (table_id) REFERENCES stations (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES station_user (id) ON DELETE CASCADE
 );

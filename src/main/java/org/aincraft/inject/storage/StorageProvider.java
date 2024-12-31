@@ -23,7 +23,7 @@ final class StorageProvider implements Provider<IStorage> {
   private final Extractor extractor;
 
   @Inject
-  public StorageProvider(@Named("logger") Logger logger, Plugin plugin, @Named("main-configuration") PluginConfiguration pluginConfiguration,
+  public StorageProvider(@Named("logger") Logger logger, Plugin plugin, @Named("main") PluginConfiguration pluginConfiguration,
       HikariConfig hikariConfig, Extractor extractor) {
     this.logger = logger;
     this.plugin = plugin;

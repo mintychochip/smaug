@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Objects;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.ingredient.Ingredient;
-import org.aincraft.container.item.KeyedItem;
 import org.aincraft.container.ingredient.IngredientFactory;
+import org.aincraft.container.item.IKeyedItem;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -59,8 +60,9 @@ final class IngredientParserImpl implements IIngredientParser {
     }
     return itemSection.getKeys(false).stream()
         .map(k -> {
-          KeyedItem keyedItem = itemRegistry.resolve(k, true);
-          return keyedItem == null ? null : ingredientFactory.item(keyedItem);
+          IKeyedItem keyedItem = itemRegistry.resolve(k, true);
+          int amount = itemSection.getInt(k, 1);
+          return keyedItem == null ? null : ingredientFactory.item(keyedItem,amount);
         }).filter(Objects::nonNull)
         .toList();
   }

@@ -1,10 +1,9 @@
 package org.aincraft.container;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.aincraft.container.item.KeyedItem;
+import org.aincraft.container.item.IKeyedItem;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,27 +17,22 @@ public interface IRegistry<T> {
 
   Iterator<T> iterator();
 
-  interface IItemRegistry extends IRegistry<KeyedItem> {
+  interface IItemRegistry extends IRegistry<IKeyedItem> {
 
     @Nullable
-    KeyedItem resolve(@Nullable String key, boolean minecraft);
+    IKeyedItem resolve(@Nullable String key, boolean minecraft);
 
     @Nullable
-    default KeyedItem resolve(@Nullable String key) {
+    default IKeyedItem resolve(@Nullable String key) {
       return resolve(key, false);
     }
 
     @Nullable
-    KeyedItem resolve(@Nullable NamespacedKey key, boolean minecraft);
+    IKeyedItem resolve(@Nullable NamespacedKey key, boolean minecraft);
 
     @Nullable
-    default KeyedItem resolve(@Nullable NamespacedKey key) {
+    default IKeyedItem resolve(@Nullable NamespacedKey key) {
       return resolve(key, false);
     }
-  }
-
-  interface IRecipeRegistry extends IRegistry<SmaugRecipe> {
-
-    List<SmaugRecipe> findAll(NamespacedKey stationKey);
   }
 }

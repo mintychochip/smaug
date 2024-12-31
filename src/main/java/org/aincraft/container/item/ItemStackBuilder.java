@@ -13,8 +13,10 @@ import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
-public class ItemStackBuilder {
+public final class ItemStackBuilder {
 
   private ItemStack reference;
 
@@ -100,7 +102,6 @@ public class ItemStackBuilder {
       });
       return this;
     }
-
 
     public ItemMetaBuilder addEnchantment(Enchantment enchantment, int level,
         boolean ignoreRestriction) {

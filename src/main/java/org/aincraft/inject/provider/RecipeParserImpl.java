@@ -2,45 +2,51 @@ package org.aincraft.inject.provider;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Optional;
+import net.kyori.adventure.text.Component;
 import org.aincraft.container.IRegistry.IItemRegistry;
-import org.aincraft.container.IRegistry.IRecipeRegistry;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.ingredient.Ingredient;
-import org.aincraft.container.item.KeyedItem;
+import org.aincraft.container.ingredient.IngredientList;
+import org.aincraft.container.ingredient.ItemIngredient;
+import org.aincraft.container.item.IKeyedItem;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Singleton
-final class RecipeParserImpl implements IParser<SmaugRecipe, IRecipeRegistry> {
+final class RecipeParserImpl implements IRecipeParser {
 
   private final IIngredientParser ingredientParser;
   private final IItemRegistry itemRegistry;
   private final KeyFactory keyFactory;
+  private final Component listMarker;
 
   @Inject
   RecipeParserImpl(
-      IIngredientParser ingredientParser, IItemRegistry itemRegistry, KeyFactory keyFactory) {
+      IIngredientParser ingredientParser, IItemRegistry itemRegistry, KeyFactory keyFactory,
+      @Named("list-marker") Component listMarker) {
     this.ingredientParser = ingredientParser;
     this.itemRegistry = itemRegistry;
     this.keyFactory = keyFactory;
+    this.listMarker = listMarker;
   }
 
   @Override
-  public @Nullable SmaugRecipe parse(@Nullable ConfigurationSection section,
-      @NotNull IRecipeRegistry registry) {
+  public @Nullable SmaugRecipe parse(@Nullable ConfigurationSection section) {
     if (section == null || !(section.contains("output") && section.contains("ingredients")
         && section.contains("type"))) {
       return null;
     }
-    Optional<NamespacedKey> recipeKeyOptional = keyFactory.getKeyFromString(section.getName());
+    Optional<NamespacedKey> recipeKeyOptional = keyFactory.getKeyFromString(section.getName(),
+        true);
     if (recipeKeyOptional.isEmpty()) {
       return null;
     }
-    KeyedItem output = itemRegistry.resolve(section.getString("output"), true);
+    IKeyedItem output = itemRegistry.resolve(section.getString("output"), true);
     if (output == null) {
       return null;
     }
@@ -50,11 +56,12 @@ final class RecipeParserImpl implements IParser<SmaugRecipe, IRecipeRegistry> {
       return null;
     }
     String typeString = section.getString("type");
-    Optional<NamespacedKey> stationKeyOptional = keyFactory.getKeyFromString(typeString);
+    Optional<NamespacedKey> stationKeyOptional = keyFactory.getKeyFromString(typeString, false);
     String permissionString =
         section.contains("permission") ? section.getString("permission") : null;
     return stationKeyOptional.map(
-        namespacedKey -> new SmaugRecipe(output, ingredients, recipeKeyOptional.get(),
+        namespacedKey -> new SmaugRecipe(output, new IngredientList(ingredients, listMarker),
+            recipeKeyOptional.get(),
             namespacedKey, permissionString)).orElse(null);
   }
 }

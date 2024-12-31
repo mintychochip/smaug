@@ -50,7 +50,7 @@ allprojects {
 }
 dependencies {
     paperweight.paperDevBundle("1.21.1-R0.1-SNAPSHOT")
-
+    implementation("com.github.ben-manes.caffeine:caffeine:2.9.0")
     implementation("org.fusesource.jansi:jansi:2.4.0")
     implementation("com.google.inject:guice:7.0.0")
     implementation("com.zaxxer:HikariCP:5.0.1")

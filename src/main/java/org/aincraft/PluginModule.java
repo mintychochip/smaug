@@ -8,12 +8,14 @@ import com.google.inject.name.Names;
 import java.util.logging.Logger;
 import org.aincraft.config.ConfigurationFactory;
 import org.aincraft.config.PluginConfiguration;
+import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.Plugin;
 
 public class PluginModule extends AbstractModule {
 
   private final Logger logger;
   private final Plugin plugin;
+
   public PluginModule(Logger logger, Plugin plugin) {
     this.logger = logger;
     this.plugin = plugin;
@@ -27,8 +29,20 @@ public class PluginModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("main-configuration")
+  @Named("main")
   private PluginConfiguration providePluginConfiguration(ConfigurationFactory factory) {
     return factory.create("config.yml");
+  }
+
+  @Provides
+  @Named("id")
+  private NamespacedKey provideIdentificationKey() {
+    return new NamespacedKey(plugin, "id");
+  }
+
+  @Provides
+  @Named("station")
+  private NamespacedKey provideStationKey() {
+    return new NamespacedKey(plugin, "station");
   }
 }

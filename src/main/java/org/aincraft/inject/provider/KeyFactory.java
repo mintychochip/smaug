@@ -14,13 +14,13 @@ final class KeyFactory {
     this.plugin = plugin;
   }
 
-  public Optional<NamespacedKey> getKeyFromString(String keyString) {
+  public Optional<NamespacedKey> getKeyFromString(String keyString, boolean minecraft) {
     if (keyString == null) {
       return Optional.empty();
     }
     String[] splitKey = keyString.toLowerCase().split(":");
     if (splitKey.length == 1) {
-      if (this.isMinecraftResource(keyString)) {
+      if (minecraft && this.isMinecraftResource(keyString)) {
         return Optional.of(NamespacedKey.minecraft(keyString));
       }
       return Optional.of(new NamespacedKey(plugin, keyString));
