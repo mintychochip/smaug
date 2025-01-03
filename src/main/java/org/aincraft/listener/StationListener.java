@@ -44,12 +44,12 @@ public class StationListener implements Listener {
   };
   private final Map<InteractionKey, StationHandler> handlers;
   private final Plugin plugin;
-  private final StationService stationService;
+  private final IStationService stationService;
   private final NamespacedKey stationKey;
 
   @Inject
   public StationListener(Map<InteractionKey, StationHandler> handlers,
-      Plugin plugin, StationService stationService,
+      Plugin plugin, IStationService stationService,
       @Named("station") NamespacedKey stationKey) {
     this.handlers = handlers;
     this.plugin = plugin;
@@ -81,7 +81,7 @@ public class StationListener implements Listener {
       return;
     }
     Player player = event.getPlayer();
-    stationService.createStation(stationKey, blockLocation, player);
+    stationService.createStation(NamespacedKey.fromString(stationKey), blockLocation);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -93,14 +93,14 @@ public class StationListener implements Listener {
       return;
     }
     Player player = event.getPlayer();
-    stationService.deleteStation(blockLocation, player, RemovalCause.PLAYER);
+    stationService.deleteStation(blockLocation);
     for (int y = blockLocation.getBlockY() + 1; y < world.getMaxHeight(); y++) {
       Block blockAbove = world.getBlockAt(
           new Location(world, blockLocation.getBlockX(), y, blockLocation.getBlockZ()));
       if (!IS_FALLING_BLOCK_TYPE.test(blockAbove)) {
         break;
       }
-      stationService.deleteStation(blockAbove.getLocation(), player, RemovalCause.PLAYER);
+      stationService.deleteStation(blockLocation);
     }
   }
 

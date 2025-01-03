@@ -1,4 +1,4 @@
-package org.aincraft.inject.provider;
+package org.aincraft.inject.implementation;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -6,19 +6,19 @@ import org.aincraft.container.IRecipeEvaluator;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientList;
-import org.aincraft.listener.StationService;
+import org.aincraft.listener.IStationService;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Singleton
-class RecipeEvaluatorImpl implements IRecipeEvaluator {
+final class RecipeEvaluatorImpl implements IRecipeEvaluator {
 
-  private final StationService service;
+  private final IStationService service;
 
   @Inject
-  public RecipeEvaluatorImpl(StationService service) {
+  public RecipeEvaluatorImpl(IStationService service) {
     this.service = service;
   }
 

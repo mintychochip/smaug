@@ -1,6 +1,7 @@
 package org.aincraft.listener;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import java.util.Map;
 import org.aincraft.container.InteractionKey;

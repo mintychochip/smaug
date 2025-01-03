@@ -1,4 +1,4 @@
-package org.aincraft.inject.provider;
+package org.aincraft.inject.implementation;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -14,7 +14,8 @@ import org.aincraft.config.PluginConfiguration;
 import org.aincraft.container.IRecipeFetcher;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.inject.IKeyFactory;
-import org.aincraft.listener.StationService;
+import org.aincraft.inject.IRecipeParser;
+import org.aincraft.listener.IStationService;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,9 +23,9 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 final class RecipeFetcherImpl implements IRecipeFetcher {
 
-  private final RecipeParser parser;
+  private final IRecipeParser parser;
   private final PluginConfiguration pluginConfiguration;
-  private final StationService stationService;
+  private final IStationService stationService;
   private final Cache<String, SmaugRecipe> recipeCache = Caffeine.newBuilder().expireAfterWrite(1,
       TimeUnit.HOURS).build();
   private final Set<String> recipeKeys;
@@ -32,8 +33,8 @@ final class RecipeFetcherImpl implements IRecipeFetcher {
 
   @Inject
   public RecipeFetcherImpl(
-      RecipeParser parser,
-      @Named("recipe") PluginConfiguration pluginConfiguration, StationService stationService,
+      IRecipeParser parser,
+      @Named("recipe") PluginConfiguration pluginConfiguration, IStationService stationService,
       IKeyFactory keyFactory) {
     this.parser = parser;
     this.pluginConfiguration = pluginConfiguration;

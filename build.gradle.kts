@@ -65,6 +65,7 @@ publishing {
 }
 dependencies {
     paperweight.paperDevBundle("1.21.1-R0.1-SNAPSHOT")
+    implementation("org.postgresql:postgresql:42.7.4")
     implementation("com.github.ben-manes.caffeine:caffeine:2.9.0")
     implementation("org.fusesource.jansi:jansi:2.4.0")
     implementation("com.google.inject:guice:7.0.0")

@@ -1,4 +1,4 @@
-package org.aincraft.inject.provider;
+package org.aincraft.inject.implementation;
 
 import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
@@ -14,6 +14,7 @@ import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.IKeyedItemFactory;
 import org.aincraft.container.item.ItemStackBuilder;
+import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -30,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 final class ItemParserImpl implements IItemParser {
 
-  private final IAttributeParser attributeParser;
+  private final AttributeParser attributeParser;
   private final IKeyFactory keyFactory;
   private final Logger logger;
   private final Plugin plugin;
@@ -38,15 +39,15 @@ final class ItemParserImpl implements IItemParser {
   private final NamespacedKey stationKey;
 
   @Inject
-  public ItemParserImpl(IAttributeParser attributeParser, IKeyFactory keyFactory,
+  public ItemParserImpl(IKeyFactory keyFactory,
       @Named("logger") Logger logger, Plugin plugin, IKeyedItemFactory keyedItemFactory,
       @Named("station") NamespacedKey stationKey) {
-    this.attributeParser = attributeParser;
     this.keyFactory = keyFactory;
     this.logger = logger;
     this.plugin = plugin;
     this.keyedItemFactory = keyedItemFactory;
     this.stationKey = stationKey;
+    attributeParser = new AttributeParser(plugin);
   }
 
   @Nullable
@@ -106,7 +107,7 @@ final class ItemParserImpl implements IItemParser {
         String itemModelString = section.getString("item-model");
         if (itemModelString != null) {
           NamespacedKey itemModelKey = keyFactory.getKeyFromString(itemModelString, true);
-          if(itemModelKey != null) {
+          if (itemModelKey != null) {
             meta.setItemModel(itemModelKey);
           }
         }

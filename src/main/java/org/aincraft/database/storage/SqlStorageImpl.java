@@ -18,15 +18,15 @@ import java.util.logging.Logger;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.aincraft.inject.implementation.ResourceExtractor;
+import org.bukkit.Bukkit;
 
 public class SqlStorageImpl implements IStorage {
 
   private final IConnectionSource source;
   private final Logger logger;
   private final SqlExecutor executor;
-  private final Extractor extractor;
+  private final ResourceExtractor extractor;
 
   private static final String DELETE_STATION = "DELETE FROM stations WHERE world_name=? AND x=? AND y=? AND z=?";
 
@@ -57,7 +57,7 @@ public class SqlStorageImpl implements IStorage {
   private static final String UPDATE_RECIPE_PROGRESS = "UPDATE station_recipe_progress SET progress=? WHERE stationId=?";
 
   public SqlStorageImpl(IConnectionSource source, @Named("logger") Logger logger,
-      Extractor extractor) {
+      ResourceExtractor extractor) {
     this.source = source;
     this.logger = logger;
     this.executor = new SqlExecutor(source);
@@ -87,7 +87,7 @@ public class SqlStorageImpl implements IStorage {
   }
 
   private boolean isSetup() {
-    String query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name LIKE '%matcha%'";
+    String query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name LIKE '%smaug%'";
     if (source.getType() == StorageType.SQLITE) {
       query = "SELECT 1 FROM sqlite_master WHERE type='table' LIMIT 1";
     }
@@ -118,34 +118,19 @@ public class SqlStorageImpl implements IStorage {
   }
 
   @Override
-  public Station createStation(String stationKey, Location location) {
-    World world = location.getWorld();
-    assert world != null;
+  public Station createStation(String stationKey, String worldName, int x, int y, int z) {
     String id = UUID.randomUUID().toString();
-    String worldName = world.getName();
-    int x = location.getBlockX();
-    int y = location.getBlockY();
-    int z = location.getBlockZ();
     executor.executeUpdate(CREATE_STATION, id, stationKey, worldName, x, y, z);
     return new Station(id, stationKey, worldName, x, y, z);
   }
 
   @Override
-  public void deleteStation(Location location) {
-    World world = location.getWorld();
-    assert world != null;
-    executor.executeUpdate(DELETE_STATION, world.getName(), location.getBlockX(),
-        location.getBlockY(), location.getBlockZ());
+  public void deleteStation(String worldName, int x, int y, int z) {
+    executor.executeUpdate(DELETE_STATION, worldName, x, y, z);
   }
 
   @Override
-  public Station getStation(Location location) {
-    World world = location.getWorld();
-    assert world != null;
-    String worldName = world.getName();
-    int x = location.getBlockX();
-    int y = location.getBlockY();
-    int z = location.getBlockZ();
+  public Station getStation(String worldName, int x, int y, int z) {
     return executor.queryRow(scanner -> {
       try {
         String id = scanner.getString("id");
@@ -158,12 +143,8 @@ public class SqlStorageImpl implements IStorage {
   }
 
   @Override
-  public boolean hasStation(Location location) {
-    World world = location.getWorld();
-    assert world != null;
-    return executor.queryExists(HAS_STATION, world.getName(), location.getBlockX(),
-        location.getBlockY(),
-        location.getBlockZ());
+  public boolean hasStation(String worldName, int x, int y, int z) {
+    return executor.queryExists(HAS_STATION, worldName, x, y, z);
   }
 
   @Override

@@ -1,4 +1,4 @@
-package org.aincraft.inject.provider;
+package org.aincraft.inject.implementation;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -15,20 +15,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Singleton
-final class IngredientParserImpl implements IIngredientParser {
+final class IngredientParser {
 
   private final IItemRegistry itemRegistry;
   private final IngredientFactory ingredientFactory;
 
   @Inject
-  IngredientParserImpl(IItemRegistry itemRegistry,
+  IngredientParser(IItemRegistry itemRegistry,
       IngredientFactory ingredientFactory) {
     this.itemRegistry = itemRegistry;
     this.ingredientFactory = ingredientFactory;
   }
 
   @NotNull
-  @Override
   @Contract("null->!null")
   public List<Ingredient> parse(ConfigurationSection ingredientSection) {
     if (ingredientSection == null) {

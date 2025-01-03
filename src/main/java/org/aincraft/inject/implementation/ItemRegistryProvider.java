@@ -1,4 +1,4 @@
-package org.aincraft.inject.provider;
+package org.aincraft.inject.implementation;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -9,8 +9,9 @@ import org.aincraft.config.PluginConfiguration;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.IKeyedItemFactory;
+import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
-import org.aincraft.inject.provider.RegistryImpl.ItemRegistryImpl;
+import org.aincraft.inject.implementation.RegistryImpl.ItemRegistryImpl;
 
 final class ItemRegistryProvider implements Provider<IItemRegistry> {
 

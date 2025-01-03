@@ -1,4 +1,4 @@
-package org.aincraft.inject.provider;
+package org.aincraft.inject.implementation;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -18,16 +18,15 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.Contract;
 
 @Singleton
-final class AttributeParserImpl implements IAttributeParser {
+final class AttributeParser {
 
   private final Plugin plugin;
 
   @Inject
-  AttributeParserImpl(Plugin plugin) {
+  AttributeParser(Plugin plugin) {
     this.plugin = plugin;
   }
 
-  @Override
   @Contract("null -> null")
   public Multimap<Attribute, AttributeModifier> parseAttributes(
       ConfigurationSection attributeSection) {

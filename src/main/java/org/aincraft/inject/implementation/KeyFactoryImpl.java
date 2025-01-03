@@ -1,4 +1,4 @@
-package org.aincraft.inject.plugin;
+package org.aincraft.inject.implementation;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -18,6 +18,7 @@ final class KeyFactoryImpl implements IKeyFactory {
     this.plugin = plugin;
   }
 
+  @Override
   @Nullable
   public NamespacedKey getKeyFromString(String keyString, boolean minecraft) {
     if (keyString == null) {

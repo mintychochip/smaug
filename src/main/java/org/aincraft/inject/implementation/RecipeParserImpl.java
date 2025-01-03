@@ -1,4 +1,4 @@
-package org.aincraft.inject.provider;
+package org.aincraft.inject.implementation;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -11,28 +11,30 @@ import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.inject.IKeyFactory;
+import org.aincraft.inject.IRecipeParser;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.Nullable;
 
 @Singleton
-class RecipeParser {
+final class RecipeParserImpl implements IRecipeParser {
 
-  private final IIngredientParser ingredientParser;
+  private final IngredientParser ingredientParser;
   private final IItemRegistry itemRegistry;
   private final IKeyFactory keyFactory;
   private final Component listMarker;
 
   @Inject
-  RecipeParser(
-      IIngredientParser ingredientParser, IItemRegistry itemRegistry, IKeyFactory keyFactory,
-      @Named("list-marker") Component listMarker) {
+  RecipeParserImpl(
+      IngredientParser ingredientParser, IItemRegistry itemRegistry, IKeyFactory keyFactory,
+      Component listMarker) {
     this.ingredientParser = ingredientParser;
     this.itemRegistry = itemRegistry;
     this.keyFactory = keyFactory;
     this.listMarker = listMarker;
   }
 
+  @Override
   public @Nullable SmaugRecipe parse(@Nullable ConfigurationSection section) {
     if (section == null || !(section.contains("output") && section.contains("ingredients")
         && section.contains("type"))) {
@@ -56,7 +58,7 @@ class RecipeParser {
     String typeString = section.getString("type");
     NamespacedKey stationKey = keyFactory.getKeyFromString(typeString, false);
     String permissionString = section.getString("permission", null);
-    int actions = section.getInt("actions",1);
+    int actions = section.getInt("actions", 1);
     return new SmaugRecipe(output, amount,
         new IngredientList(ingredients, listMarker),
         recipeKey,

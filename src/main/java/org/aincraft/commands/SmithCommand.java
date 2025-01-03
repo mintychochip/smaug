@@ -6,6 +6,8 @@ import org.aincraft.container.IRecipeEvaluator.RecipeResult;
 import org.aincraft.container.IRecipeFetcher;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.SmaugRecipe;
+import org.aincraft.database.model.Station;
+import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -22,13 +24,15 @@ public class SmithCommand implements CommandExecutor {
   private final Plugin plugin;
   private final IRecipeFetcher fetcher;
   private final IRecipeEvaluator evaluator;
+  private final IStationService service;
   @Inject
   public SmithCommand(IItemRegistry registry, Plugin plugin, IRecipeFetcher fetcher,
-      IRecipeEvaluator evaluator) {
+      IRecipeEvaluator evaluator, IStationService service) {
     this.registry = registry;
     this.plugin = plugin;
     this.fetcher = fetcher;
     this.evaluator = evaluator;
+    this.service = service;
   }
 
   @Override
@@ -38,10 +42,12 @@ public class SmithCommand implements CommandExecutor {
       registry.get(new NamespacedKey(plugin, strings[0])).ifPresent(item -> {
         player.getInventory().addItem(new ItemStack(item.getReference()));
       });
+
+      Station station = service.getStation(player.getLocation());
+
       SmaugRecipe recipe = fetcher.fetch("test");
       if(recipe != null) {
         RecipeResult recipeResult = evaluator.test(recipe, player, player.getInventory());
-        Bukkit.broadcastMessage(recipeResult.toString());
         Bukkit.broadcast(recipeResult.getMissing().asComponent());
       }
       return true;

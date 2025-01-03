@@ -1,4 +1,4 @@
-package org.aincraft.inject.plugin;
+package org.aincraft.inject.implementation;
 
 import com.google.gson.Gson;
 import com.google.inject.Inject;
@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 final class KeyedItemFactoryImpl implements IKeyedItemFactory {
 
   private final NamespacedKey identifierKey;
-  private final int version = 1;
 
   @Inject
   KeyedItemFactoryImpl(@Named("id") NamespacedKey identifierKey) {
@@ -44,7 +43,7 @@ final class KeyedItemFactoryImpl implements IKeyedItemFactory {
     ItemMeta itemMeta = itemStack.getItemMeta();
     PersistentDataContainer pdc = itemMeta.getPersistentDataContainer();
     pdc.set(identifierKey, PersistentDataType.STRING,
-        new Gson().toJson(new ItemIdentifier(key, version)));
+        new Gson().toJson(new ItemIdentifier(key, 1)));
     itemStack.setItemMeta(itemMeta);
     return new KeyedItemImpl(key, itemStack);
   }

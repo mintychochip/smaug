@@ -11,13 +11,13 @@ public interface IStorage {
   //  // Table-related methods
   List<Station> getAllStations();
 
-  Station createStation(String stationKey, Location location);
+  Station createStation(String stationKey, String worldName, int x, int y, int z);
 
-  void deleteStation(Location location);
+  void deleteStation(String worldName, int x, int y, int z);
 
-  Station getStation(Location location);
+  Station getStation(String worldName, int x, int y, int z);
 
-  boolean hasStation(Location location);
+  boolean hasStation(String worldName, int x, int y, int z);
 
   boolean hasStationUser(String playerId);
 
@@ -51,10 +51,6 @@ public interface IStorage {
 //  TableInventoryModel createInventory(String tableId);
 //  TableInventoryModel getStationInventory(String tableId);
 //  void updateInventory(TableInventoryModel model);
-//  void deleteRecipeProgress(String id);
-//  TableRecipeProgressModel createRecipeProgress(String tableId, String recipeId);
-//  TableRecipeProgressModel getRecipeProgress(String tableId);
-//  void updateRecipeProgress(TableRecipeProgressModel model);
 //
 
 
