@@ -1,11 +1,11 @@
-package org.aincraft.storage.hikari;
+package org.aincraft.database.storage.hikari;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import org.aincraft.storage.IConnectionSource;
-import org.aincraft.storage.StorageType;
+import org.aincraft.database.storage.IConnectionSource;
+import org.aincraft.database.storage.StorageType;
 
 public class HikariSource implements IConnectionSource {
 

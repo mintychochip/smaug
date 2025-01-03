@@ -1,7 +1,5 @@
 package org.aincraft.container;
 
-import org.aincraft.container.SmaugRecipe.RecipeResult.Status;
-import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.container.item.IKeyedItem;
 import org.bukkit.Keyed;
@@ -11,26 +9,43 @@ import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record SmaugRecipe(IKeyedItem output, IngredientList ingredientList,
-                          NamespacedKey recipeKey, NamespacedKey stationKey,
-                          @Nullable String permission) implements Keyed {
+public class SmaugRecipe implements Keyed {
 
-  public RecipeResult test(Player player, Inventory inventory) {
-    if (permission != null && !player.hasPermission(permission)) {
-      return new RecipeResult(Status.FAILURE, null, "permission failure");
-    }
-    for (Ingredient ingredient : ingredientList) {
-      if (!ingredient.isSubset(player, inventory)) {
-        return new RecipeResult(Status.FAILURE, ingredientList.findMissing(player, inventory),
-            null);
-      }
-    }
-    return new RecipeResult(Status.SUCCESS, null, null);
+  private final IKeyedItem output;
+  private final int amount;
+  private final IngredientList ingredientList;
+  private final NamespacedKey recipeKey;
+  private final NamespacedKey stationKey;
+  private final @Nullable String permission;
+  private final int actions;
+
+  public SmaugRecipe(IKeyedItem output, int amount, IngredientList ingredientList,
+      NamespacedKey recipeKey, NamespacedKey stationKey,
+      @Nullable String permission, int actions) {
+    this.output = output;
+    this.amount = amount;
+    this.ingredientList = ingredientList;
+    this.recipeKey = recipeKey;
+    this.stationKey = stationKey;
+    this.permission = permission;
+    this.actions = actions;
+  }
+
+  public int getActions() {
+    return actions;
+  }
+
+  public @Nullable String getPermission() {
+    return permission;
   }
 
   @Override
   public @NotNull NamespacedKey getKey() {
     return recipeKey;
+  }
+
+  public NamespacedKey getStationKey() {
+    return stationKey;
   }
 
   public IngredientList getIngredientList() {
@@ -41,13 +56,7 @@ public record SmaugRecipe(IKeyedItem output, IngredientList ingredientList,
     return output;
   }
 
-  public record RecipeResult(@NotNull SmaugRecipe.RecipeResult.Status status,
-                             @Nullable IngredientList missing,
-                             @Nullable String errorMessage) {
-
-    public enum Status {
-      SUCCESS,
-      FAILURE
-    }
+  public int getAmount() {
+    return amount;
   }
 }

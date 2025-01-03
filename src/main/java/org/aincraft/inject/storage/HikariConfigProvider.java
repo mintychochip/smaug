@@ -5,7 +5,7 @@ import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import com.zaxxer.hikari.HikariConfig;
 import org.aincraft.config.PluginConfiguration;
-import org.aincraft.storage.StorageType;
+import org.aincraft.database.storage.StorageType;
 import org.bukkit.configuration.ConfigurationSection;
 
 final class HikariConfigProvider implements Provider<HikariConfig> {

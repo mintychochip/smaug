@@ -1,4 +1,4 @@
-package org.aincraft.model;
+package org.aincraft.database.model;
 
 import java.util.UUID;
 import org.bukkit.Bukkit;
@@ -28,7 +28,7 @@ public final class Station {
     return UUID.fromString(id);
   }
 
-  public NamespacedKey getStationKey() {
+  public NamespacedKey getKey() {
     return NamespacedKey.fromString(stationKey);
   }
 

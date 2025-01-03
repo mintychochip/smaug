@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.aincraft.container.IRegistry;
 import org.aincraft.container.item.IKeyedItem;
+import org.aincraft.container.item.IKeyedItemFactory;
+import org.aincraft.inject.IKeyFactory;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -43,17 +45,17 @@ class RegistryImpl<T extends Keyed> implements IRegistry<T> {
   static final class ItemRegistryImpl extends RegistryImpl<IKeyedItem> implements
       IItemRegistry {
 
-    private final KeyFactory keyFactory;
-    private final KeyedItemFactoryImpl keyedItemFactory;
-    ItemRegistryImpl(KeyFactory keyFactory, KeyedItemFactoryImpl keyedItemFactory) {
+    private final IKeyFactory keyFactory;
+    private final IKeyedItemFactory keyedItemFactory;
+    ItemRegistryImpl(IKeyFactory keyFactory, IKeyedItemFactory keyedItemFactory) {
       this.keyFactory = keyFactory;
       this.keyedItemFactory = keyedItemFactory;
     }
 
     @Override
     public @Nullable IKeyedItem resolve(String key, boolean minecraft) {
-      Optional<NamespacedKey> keyOptional = keyFactory.getKeyFromString(key, minecraft);
-      return keyOptional.map(namespacedKey -> resolve(namespacedKey, minecraft)).orElse(null);
+      NamespacedKey namespacedKey = keyFactory.getKeyFromString(key, minecraft);
+      return resolve(namespacedKey, minecraft);
     }
 
     @Override

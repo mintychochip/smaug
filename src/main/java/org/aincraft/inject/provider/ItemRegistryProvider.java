@@ -8,6 +8,8 @@ import java.util.logging.Logger;
 import org.aincraft.config.PluginConfiguration;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.item.IKeyedItem;
+import org.aincraft.container.item.IKeyedItemFactory;
+import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.provider.RegistryImpl.ItemRegistryImpl;
 
 final class ItemRegistryProvider implements Provider<IItemRegistry> {
@@ -15,13 +17,13 @@ final class ItemRegistryProvider implements Provider<IItemRegistry> {
   private final PluginConfiguration itemConfiguration;
   private final IItemParser parser;
   private final Logger logger;
-  private final KeyFactory keyFactory;
-  private final KeyedItemFactoryImpl keyedItemFactory;
+  private final IKeyFactory keyFactory;
+  private final IKeyedItemFactory keyedItemFactory;
 
   @Inject
   public ItemRegistryProvider(@Named("item") PluginConfiguration itemConfiguration,
-      IItemParser parser, @Named("logger") Logger logger, KeyFactory keyFactory,
-      KeyedItemFactoryImpl keyedItemFactory) {
+      IItemParser parser, @Named("logger") Logger logger, IKeyFactory keyFactory,
+      IKeyedItemFactory keyedItemFactory) {
     this.itemConfiguration = itemConfiguration;
     this.parser = parser;
     this.logger = logger;

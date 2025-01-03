@@ -1,13 +1,16 @@
 package org.aincraft.listener;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import org.aincraft.api.event.StationAfterRemoveEvent;
 import org.aincraft.api.event.StationBeforeRemoveEvent;
-import org.aincraft.api.event.StationCreateEvent;
+import org.aincraft.api.event.StationCreatedEvent;
 import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
-import org.aincraft.model.Station;
-import org.aincraft.storage.IStorage;
+import org.aincraft.database.model.Station;
+import org.aincraft.database.storage.IStorage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -20,10 +23,17 @@ public final class StationService {
   private final IStorage storage;
   private final Plugin plugin;
 
+  private static final Duration DEFAULT_EXPIRE = Duration.ofHours(1);
+  private final Cache<Location, Station> stationCache = Caffeine.newBuilder().expireAfterWrite(
+      DEFAULT_EXPIRE).build();
   @Inject
   public StationService(Plugin plugin, IStorage storage) {
     this.plugin = plugin;
     this.storage = storage;
+  }
+
+  public Station getStation(Location location) {
+    return stationCache.get(location,l -> storage.getStation(location));
   }
 
   public void createStation(String stationKey, Location location,
@@ -39,8 +49,9 @@ public final class StationService {
                   new BukkitRunnable() {
                     @Override
                     public void run() {
+                      stationCache.put(location,station);
                       Bukkit.getPluginManager()
-                          .callEvent(new StationCreateEvent(station, player));
+                          .callEvent(new StationCreatedEvent(station, player));
                     }
                   }.runTask(plugin);
                 }
@@ -61,6 +72,7 @@ public final class StationService {
               .callEvent(new StationBeforeRemoveEvent(station, player, removalCause));
           CompletableFuture.runAsync(() -> {
             storage.deleteStation(location);
+            stationCache.invalidate(location);
             new BukkitRunnable() {
               @Override
               public void run() {

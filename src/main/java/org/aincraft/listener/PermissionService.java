@@ -1,7 +1,7 @@
 package org.aincraft.listener;
 
 import com.google.inject.Inject;
-import org.aincraft.storage.IStorage;
+import org.aincraft.database.storage.IStorage;
 
 public class PermissionService {
 

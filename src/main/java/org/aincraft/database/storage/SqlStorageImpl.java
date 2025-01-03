@@ -1,4 +1,4 @@
-package org.aincraft.storage;
+package org.aincraft.database.storage;
 
 import com.google.inject.name.Named;
 import java.io.IOException;
@@ -15,14 +15,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.aincraft.SmaugBootstrap;
-import org.aincraft.model.Station;
-import org.aincraft.model.StationUser;
-import org.bukkit.Bukkit;
+import org.aincraft.database.model.Station;
+import org.aincraft.database.model.StationRecipeProgress;
+import org.aincraft.database.model.StationUser;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class SqlStorageImpl implements IStorage {
 
@@ -48,6 +45,16 @@ public class SqlStorageImpl implements IStorage {
   private static final String UPDATE_STATION_USER = "UPDATE station_user SET name=? WHERE id=?";
 
   private static final String GET_STATION_USER = "SELECT name, joined FROM station_user WHERE id=?";
+
+  private static final String CREATE_RECIPE_PROGRESS = "INSERT INTO station_recipe_progress (id,station_id,recipe_key,progress) VALUES (?,?,?,?)";
+
+  private static final String GET_RECIPE_PROGRESS = "SELECT id,recipe_key,progress FROM station_recipe_progress WHERE station_id=?";
+
+  private static final String DELETE_RECIPE_PROGRESS = "DELETE FROM station_recipe_progress WHERE station_id=?";
+
+  private static final String HAS_RECIPE_PROGRESS = "SELECT EXISTS (SELECT 1 FROM station_recipe_progress WHERE station_id=?)";
+
+  private static final String UPDATE_RECIPE_PROGRESS = "UPDATE station_recipe_progress SET progress=? WHERE stationId=?";
 
   public SqlStorageImpl(IConnectionSource source, @Named("logger") Logger logger,
       Extractor extractor) {
@@ -154,25 +161,15 @@ public class SqlStorageImpl implements IStorage {
   public boolean hasStation(Location location) {
     World world = location.getWorld();
     assert world != null;
-    return executor.queryRow(scanner -> {
-          try {
-            return scanner.getBoolean(1);
-          } catch (Exception err) {
-            throw new RuntimeException(err);
-          }
-        }, HAS_STATION, world.getName(), location.getBlockX(), location.getBlockY(),
+    return executor.queryExists(HAS_STATION, world.getName(), location.getBlockX(),
+        location.getBlockY(),
         location.getBlockZ());
   }
 
   @Override
   public boolean hasStationUser(String playerId) {
-    return executor.queryRow(scanner -> {
-      try {
-        return scanner.getBoolean(1);
-      } catch (Exception err) {
-        throw new RuntimeException(err);
-      }
-    }, HAS_STATION_USER, playerId);
+    return executor.queryExists(HAS_STATION_USER, playerId);
+
   }
 
   @Override
@@ -199,6 +196,44 @@ public class SqlStorageImpl implements IStorage {
   public boolean updateStationUser(StationUser user) {
     return executor.executeUpdate(UPDATE_STATION_USER, user.getName(), user.getId());
   }
+
+  @Override
+  public StationRecipeProgress createRecipeProgress(String stationId, String recipeKey) {
+    String id = UUID.randomUUID().toString();
+    executor.executeUpdate(CREATE_RECIPE_PROGRESS, id, stationId, recipeKey, 0);
+    return new StationRecipeProgress(id, stationId, recipeKey, 0);
+  }
+
+  @Override
+  public StationRecipeProgress getRecipeProgress(String stationId) {
+    return executor.queryRow(scanner -> {
+      try {
+        String id = scanner.getString("id");
+        String recipeKey = scanner.getString("recipe_key");
+        int progress = scanner.getInt("progress");
+        return new StationRecipeProgress(id, stationId, recipeKey, progress);
+      } catch (SQLException err) {
+        throw new RuntimeException(err);
+      }
+    }, GET_RECIPE_PROGRESS, stationId);
+  }
+
+  @Override
+  public void deleteRecipeProgress(String stationId) {
+    executor.executeUpdate(DELETE_RECIPE_PROGRESS, stationId);
+  }
+
+  @Override
+  public boolean hasRecipeProgress(String stationId) {
+    return executor.queryExists(HAS_RECIPE_PROGRESS, stationId);
+  }
+
+  @Override
+  public boolean updateRecipeProgress(StationRecipeProgress progress) {
+    return executor.executeUpdate(UPDATE_RECIPE_PROGRESS, progress.getProgress(),
+        progress.getStationId());
+  }
+
 
   @Override
   public void close() {

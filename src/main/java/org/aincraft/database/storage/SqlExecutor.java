@@ -1,4 +1,4 @@
-package org.aincraft.storage;
+package org.aincraft.database.storage;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -76,6 +76,15 @@ public class SqlExecutor {
     }
   }
 
+  public boolean queryExists(String query, Object ... args) {
+    return queryRow(scanner -> {
+      try {
+        return scanner.getBoolean(1);
+      } catch (SQLException err) {
+        throw new RuntimeException(err);
+      }
+    },query,args);
+  }
   public <T> T queryRow(Function<ResultSet, T> scanner, String query, Object... args) {
     try (Connection connection = source.getConnection();
         PreparedStatement ps = connection.prepareStatement(query)) {
@@ -89,8 +98,8 @@ public class SqlExecutor {
         }
         return null;
       }
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
+    } catch (SQLException err) {
+      throw new RuntimeException(err);
     }
   }
 }

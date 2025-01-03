@@ -1,12 +1,12 @@
-package org.aincraft.model;
+package org.aincraft.database.model;
 
-public class StationPermission {
+public final class StationUserPermission {
 
   private final String stationId;
   private final String userId;
   private int permission;
 
-  public StationPermission(String stationId, String userId, int permission) {
+  public StationUserPermission(String stationId, String userId, int permission) {
     this.stationId = stationId;
     this.userId = userId;
     this.permission = permission;

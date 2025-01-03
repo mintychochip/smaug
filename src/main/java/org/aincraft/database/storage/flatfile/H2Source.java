@@ -1,8 +1,8 @@
-package org.aincraft.storage.flatfile;
+package org.aincraft.database.storage.flatfile;
 
 import java.nio.file.Path;
 import java.util.logging.Logger;
-import org.aincraft.storage.StorageType;
+import org.aincraft.database.storage.StorageType;
 
 public class H2Source extends FlatFileSource{
 

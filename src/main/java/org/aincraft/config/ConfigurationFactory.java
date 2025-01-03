@@ -7,7 +7,6 @@ public final class ConfigurationFactory {
 
   private final Plugin plugin;
 
-  @Inject
   public ConfigurationFactory(Plugin plugin) {
     this.plugin = plugin;
   }

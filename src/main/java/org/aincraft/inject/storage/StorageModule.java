@@ -2,14 +2,10 @@ package org.aincraft.inject.storage;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.zaxxer.hikari.HikariConfig;
-import java.util.logging.Logger;
-import org.aincraft.config.PluginConfiguration;
-import org.aincraft.storage.Extractor;
-import org.aincraft.storage.Extractor.ResourceExtractor;
-import org.aincraft.storage.IStorage;
-import org.bukkit.plugin.Plugin;
+import org.aincraft.database.storage.Extractor;
+import org.aincraft.database.storage.Extractor.ResourceExtractor;
+import org.aincraft.database.storage.IStorage;
 
 public final class StorageModule extends AbstractModule {
 

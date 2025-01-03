@@ -1,6 +1,6 @@
 package org.aincraft.api.event;
 
-import org.aincraft.model.Station;
+import org.aincraft.database.model.Station;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 

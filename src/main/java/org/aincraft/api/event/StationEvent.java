@@ -1,6 +1,6 @@
 package org.aincraft.api.event;
 
-import org.aincraft.model.Station;
+import org.aincraft.database.model.Station;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -14,15 +14,15 @@ public abstract class StationEvent extends Event {
   private final Station station;
 
   @Nullable
-  private final Player progenitor;
+  private final Player player;
 
-  public StationEvent(Station station, @Nullable Player progenitor) {
+  public StationEvent(Station station, @Nullable Player player) {
     this.station = station;
-    this.progenitor = progenitor;
+    this.player = player;
   }
 
-  public @Nullable Player getProgenitor() {
-    return progenitor;
+  public @Nullable Player getPlayer() {
+    return player;
   }
 
   public Station getStation() {

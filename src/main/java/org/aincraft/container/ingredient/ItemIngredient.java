@@ -1,20 +1,14 @@
 package org.aincraft.container.ingredient;
 
-import com.google.gson.Gson;
-import java.time.Duration;
-import java.time.Instant;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +18,6 @@ public final class ItemIngredient implements Ingredient {
   private final IKeyedItem item;
   private final NamespacedKey idKey;
   private final int amount;
-
   ItemIngredient(IKeyedItem item,
       NamespacedKey idKey, int amount) {
     this.item = item;
@@ -33,7 +26,7 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
-  public @NotNull Number getAmount() {
+  public @NotNull Number getRequired() {
     return amount;
   }
 
@@ -43,16 +36,16 @@ public final class ItemIngredient implements Ingredient {
 
   @Override
   @Contract("_,null -> false")
-  public boolean isSubset(Player player, Inventory inventory) {
+  public boolean test(Player player, Inventory inventory) {
     if (inventory == null) {
       return false;
     }
-    return this.getCurrentAmount(player, inventory).doubleValue() >= this.getAmount().doubleValue();
+    return this.getCurrentAmount(player, inventory).doubleValue() >= this.getRequired().doubleValue();
   }
 
   @Override
-  public void addIngredientToPlayer(Player player) {
-    player.getInventory().addItem(new ItemStack(item.getReference()));
+  public void add(Player player, Inventory inventory) {
+
   }
 
   @Override
@@ -79,7 +72,7 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
-  public @NotNull Component toItemizedComponent() {
+  public @NotNull Component asComponent() {
     ItemStack reference = item.getReference();
     ItemMeta itemMeta = reference.getItemMeta();
     assert itemMeta != null;

@@ -8,17 +8,24 @@ import org.jetbrains.annotations.Nullable;
 
 public interface Ingredient {
 
-  boolean isSubset(Player player, Inventory inventory);
+  boolean test(Player player, Inventory inventory);
 
-  void addIngredientToPlayer(Player player);
+  void add(Player player, Inventory inventory);
 
+  /**
+   * Returns how much of this ingredient is currently in possession of the player,
+   * or an inventory depending on the type of ingredient.
+   * @param player the player to be checked
+   * @param inventory the inventory to be checked
+   * @return amount of the ingredient
+   */
   Number getCurrentAmount(Player player, @Nullable Inventory inventory);
 
   @NotNull
-  Number getAmount();
+  Number getRequired();
 
   @NotNull
-  Component toItemizedComponent();
+  Component asComponent();
 
   Ingredient copy(Number amount);
 }

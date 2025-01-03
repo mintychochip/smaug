@@ -18,20 +18,18 @@ public final class ExperienceIngredient implements Ingredient {
 
   @Override
   @Contract("null,_ -> false")
-  public boolean isSubset(Player player, Inventory inventory) {
+  public boolean test(Player player, Inventory inventory) {
     return player != null && player.calculateTotalExperiencePoints() >= amount;
   }
 
   @Override
-  public @NotNull Number getAmount() {
+  public @NotNull Number getRequired() {
     return amount;
   }
 
   @Override
-  public void addIngredientToPlayer(Player player) {
-    int totalExperience = player.getTotalExperience();
-    player.sendExperienceChange(0, 2);
-    player.setTotalExperience(amount + totalExperience);
+  public void add(Player player, Inventory inventory) {
+
   }
 
   @Override
@@ -40,7 +38,7 @@ public final class ExperienceIngredient implements Ingredient {
   }
 
   @Override
-  public @NotNull Component toItemizedComponent() {
+  public @NotNull Component asComponent() {
     return Component.text("XP " + amount);
   }
 

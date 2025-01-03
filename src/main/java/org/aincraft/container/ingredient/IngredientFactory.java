@@ -18,17 +18,18 @@ public final class IngredientFactory {
   }
 
   public Ingredient item(@Nullable IKeyedItem item, int amount) {
-    if(item == null) {
+    if (item == null) {
       return null;
     }
-    return new ItemIngredient(item,keyedItemFactory.getIdentifierKey(), amount);
+    return new ItemIngredient(item, keyedItemFactory.getIdentifierKey(), amount);
   }
+
   @Nullable
   public Ingredient item(@Nullable ItemStack itemStack, @Nullable NamespacedKey key) {
     if (itemStack == null || key == null) {
       return null;
     }
-    return item(keyedItemFactory.create(itemStack,key),itemStack.getAmount());
+    return item(keyedItemFactory.create(itemStack, key), itemStack.getAmount());
   }
 
   @NotNull

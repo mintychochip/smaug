@@ -4,8 +4,8 @@ import com.google.inject.Inject;
 import java.sql.Timestamp;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import org.aincraft.model.StationUser;
-import org.aincraft.storage.IStorage;
+import org.aincraft.database.model.StationUser;
+import org.aincraft.database.storage.IStorage;
 import org.bukkit.entity.Player;
 
 public final class PlayerService {

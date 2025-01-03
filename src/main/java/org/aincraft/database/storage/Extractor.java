@@ -1,4 +1,4 @@
-package org.aincraft.storage;
+package org.aincraft.database.storage;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

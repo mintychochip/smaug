@@ -1,4 +1,4 @@
-package org.aincraft.model;
+package org.aincraft.database.model;
 
 public enum UserPermission {
   INTERACT("interact"),

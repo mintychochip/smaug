@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import org.apache.logging.log4j.core.tools.picocli.CommandLine.Help.Ansi.Text;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
@@ -22,9 +21,9 @@ public final class IngredientList implements Iterable<Ingredient> {
     this.listMarker = listMarker;
   }
 
-  public Component toItemizedList() {
+  public Component asComponent() {
     return ingredients.stream()
-        .map(Ingredient::toItemizedComponent)
+        .map(Ingredient::asComponent)
         .map(component -> Component.text("")
             .append(listMarker)
             .append(Component.space())
@@ -59,9 +58,9 @@ public final class IngredientList implements Iterable<Ingredient> {
       Inventory inventory) {
     List<Ingredient> missing = new ArrayList<>();
     for (Ingredient ingredient : this.ingredients) {
-      if (!ingredient.isSubset(player, inventory)) {
+      if (!ingredient.test(player, inventory)) {
         double amount =
-            ingredient.getAmount().doubleValue() - ingredient.getCurrentAmount(player, inventory)
+            ingredient.getRequired().doubleValue() - ingredient.getCurrentAmount(player, inventory)
                 .doubleValue();
         missing.add(ingredient.copy(amount));
       }

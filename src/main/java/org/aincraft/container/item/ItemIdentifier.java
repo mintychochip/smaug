@@ -20,10 +20,21 @@ public record ItemIdentifier(NamespacedKey key, long version) implements Keyed {
 
   @Override
   public boolean equals(Object obj) {
+    if (obj instanceof NamespacedKey namespacedKey) {
+      return namespacedKey.equals(this.key);
+    }
     if (obj instanceof Keyed keyed) {
       return keyed.getKey().equals(this.key);
     }
     return obj.equals(this);
+  }
+
+  public static boolean contains(ItemStack itemStack, NamespacedKey identifierKey, String substr) {
+    ItemIdentifier identifier = getIdentifier(itemStack, identifierKey);
+    if (identifier == null) {
+      return false;
+    }
+    return identifier.getKey().getKey().contains(substr);
   }
 
   public static boolean compare(@NotNull ItemStack one, @NotNull ItemStack two,

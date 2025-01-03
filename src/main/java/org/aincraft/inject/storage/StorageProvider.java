@@ -6,12 +6,12 @@ import com.google.inject.name.Named;
 import com.zaxxer.hikari.HikariConfig;
 import java.util.logging.Logger;
 import org.aincraft.config.PluginConfiguration;
-import org.aincraft.storage.Extractor;
-import org.aincraft.storage.IStorage;
-import org.aincraft.storage.SqlStorageImpl;
-import org.aincraft.storage.StorageType;
-import org.aincraft.storage.flatfile.H2Source;
-import org.aincraft.storage.flatfile.SqliteSource;
+import org.aincraft.database.storage.Extractor;
+import org.aincraft.database.storage.IStorage;
+import org.aincraft.database.storage.SqlStorageImpl;
+import org.aincraft.database.storage.StorageType;
+import org.aincraft.database.storage.flatfile.H2Source;
+import org.aincraft.database.storage.flatfile.SqliteSource;
 import org.bukkit.plugin.Plugin;
 
 final class StorageProvider implements Provider<IStorage> {

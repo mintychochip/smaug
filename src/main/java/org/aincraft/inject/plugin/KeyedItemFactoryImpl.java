@@ -1,7 +1,9 @@
-package org.aincraft.inject.provider;
+package org.aincraft.inject.plugin;
 
 import com.google.gson.Gson;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
 import org.aincraft.container.item.IKeyedItemFactory;
@@ -11,17 +13,18 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Singleton
 final class KeyedItemFactoryImpl implements IKeyedItemFactory {
 
   private final NamespacedKey identifierKey;
-  private final int version;
+  private final int version = 1;
 
-  KeyedItemFactoryImpl(NamespacedKey identifierKey, int version) {
+  @Inject
+  KeyedItemFactoryImpl(@Named("id") NamespacedKey identifierKey) {
     this.identifierKey = identifierKey;
-    this.version = version;
   }
 
   @Override
@@ -46,4 +49,16 @@ final class KeyedItemFactoryImpl implements IKeyedItemFactory {
     return new KeyedItemImpl(key, itemStack);
   }
 
+  record KeyedItemImpl(NamespacedKey key, ItemStack reference) implements IKeyedItem {
+
+    @Override
+    public @NotNull NamespacedKey getKey() {
+      return key;
+    }
+
+    @Override
+    public ItemStack getReference() {
+      return reference;
+    }
+  }
 }

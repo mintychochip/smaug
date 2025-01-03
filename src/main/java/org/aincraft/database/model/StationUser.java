@@ -1,4 +1,4 @@
-package org.aincraft.model;
+package org.aincraft.database.model;
 
 import java.sql.Timestamp;
 import java.util.UUID;

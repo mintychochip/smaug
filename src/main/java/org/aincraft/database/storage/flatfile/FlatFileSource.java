@@ -1,4 +1,4 @@
-package org.aincraft.storage.flatfile;
+package org.aincraft.database.storage.flatfile;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,7 +8,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.aincraft.storage.IConnectionSource;
+import org.aincraft.database.storage.IConnectionSource;
 
 public abstract class FlatFileSource implements IConnectionSource {
 

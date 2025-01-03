@@ -48,6 +48,21 @@ allprojects {
 
 
 }
+paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.REOBF_PRODUCTION
+
+
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "org.aincraft"
+            artifactId = "${project.property("artifactName")}".lowercase()
+            version = "${project.version}"
+
+            from(components["java"])
+        }
+    }
+}
 dependencies {
     paperweight.paperDevBundle("1.21.1-R0.1-SNAPSHOT")
     implementation("com.github.ben-manes.caffeine:caffeine:2.9.0")

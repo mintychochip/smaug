@@ -1,4 +1,4 @@
-package org.aincraft.storage;
+package org.aincraft.database.storage;
 
 public enum StorageType {
   H2("h2", "org.h2.Driver"),
