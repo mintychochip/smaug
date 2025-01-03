@@ -2,7 +2,6 @@ package org.aincraft.container.item;
 
 import com.google.gson.Gson;
 import org.bukkit.Keyed;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;

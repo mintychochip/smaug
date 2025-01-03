@@ -4,7 +4,6 @@ import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.security.KeyFactory;
 import java.util.Optional;
 import java.util.logging.Logger;
 import net.kyori.adventure.text.Component;

@@ -2,7 +2,6 @@ package org.aincraft.inject.provider;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.security.KeyFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -10,7 +9,6 @@ import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientFactory;
 import org.aincraft.container.item.IKeyedItem;
-import org.aincraft.inject.IKeyFactory;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

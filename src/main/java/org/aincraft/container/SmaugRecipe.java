@@ -4,8 +4,6 @@ import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.container.item.IKeyedItem;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

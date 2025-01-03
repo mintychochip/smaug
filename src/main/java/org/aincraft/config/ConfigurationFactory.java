@@ -1,6 +1,5 @@
 package org.aincraft.config;
 
-import com.google.inject.Inject;
 import org.bukkit.plugin.Plugin;
 
 public final class ConfigurationFactory {
