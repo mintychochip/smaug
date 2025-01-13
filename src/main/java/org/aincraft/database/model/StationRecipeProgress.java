@@ -1,13 +1,12 @@
 package org.aincraft.database.model;
 
 import java.util.UUID;
-import org.bukkit.NamespacedKey;
 
 public final class StationRecipeProgress {
 
   private final String id;
   private final String stationId;
-  private final String recipeKey;
+  private String recipeKey;
   private int progress;
 
   public StationRecipeProgress(String id, String stationId, String recipeKey, int progress) {
@@ -15,6 +14,10 @@ public final class StationRecipeProgress {
     this.stationId = stationId;
     this.recipeKey = recipeKey;
     this.progress = progress;
+  }
+
+  public void setRecipeKey(String recipeKey) {
+    this.recipeKey = recipeKey;
   }
 
   public void setProgress(int progress) {
@@ -33,7 +36,7 @@ public final class StationRecipeProgress {
     return UUID.fromString(id);
   }
 
-  public NamespacedKey getRecipeKey() {
-    return NamespacedKey.fromString(recipeKey);
+  public String getRecipeKey() {
+    return recipeKey;
   }
 }

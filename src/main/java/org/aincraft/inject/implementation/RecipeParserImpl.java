@@ -2,7 +2,6 @@ package org.aincraft.inject.implementation;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.aincraft.container.IRegistry.IItemRegistry;
@@ -40,11 +39,6 @@ final class RecipeParserImpl implements IRecipeParser {
         && section.contains("type"))) {
       return null;
     }
-    NamespacedKey recipeKey = keyFactory.getKeyFromString(section.getName(),
-        true);
-    if (recipeKey == null) {
-      return null;
-    }
     IKeyedItem output = itemRegistry.resolve(section.getString("output"), true);
     if (output == null) {
       return null;
@@ -60,8 +54,8 @@ final class RecipeParserImpl implements IRecipeParser {
     String permissionString = section.getString("permission", null);
     int actions = section.getInt("actions", 1);
     return new SmaugRecipe(output, amount,
-        new IngredientList(ingredients, listMarker),
-        recipeKey,
+        new IngredientList(ingredients),
+        section.getName(),
         stationKey, permissionString, actions);
   }
 }

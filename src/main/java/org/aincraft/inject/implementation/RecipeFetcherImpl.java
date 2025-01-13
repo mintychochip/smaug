@@ -70,19 +70,4 @@ final class RecipeFetcherImpl implements IRecipeFetcher {
   @Override
   public void refresh() {
   }
-//
-//  @Override
-//  public RecipeResult test(SmaugRecipe recipe, Player player, Inventory inventory) {
-//    if (recipe.getPermission() != null && !player.hasPermission(recipe.getPermission())) {
-//      return new RecipeResult(Status.PERMISSION_FAILURE, null, "permission failure");
-//    }
-//    for (Ingredient ingredient : recipe.getIngredientList()) {
-//      if (!ingredient.test(player, inventory)) {
-//        return new RecipeResult(Status.INSUFFICIENT_RESOURCES,
-//            recipe.getIngredientList().findMissing(player, inventory),
-//            null);
-//      }
-//    }
-//    return new RecipeResult(Status.SUCCESS, null, null);
-//  }
 }

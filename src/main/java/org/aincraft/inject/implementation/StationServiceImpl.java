@@ -6,49 +6,45 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import org.aincraft.api.event.SmaugInventoryEvent;
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.StationInventory;
 import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.listener.IStationService;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 @Singleton
 final class StationServiceImpl implements IStationService {
 
   private final IStorage storage;
   private final Plugin plugin;
+  //merge these two caches
+  private static final Cache<UUID, Station> station2Cache;
+  private static final Cache<Location, Station> stationCache;
+  private static final Cache<Player, StationUser> userCache;
+  private static final Cache<UUID, StationRecipeProgress> recipeCache;
+  private static final Cache<UUID, StationInventory> inventoryCache;
 
-  private static final Duration DEFAULT_EXPIRE = Duration.ofHours(1);
-  private final Cache<Location, Station> stationCache = Caffeine.newBuilder().expireAfterWrite(
-      DEFAULT_EXPIRE).build();
-  private final Cache<Player, StationUser> userCache = Caffeine.newBuilder()
-      .expireAfterWrite(DEFAULT_EXPIRE).build();
-  private final Cache<StationRecipeKey, StationRecipeProgress> recipeCache = Caffeine.newBuilder()
-      .expireAfterWrite(DEFAULT_EXPIRE).build();
+  static {
+    station2Cache = createCache();
+    stationCache = createCache();
+    userCache = createCache();
+    recipeCache = createCache();
+    inventoryCache = createCache();
+  }
 
-  record StationRecipeKey(UUID stationId) {
-
-    @Override
-    public int hashCode() {
-      return stationId.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (obj == null || getClass() != obj.getClass()) {
-        return false;
-      }
-      StationRecipeKey other = (StationRecipeKey) obj;
-      return stationId.equals(other.stationId());
-    }
+  private static <K, V> Cache<K, V> createCache() {
+    return Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(1)).build();
   }
 
   @Inject
@@ -72,6 +68,11 @@ final class StationServiceImpl implements IStationService {
   }
 
   @Override
+  public Station getStation(UUID stationId) {
+    return station2Cache.get(stationId, k -> storage.getStation(stationId.toString()));
+  }
+
+  @Override
   public void deleteStation(Location location) {
     World world = location.getWorld();
     if (world == null) {
@@ -82,32 +83,26 @@ final class StationServiceImpl implements IStationService {
     stationCache.invalidate(location);
   }
 
+  @Override
   public Station getStation(Location location) {
-    return stationCache.get(location, l -> {
-      World world = location.getWorld();
+    return stationCache.get(location, k -> {
+      World world = k.getWorld();
       if (world == null) {
         return null;
       }
-      return storage.getStation(world.getName(), location.getBlockX(), location.getBlockY(),
-          location.getBlockZ());
+      return storage.getStation(world.getName(), k.getBlockX(), k.getBlockY(),
+          k.getBlockZ());
     });
   }
 
   @Override
   public boolean hasStation(Location location) {
-    World world = location.getWorld();
-    if (world == null) {
-      return false;
-    }
-    return stationCache.getIfPresent(location) == null && storage.hasStation(world.getName(),
-        location.getBlockX(), location.getBlockY(),
-        location.getBlockZ());
+    return this.getStation(location) != null;
   }
 
   @Override
   public boolean hasStationUser(Player player) {
-    return userCache.getIfPresent(player) == null && storage.hasStationUser(
-        player.getUniqueId().toString());
+    return this.getStationUser(player) != null;
   }
 
   @Override
@@ -121,7 +116,7 @@ final class StationServiceImpl implements IStationService {
   @Override
   public StationUser getStationUser(Player player) {
     return userCache.get(player,
-        p -> storage.getStationUser(player.getUniqueId().toString()));
+        k -> storage.getStationUser(k.getUniqueId().toString()));
   }
 
   @Override
@@ -134,39 +129,83 @@ final class StationServiceImpl implements IStationService {
   }
 
   @Override
-  public StationRecipeProgress createRecipeProgress(UUID stationId, NamespacedKey recipeKey) {
-    StationRecipeKey stationKey = new StationRecipeKey(stationId);
+  public StationRecipeProgress createRecipeProgress(UUID stationId, String recipeKey) {
     StationRecipeProgress recipeProgress = storage.createRecipeProgress(stationId.toString(),
-        recipeKey.toString());
-    recipeCache.put(stationKey, recipeProgress);
+        recipeKey);
+    recipeCache.put(stationId, recipeProgress);
     return recipeProgress;
   }
 
   @Override
   public StationRecipeProgress getRecipeProgress(UUID stationId) {
-    return recipeCache.get(new StationRecipeKey(stationId),
+    return recipeCache.get(stationId,
         k -> storage.getRecipeProgress(stationId.toString()));
   }
 
   @Override
   public void deleteRecipeProgress(UUID stationId) {
     storage.deleteRecipeProgress(stationId.toString());
-    recipeCache.invalidate(new StationRecipeKey(stationId));
+    recipeCache.invalidate(stationId);
   }
 
   @Override
   public boolean hasRecipeProgress(UUID stationId) {
-    return recipeCache.getIfPresent(new StationRecipeKey(stationId)) == null
-        && storage.hasRecipeProgress(stationId.toString());
+    return this.getRecipeProgress(stationId) != null;
   }
 
   @Override
-  public boolean updateRecipeProgress(UUID stationId) {
-    StationRecipeProgress recipeProgress = storage.getRecipeProgress(stationId.toString());
-    if(recipeProgress == null) {
-      return false;
-    }
+  public boolean updateRecipeProgress(StationRecipeProgress progress) {
+    return storage.updateRecipeProgress(progress);
+  }
+
+  @Override
+  public boolean updateRecipeProgress(UUID stationId,
+      Consumer<StationRecipeProgress> progressConsumer) {
+    StationRecipeProgress recipeProgress = this.getRecipeProgress(stationId);
+    progressConsumer.accept(recipeProgress);
     return storage.updateRecipeProgress(recipeProgress);
+  }
+
+  @Override
+  public StationInventory createInventory(UUID stationId, int inventoryLimit) {
+    StationInventory inventory = storage.createInventory(stationId.toString(), inventoryLimit);
+    inventoryCache.put(stationId, inventory);
+    return inventory;
+  }
+
+  @Override
+  public StationInventory getInventory(UUID stationId) {
+    return inventoryCache.get(stationId, k -> storage.getInventory(k.toString()));
+  }
+
+  @Override
+  public boolean hasInventory(UUID stationId) {
+    if (inventoryCache.getIfPresent(stationId) != null) {
+      return true;
+    }
+    return storage.hasInventory(stationId.toString());
+  }
+
+  @Override
+  public boolean updateInventory(StationInventory inventory) {
+    boolean b = storage.updateInventory(inventory);
+    if(b) {
+      inventoryCache.put(inventory.getStationId(), inventory);
+    }
+    return b;
+  }
+
+  @Override
+  public void updateInventoryAsync(StationInventory inventory, Consumer<Boolean> callback) {
+    CompletableFuture.supplyAsync(() -> this.updateInventory(inventory))
+        .thenAcceptAsync(callback);
+  }
+
+  @Override
+  public boolean updateInventory(UUID stationId, Consumer<StationInventory> inventoryConsumer) {
+    StationInventory inventory = this.getInventory(stationId);
+    inventoryConsumer.accept(inventory);
+    return this.updateInventory(inventory);
   }
 //
 //  public void createStation(String stationKey, Location location,

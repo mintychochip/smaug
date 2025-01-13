@@ -4,10 +4,14 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Map;
 import java.util.function.Predicate;
-import org.aincraft.api.event.StationInteractEvent;
-import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
-import org.aincraft.container.InteractionKey;
+import org.aincraft.api.event.SmaugInventoryEvent;
+import org.aincraft.api.event.StationActionEvent;
+import org.aincraft.container.IRecipeFetcher;
+import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
+import org.aincraft.container.StationHandler.Context;
+import org.aincraft.container.StationHandler.IActionContext;
+import org.aincraft.container.StationHandler.IInteractionContext;
 import org.aincraft.database.model.Station;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -19,6 +23,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -27,6 +32,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class StationListener implements Listener {
 
@@ -42,19 +49,21 @@ public class StationListener implements Listener {
         material == Material.DAMAGED_ANVIL ||
         materialString.contains("CONCRETE_POWDER");
   };
-  private final Map<InteractionKey, StationHandler> handlers;
+  private final Map<NamespacedKey, StationHandler> handlers;
   private final Plugin plugin;
   private final IStationService stationService;
   private final NamespacedKey stationKey;
+  private final IRecipeFetcher recipeFetcher;
 
   @Inject
-  public StationListener(Map<InteractionKey, StationHandler> handlers,
+  public StationListener(Map<NamespacedKey, StationHandler> handlers,
       Plugin plugin, IStationService stationService,
-      @Named("station") NamespacedKey stationKey) {
+      @Named("station") NamespacedKey stationKey, IRecipeFetcher recipeFetcher) {
     this.handlers = handlers;
     this.plugin = plugin;
     this.stationService = stationService;
     this.stationKey = stationKey;
+    this.recipeFetcher = recipeFetcher;
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -81,7 +90,8 @@ public class StationListener implements Listener {
       return;
     }
     Player player = event.getPlayer();
-    stationService.createStation(NamespacedKey.fromString(stationKey), blockLocation);
+    stationService.createStation(NamespacedKey.fromString(stationKey),
+        blockLocation);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -104,8 +114,22 @@ public class StationListener implements Listener {
     }
   }
 
+  @EventHandler(priority = EventPriority.HIGHEST)
+  private void handleAction(final StationActionEvent event) {
+    if (event.isCancelled()) {
+      return;
+    }
+    Station station = event.getStation();
+    StationHandler handler = handlers.get(station.getKey());
+    if(handler == null) {
+      return;
+    }
+    handler.handleAction(new ActionContextImpl(station, event.getPlayer(), event.getItem(),
+        event.getContext().getAction(), event.getRecipe()));
+  }
+
   @EventHandler(priority = EventPriority.MONITOR)
-  private void handleStationInteract(final PlayerInteractEvent event) {
+  private void handleInteract(final PlayerInteractEvent event) {
     Block block = event.getClickedBlock();
     if (block == null) {
       return;
@@ -117,24 +141,92 @@ public class StationListener implements Listener {
     if (station == null) {
       return;
     }
-    Bukkit.getPluginManager().callEvent(new StationInteractEvent(station, event));
-  }
-
-  @EventHandler(priority = EventPriority.MONITOR)
-  private void handleStationInteractEvent(final StationInteractEvent event) {
-    if (event.isCancelled()) {
-      return;
-    }
-    InteractionKey interactionKey = new InteractionKey(event.getStation().getKey(),
-        event.getInteractionType());
-    StationHandler handler = handlers.get(interactionKey);
+    StationHandler handler = handlers.get(station.getKey());
     if (handler == null) {
       return;
     }
-    handler.handle(event, stationService);
+    InteractionContextImpl interactionContext = new InteractionContextImpl(station, event);
+    handler.handleInteraction(interactionContext, recipe -> {
+      Bukkit.getPluginManager()
+          .callEvent(new StationActionEvent(recipe, interactionContext));
+    });
   }
 
-//  @EventHandler
+  @EventHandler
+  private void handleInventoryUpdate(final SmaugInventoryEvent event) {
+    Bukkit.broadcastMessage(event.getInventory().toString());
+  }
+
+  static final class ActionContextImpl extends ContextImpl implements IActionContext {
+
+    private final SmaugRecipe recipe;
+
+    ActionContextImpl(Station station, Player player, ItemStack stack, Action action,
+        SmaugRecipe recipe) {
+      super(station, player, stack, action);
+      this.recipe = recipe;
+    }
+
+    @Override
+    public SmaugRecipe getRecipe() {
+      return recipe;
+    }
+  }
+
+  static final class InteractionContextImpl extends ContextImpl implements IInteractionContext {
+
+    private final PlayerInteractEvent event;
+
+    InteractionContextImpl(Station station, PlayerInteractEvent event) {
+      super(station, event.getPlayer(), event.getItem(), event.getAction());
+      this.event = event;
+    }
+
+    @Override
+    public void cancel() {
+      event.setCancelled(true);
+    }
+  }
+
+  static abstract class ContextImpl implements Context {
+
+    private final Station station;
+    private final Player player;
+    @Nullable
+    private final ItemStack stack;
+    private final Action action;
+
+    ContextImpl(Station station, Player player, @Nullable ItemStack stack, Action action) {
+      this.station = station;
+      this.player = player;
+      this.stack = stack;
+      this.action = action;
+    }
+
+    @NotNull
+    @Override
+    public Action getAction() {
+      return action;
+    }
+
+    @NotNull
+    @Override
+    public Station getStation() {
+      return station;
+    }
+
+    @Override
+    public @NotNull ItemStack getItem() {
+      return stack;
+    }
+
+    @NotNull
+    @Override
+    public Player getPlayer() {
+      return player;
+    }
+  }
+  //  @EventHandler
 //  private void handleDropItemsOnStationRemove(final StationBeforeRemoveEvent event) {
 //    Station station = event.getStation();
 //    Location stationLocation = station.getLocation();
@@ -165,6 +257,9 @@ public class StationListener implements Listener {
 //        }
 //      }.runTask(plugin);
 //    });
-//  }
+//
+
   //TODO: Add Explosion/Piston handling
+
+
 }

@@ -1,5 +1,8 @@
 package org.aincraft.container.ingredient;
 
+import com.google.common.base.Preconditions;
+import java.util.Iterator;
+import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.aincraft.container.item.IKeyedItem;
@@ -11,13 +14,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public final class ItemIngredient implements Ingredient {
 
   private final IKeyedItem item;
   private final NamespacedKey idKey;
   private final int amount;
+
   ItemIngredient(IKeyedItem item,
       NamespacedKey idKey, int amount) {
     this.item = item;
@@ -35,12 +38,10 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
-  @Contract("_,null -> false")
-  public boolean test(Player player, Inventory inventory) {
-    if (inventory == null) {
-      return false;
-    }
-    return this.getCurrentAmount(player, inventory).doubleValue() >= this.getRequired().doubleValue();
+  public boolean test(Player player, List<ItemStack> stacks) {
+    Preconditions.checkArgument(stacks != null);
+    return this.getCurrentAmount(player, stacks).doubleValue() >= this.getRequired()
+        .doubleValue();
   }
 
   @Override
@@ -49,26 +50,48 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
-  @Contract("_,null -> null")
-  public Number getCurrentAmount(Player player, @Nullable Inventory inventory) {
-    if (inventory == null) {
-      return null;
+  @Contract(value = "_,null->fail", pure = true)
+  public void remove(Player player, List<ItemStack> contents) {
+    Preconditions.checkArgument(contents != null);
+    int current = getRequired().intValue();
+    Iterator<ItemStack> iter = contents.iterator();
+    while (current > 0 && iter.hasNext()) {
+      ItemStack stack = iter.next();
+      if (this.stackIsEqual(stack)) {
+        int amount = stack.getAmount();
+        if (current >= amount) {
+          stack.setAmount(0);
+          current -= amount;
+        } else {
+          stack.setAmount(amount - current);
+          current = 0;
+        }
+      }
     }
+  }
+
+  @Override
+  public Number getCurrentAmount(Player player, List<ItemStack> stacks) {
+    Preconditions.checkArgument(stacks != null);
     int amount = 0;
-    for (ItemStack content : inventory.getContents()) {
+    for (ItemStack content : stacks) {
       if (content == null) {
         continue;
       }
       if (content.getType().isAir()) {
         continue;
       }
-      if (item.getKey().getNamespace().equals("minecraft") && content.isSimilar(item.getReference())
-          || ItemIdentifier.compare(
-          item.getReference(), content, idKey)) {
+      if (this.stackIsEqual(content)) {
         amount += content.getAmount();
       }
     }
     return amount;
+  }
+
+  private boolean stackIsEqual(ItemStack stack) {
+    return item.getKey().getNamespace().equals("minecraft") && stack.isSimilar(item.getReference())
+        || ItemIdentifier.compare(
+        item.getReference(), stack, idKey);
   }
 
   @Override

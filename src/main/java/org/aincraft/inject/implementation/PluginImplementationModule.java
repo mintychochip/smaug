@@ -3,7 +3,6 @@ package org.aincraft.inject.implementation;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import org.aincraft.container.IRecipeEvaluator;
 import org.aincraft.container.IRecipeFetcher;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.item.IKeyedItemFactory;
@@ -19,7 +18,6 @@ public class PluginImplementationModule extends AbstractModule {
   private Class<? extends IKeyedItemFactory> keyedItemFactoryClazz = KeyedItemFactoryImpl.class;
   private Class<? extends IKeyFactory> keyFactoryClazz = KeyFactoryImpl.class;
   private Class<? extends IItemParser> itemParserClazz = ItemParserImpl.class;
-  private Class<? extends IRecipeEvaluator> evaluatorClazz = RecipeEvaluatorImpl.class;
   private Class<? extends IRecipeFetcher> recipeFetcherClazz = RecipeFetcherImpl.class;
   private Class<? extends IRecipeParser> recipeParserClazz = RecipeParserImpl.class;
   private Class<? extends IStationService> stationServiceClazz = StationServiceImpl.class;
@@ -32,7 +30,6 @@ public class PluginImplementationModule extends AbstractModule {
     bind(IKeyedItemFactory.class).to(keyedItemFactoryClazz).in(Singleton.class);
     bind(IKeyFactory.class).to(keyFactoryClazz).in(Singleton.class);
     bind(IItemParser.class).to(itemParserClazz).in(Singleton.class);
-    bind(IRecipeEvaluator.class).to(evaluatorClazz).in(Singleton.class);
     bind(IRecipeFetcher.class).to(recipeFetcherClazz).in(Singleton.class);
     bind(IRecipeParser.class).to(recipeParserClazz).in(Singleton.class);
     bind(IStationService.class).to(stationServiceClazz).in(Singleton.class);
@@ -54,11 +51,6 @@ public class PluginImplementationModule extends AbstractModule {
   public void setItemParserClazz(
       Class<? extends IItemParser> itemParserClazz) {
     this.itemParserClazz = itemParserClazz;
-  }
-
-  public void setEvaluatorClazz(
-      Class<? extends IRecipeEvaluator> evaluatorClazz) {
-    this.evaluatorClazz = evaluatorClazz;
   }
 
   public void setRecipeFetcherClazz(

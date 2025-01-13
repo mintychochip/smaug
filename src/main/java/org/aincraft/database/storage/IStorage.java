@@ -2,9 +2,9 @@ package org.aincraft.database.storage;
 
 import java.util.List;
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.StationInventory;
 import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
-import org.bukkit.Location;
 
 public interface IStorage {
 
@@ -16,6 +16,8 @@ public interface IStorage {
   void deleteStation(String worldName, int x, int y, int z);
 
   Station getStation(String worldName, int x, int y, int z);
+
+  Station getStation(String stationId);
 
   boolean hasStation(String worldName, int x, int y, int z);
 
@@ -36,6 +38,14 @@ public interface IStorage {
   boolean hasRecipeProgress(String stationId);
 
   boolean updateRecipeProgress(StationRecipeProgress progress);
+
+  StationInventory createInventory(String stationId, int inventoryLimit);
+
+  StationInventory getInventory(String stationId);
+
+  boolean hasInventory(String stationId);
+
+  boolean updateInventory(StationInventory inventory);
 //
 //  StationUserPermission createUserPermission(String stationId, String playerId, int permission);
 //
@@ -44,16 +54,6 @@ public interface IStorage {
 //  boolean updateUserPermission(StationUserPermission permission);
 //
 //  void deleteUserPermission(String stationId, String playerId);
-//  boolean isTableType(Location location, String tableType);
-//  List<TableModel> getTablesByType(@NotNull String tableType);
-//  boolean hasInventory(@NotNull String tableId);
-//  boolean hasRecipeProgress(@NotNull String tableId);
-//  TableInventoryModel createInventory(String tableId);
-//  TableInventoryModel getStationInventory(String tableId);
-//  void updateInventory(TableInventoryModel model);
-//
 
-
-  // Utility Methods
   void close();
 }

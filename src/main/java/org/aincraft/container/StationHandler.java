@@ -1,8 +1,35 @@
 package org.aincraft.container;
 
-import org.aincraft.api.event.StationInteractEvent;
-import org.aincraft.listener.IStationService;
+import java.util.function.Consumer;
+import org.aincraft.database.model.Station;
+import org.bukkit.entity.Player;
+import org.bukkit.event.block.Action;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public interface StationHandler {
-  void handle(final StationInteractEvent event, final IStationService service);
+
+  interface Context {
+    @NotNull
+    Station getStation();
+
+    @NotNull
+    Action getAction();
+
+    @NotNull
+    Player getPlayer();
+
+    @NotNull
+    ItemStack getItem();
+  }
+
+  interface IInteractionContext extends Context {
+    void cancel();
+  }
+  interface IActionContext extends Context {
+    SmaugRecipe getRecipe();
+  }
+  void handleInteraction(final IInteractionContext ctx, Consumer<SmaugRecipe> recipeConsumer);
+
+  void handleAction(IActionContext ctx);
 }

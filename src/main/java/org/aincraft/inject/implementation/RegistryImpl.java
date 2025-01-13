@@ -1,10 +1,10 @@
 package org.aincraft.inject.implementation;
 
 import com.google.inject.Singleton;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import org.aincraft.container.IRegistry;
 import org.aincraft.container.item.IKeyedItem;
@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 class RegistryImpl<T extends Keyed> implements IRegistry<T> {
 
-  protected Map<NamespacedKey, T> registry = new HashMap<>();
+  protected Map<NamespacedKey, T> registry = new ConcurrentHashMap<>();
 
   @Override
   public void register(T object) {

@@ -1,20 +1,48 @@
 package org.aincraft.container.item;
 
 import com.google.gson.Gson;
+import java.util.HashMap;
+import java.util.Map;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.ApiStatus.Experimental;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record ItemIdentifier(NamespacedKey key, long version) implements Keyed {
+public final class ItemIdentifier implements Keyed {
+
+  private final NamespacedKey key;
+  private final long version;
+
+  private final Map<Long, ItemIdentifier> aliasMap = new HashMap<>();
+
+  public ItemIdentifier(NamespacedKey key, long version) {
+    this.key = key;
+    this.version = version;
+  }
+
+  //TODO: work on alias for migrations prio low
+  @Experimental
+  public ItemIdentifier addAlias(ItemIdentifier identifier) {
+    aliasMap.put(identifier.getVersion(), identifier);
+    return this;
+  }
+
+  public boolean isAlias(ItemIdentifier identifier) {
+    return aliasMap.entrySet().stream().anyMatch(entry -> entry.getValue().equals(identifier));
+  }
 
   @Override
   public @NotNull NamespacedKey getKey() {
     return key;
+  }
+
+  public long getVersion() {
+    return version;
   }
 
   @Override
@@ -38,8 +66,8 @@ public record ItemIdentifier(NamespacedKey key, long version) implements Keyed {
 
   public static boolean compare(@NotNull ItemStack one, @NotNull ItemStack two,
       @NotNull NamespacedKey identifierKey) {
-    ItemIdentifier oneIdentifier = ItemIdentifier.getIdentifier(one, identifierKey);
-    ItemIdentifier twoIdentifier = ItemIdentifier.getIdentifier(two, identifierKey);
+    ItemIdentifier oneIdentifier = getIdentifier(one, identifierKey);
+    ItemIdentifier twoIdentifier = getIdentifier(two, identifierKey);
     if (oneIdentifier == null || twoIdentifier == null) {
       return false;
     }

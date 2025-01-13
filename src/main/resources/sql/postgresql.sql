@@ -11,9 +11,10 @@ CREATE TABLE IF NOT EXISTS stations
 CREATE TABLE IF NOT EXISTS station_inventory
 (
     id               TEXT PRIMARY KEY,
-    station_id       TEXT NOT NULL,
-    input_inventory  TEXT NOT NULL,
-    output_inventory TEXT NOT NULL,
+    station_id       TEXT    NOT NULL,
+    input_inventory  TEXT    NOT NULL,
+    output_inventory TEXT    NOT NULL,
+    inventory_limit            INTEGER NOT NULL,
     FOREIGN KEY (station_id) REFERENCES stations (id) ON DELETE CASCADE
 );
 

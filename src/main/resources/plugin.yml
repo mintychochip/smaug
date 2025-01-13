@@ -1,5 +1,5 @@
-name: Smaug
-version: '1.1'
+name: ${name}
+version: ${version}
 main: org.aincraft.SmaugBootstrap
 api-version: '1.21'
 authors: [ mintychochip ]

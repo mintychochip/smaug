@@ -1,9 +1,11 @@
 package org.aincraft.container.ingredient;
 
 import com.google.common.base.Preconditions;
+import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,7 +20,7 @@ public final class ExperienceIngredient implements Ingredient {
 
   @Override
   @Contract("null,_ -> false")
-  public boolean test(Player player, Inventory inventory) {
+  public boolean test(Player player, List<ItemStack> stacks) {
     return player != null && player.calculateTotalExperiencePoints() >= amount;
   }
 
@@ -33,7 +35,12 @@ public final class ExperienceIngredient implements Ingredient {
   }
 
   @Override
-  public Number getCurrentAmount(Player player, Inventory inventory) {
+  public void remove(Player player, List<ItemStack> stacks) {
+
+  }
+
+  @Override
+  public Number getCurrentAmount(Player player, List<ItemStack> stacks) {
     return player.calculateTotalExperiencePoints();
   }
 

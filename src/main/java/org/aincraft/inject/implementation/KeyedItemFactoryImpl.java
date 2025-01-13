@@ -1,5 +1,6 @@
 package org.aincraft.inject.implementation;
 
+import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -21,6 +22,8 @@ final class KeyedItemFactoryImpl implements IKeyedItemFactory {
 
   private final NamespacedKey identifierKey;
 
+  private static final Gson gson = new Gson();
+
   @Inject
   KeyedItemFactoryImpl(@Named("id") NamespacedKey identifierKey) {
     this.identifierKey = identifierKey;
@@ -34,21 +37,26 @@ final class KeyedItemFactoryImpl implements IKeyedItemFactory {
   @Override
   @Contract("null,null -> null")
   public @Nullable IKeyedItem create(ItemStack itemStack, NamespacedKey key) {
-    if (itemStack == null || key == null) {
-      return null;
-    }
-    if (itemStack.getType().isAir()) {
-      return null;
-    }
-    ItemMeta itemMeta = itemStack.getItemMeta();
-    PersistentDataContainer pdc = itemMeta.getPersistentDataContainer();
-    pdc.set(identifierKey, PersistentDataType.STRING,
-        new Gson().toJson(new ItemIdentifier(key, 1)));
-    itemStack.setItemMeta(itemMeta);
-    return new KeyedItemImpl(key, itemStack);
+    return create(itemStack,new ItemIdentifier(key,1));
   }
 
-  record KeyedItemImpl(NamespacedKey key, ItemStack reference) implements IKeyedItem {
+  @Override
+  @Contract(value = "null,null->fail", pure = true)
+  public @Nullable IKeyedItem create(ItemStack stack, ItemIdentifier identifier) {
+    Preconditions.checkArgument(stack != null);
+    Preconditions.checkArgument(identifier != null);
+    if (stack.getType().isAir()) {
+      return null;
+    }
+    stack.setAmount(1);
+    ItemMeta meta = stack.getItemMeta();
+    PersistentDataContainer pdc = meta.getPersistentDataContainer();
+    pdc.set(identifierKey,PersistentDataType.STRING,gson.toJson(identifier));
+    stack.setItemMeta(meta);
+    return new KeyedItemImpl(stack,identifier.getKey());
+  }
+
+  record KeyedItemImpl(ItemStack reference, NamespacedKey key) implements IKeyedItem {
 
     @Override
     public @NotNull NamespacedKey getKey() {

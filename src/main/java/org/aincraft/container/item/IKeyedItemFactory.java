@@ -8,6 +8,10 @@ public interface IKeyedItemFactory {
 
   @Nullable
   IKeyedItem create(ItemStack itemStack, NamespacedKey key);
+
+  @Nullable
+  IKeyedItem create(ItemStack stack, ItemIdentifier identifier);
   
   NamespacedKey getIdentifierKey();
+
 }

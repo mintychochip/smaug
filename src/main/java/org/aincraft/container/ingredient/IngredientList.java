@@ -3,35 +3,36 @@ package org.aincraft.container.ingredient;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.Tag;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class IngredientList implements Iterable<Ingredient> {
 
-  @NotNull
-  private final Component listMarker;
+  String format = "<italic:false><white> * <ingredient>";
 
   private List<Ingredient> ingredients;
 
-  public IngredientList(List<Ingredient> ingredients, @NotNull Component listMarker) {
+  public List<Component> components() {
+    List<Component> list = new ArrayList<>();
+    list.add(MiniMessage.miniMessage().deserialize("<italic:false><white>Ingredients:"));
+    for (Ingredient i : ingredients) {
+      TagResolver resolver = TagResolver.resolver("ingredient",
+          (args, ctx) -> Tag.inserting(i.asComponent()));
+      Component component = MiniMessage.miniMessage().deserialize(format, resolver);
+      list.add(component);
+    }
+    return list;
+  }
+
+  public IngredientList(List<Ingredient> ingredients) {
     this.ingredients = ingredients;
-    this.listMarker = listMarker;
   }
-
-  public Component asComponent() {
-    return ingredients.stream()
-        .map(Ingredient::asComponent)
-        .map(component -> Component.text("")
-            .append(listMarker)
-            .append(Component.space())
-            .append(component)
-            .append(Component.newline()))
-        .reduce(Component.empty(), TextComponent::append);
-  }
-
 
   public IngredientList addIngredient(Ingredient ingredient) {
     ingredients.add(ingredient);
@@ -49,22 +50,21 @@ public final class IngredientList implements Iterable<Ingredient> {
     return ingredients.iterator();
   }
 
-  @NotNull
-  public Component getListMarker() {
-    return listMarker;
+  public Stream<Ingredient> stream() {
+    return ingredients.stream();
   }
 
-  public IngredientList findMissing(Player player,
-      Inventory inventory) {
+  public IngredientList missing(Player player,
+      List<ItemStack> stacks) {
     List<Ingredient> missing = new ArrayList<>();
     for (Ingredient ingredient : this.ingredients) {
-      if (!ingredient.test(player, inventory)) {
+      if (!ingredient.test(player, stacks)) {
         double amount =
-            ingredient.getRequired().doubleValue() - ingredient.getCurrentAmount(player, inventory)
+            ingredient.getRequired().doubleValue() - ingredient.getCurrentAmount(player, stacks)
                 .doubleValue();
         missing.add(ingredient.copy(amount));
       }
     }
-    return new IngredientList(missing, this.listMarker);
+    return new IngredientList(missing);
   }
 }

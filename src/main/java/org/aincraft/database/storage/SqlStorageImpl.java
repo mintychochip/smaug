@@ -15,11 +15,14 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.aincraft.SmaugBootstrap;
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.StationInventory;
 import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.inject.implementation.ResourceExtractor;
 import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class SqlStorageImpl implements IStorage {
 
@@ -35,6 +38,8 @@ public class SqlStorageImpl implements IStorage {
   private static final String CREATE_STATION = "INSERT INTO stations (id,station_key,world_name,x,y,z) VALUES (?,?,?,?,?,?)";
 
   private static final String GET_STATION_BY_LOCATION = "SELECT id,station_key FROM stations WHERE world_name=? AND x=? AND y=? AND z=?";
+
+  private static final String GET_STATION_BY_ID = "SELECT station_key,world_name,x,y,z FROM stations WHERE id=?";
 
   private static final String GET_ALL_STATIONS = "SELECT * FROM stations";
 
@@ -54,7 +59,15 @@ public class SqlStorageImpl implements IStorage {
 
   private static final String HAS_RECIPE_PROGRESS = "SELECT EXISTS (SELECT 1 FROM station_recipe_progress WHERE station_id=?)";
 
-  private static final String UPDATE_RECIPE_PROGRESS = "UPDATE station_recipe_progress SET progress=? WHERE stationId=?";
+  private static final String UPDATE_RECIPE_PROGRESS = "UPDATE station_recipe_progress SET progress=?, recipe_key=? WHERE station_id=?";
+
+  private static final String CREATE_INVENTORY = "INSERT INTO station_inventory(id,station_id,input_inventory,output_inventory, inventory_limit) VALUES (?,?,?,?,?)";
+
+  private static final String HAS_INVENTORY = "SELECT EXISTS (SELECT 1 FROM station_inventory WHERE station_id=?)";
+
+  private static final String GET_INVENTORY = "SELECT id,input_inventory,output_inventory, inventory_limit FROM station_inventory WHERE station_id=?";
+
+  private static final String UPDATE_INVENTORY = "UPDATE station_inventory SET input_inventory=?, output_inventory=?, inventory_limit=? WHERE station_id=?";
 
   public SqlStorageImpl(IConnectionSource source, @Named("logger") Logger logger,
       ResourceExtractor extractor) {
@@ -143,6 +156,22 @@ public class SqlStorageImpl implements IStorage {
   }
 
   @Override
+  public Station getStation(String stationId) {
+    return executor.queryRow(scanner -> {
+      try {
+        String stationKey = scanner.getString("station_key");
+        String worldName = scanner.getString("world_name");
+        int x = scanner.getInt("x");
+        int y = scanner.getInt("y");
+        int z = scanner.getInt("z");
+        return new Station(stationId, stationKey, worldName, x, y, z);
+      } catch (SQLException err) {
+        throw new RuntimeException(err);
+      }
+    }, GET_STATION_BY_ID, stationId);
+  }
+
+  @Override
   public boolean hasStation(String worldName, int x, int y, int z) {
     return executor.queryExists(HAS_STATION, worldName, x, y, z);
   }
@@ -212,7 +241,50 @@ public class SqlStorageImpl implements IStorage {
   @Override
   public boolean updateRecipeProgress(StationRecipeProgress progress) {
     return executor.executeUpdate(UPDATE_RECIPE_PROGRESS, progress.getProgress(),
-        progress.getStationId());
+        progress.getRecipeKey(),
+        progress.getStationId().toString());
+  }
+
+  @Override
+  public StationInventory createInventory(String stationId, int inventoryLimit) {
+    String id = UUID.randomUUID().toString();
+    StationInventory inventory = StationInventory.create(id, stationId, inventoryLimit);
+    executor.executeUpdate(CREATE_INVENTORY, id, inventory.getStationId(), inventory.getInput(),
+        inventory.getOutput(), inventoryLimit);
+    return inventory;
+  }
+
+  @Override
+  public boolean hasInventory(String stationId) {
+    return executor.queryExists(HAS_INVENTORY, stationId);
+  }
+
+  @Override
+  public StationInventory getInventory(String stationId) {
+    return executor.queryRow(scanner -> {
+      try {
+        String id = scanner.getString("id");
+        String input = scanner.getString("input_inventory");
+        String output = scanner.getString("output_inventory");
+        int inventoryLimit = scanner.getInt("inventory_limit");
+        return new StationInventory(id, stationId, input, output, inventoryLimit);
+      } catch (SQLException err) {
+        throw new RuntimeException(err);
+      }
+    }, GET_INVENTORY, stationId);
+  }
+
+  @Override
+  public boolean updateInventory(StationInventory inventory) {
+    new BukkitRunnable() {
+      @Override
+      public void run() {
+        Bukkit.broadcastMessage(inventory.toString());
+      }
+    }.runTask(SmaugBootstrap.getPlugin());
+    return executor.executeUpdate(UPDATE_INVENTORY, inventory.getInput(), inventory.getOutput(),
+        inventory.getInventoryLimit(),
+        inventory.getStationId().toString());
   }
 
 
