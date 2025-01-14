@@ -13,7 +13,6 @@ import org.aincraft.container.IRecipeFetcher;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
-import org.aincraft.container.display.AnvilViewModel;
 import org.aincraft.container.gui.RecipeMenuListener;
 import org.aincraft.container.item.IKeyedItemFactory;
 import org.aincraft.database.storage.IStorage;
@@ -37,7 +36,6 @@ final class SmaugPlugin implements Smaug {
   private final Map<NamespacedKey, StationHandler> handlers = new HashMap<>();
   private final NamespacedKey idKey;
   private final IKeyedItemFactory keyedItemFactory;
-  private final AnvilViewModel viewModel = new AnvilViewModel();
   private final IRecipeFetcher fetcher;
 
   @Inject

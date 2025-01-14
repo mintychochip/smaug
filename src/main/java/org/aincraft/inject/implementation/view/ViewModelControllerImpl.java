@@ -1,5 +1,8 @@
-package org.aincraft.container.display;
+package org.aincraft.inject.implementation.view;
 
+import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,22 +14,33 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
+import org.aincraft.container.display.View;
+import org.aincraft.container.display.IViewModel;
+import org.aincraft.container.display.IViewModelController;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
 import org.aincraft.database.model.StationInventory.InventoryType;
 import org.aincraft.listener.IStationService;
-import org.aincraft.util.Util;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
-public final class ViewModelController {
+@Singleton
+final class ViewModelControllerImpl implements IViewModelController {
 
-  private final Map<Key, SmaugViewModel> viewModels = new HashMap<>();
+  private final Map<Key, IViewModel> viewModels;
   private final IStationService stationService;
   private static int MAX_DISPLAY = 5;
-  private static final int DEFAULT_WEIGHT = 1;
+  private static int DEFAULT_WEIGHT = 1;
   private static final Map<Key, Number> ITEM_MODEL_WEIGHTS;
+
+  public static void setMaxDisplay(int maxDisplay) {
+    MAX_DISPLAY = maxDisplay;
+  }
+
+  public static void setDefaultWeight(int defaultWeight) {
+    DEFAULT_WEIGHT = defaultWeight;
+  }
 
   static {
     List<Material> materialList = Arrays.stream(Material.values()).toList();
@@ -44,41 +58,41 @@ public final class ViewModelController {
     return modelWeights;
   }
 
-  public ViewModelController(IStationService stationService) {
+  @Inject
+  public ViewModelControllerImpl(Map<Key, IViewModel> viewModels, IStationService stationService) {
+    this.viewModels = viewModels;
     this.stationService = stationService;
   }
 
-  public static void setMaxDisplay(int maxDisplay) {
-    MAX_DISPLAY = maxDisplay;
-  }
-
-  public void register(Key key, SmaugViewModel viewModel) {
+  @Override
+  public void register(@NotNull Key key, @NotNull IViewModel viewModel) {
     viewModels.put(key, viewModel);
   }
 
-  public boolean isRegistered(Key key) {
+  @Override
+  public boolean isRegistered(@NotNull Key key) {
+    Preconditions.checkArgument(key != null);
     return viewModels.containsKey(key);
+  }
+
+  @Override
+  public IViewModel get(@NotNull Key key) {
+    return viewModels.get(key);
   }
 
   public void update(UUID stationId) {
     Station station = stationService.getStation(stationId);
     StationInventory inventory = stationService.getInventory(stationId);
-    update(station, inventory, viewModels.get(station.getKey()));
+    List<ItemStack> stacks = inventory.hasItems(InventoryType.OUTPUT)
+        ? inventory.getItems(InventoryType.OUTPUT) : inventory.getItems(InventoryType.INPUT);
+    update(station, stacks, viewModels.get(station.getKey()));
   }
 
-  public SmaugViewModel get(Key key) {
-    return viewModels.get(key);
-  }
-
-  private static void update(Station station, StationInventory inventory,
-      SmaugViewModel viewModel) {
-    UUID stationId = inventory.getStationId();
-    if (!viewModel.isBound(stationId)) {
-      viewModel.bind(station, new SmaugView());
+  private static void update(Station station, List<ItemStack> stacks,
+      IViewModel viewModel) {
+    if (!viewModel.isBound(station.getId())) {
+      viewModel.bindView(station, new View());
     }
-    List<ItemStack> stacks =
-        inventory.hasItems(InventoryType.OUTPUT) ? inventory.getItems(InventoryType.OUTPUT)
-            : inventory.getItems(InventoryType.INPUT);
     if (stacks.isEmpty()) {
       return;
     }
@@ -87,10 +101,10 @@ public final class ViewModelController {
       return;
     }
     Set<ItemStack> items = selectWeightedItems(weightedItems);
-    Bukkit.broadcastMessage(items.toString());
-    viewModel.update(stationId, items);
+    viewModel.updateView(station.getId(), items);
   }
 
+  @NotNull
   private static Map<ItemStack, Number> createWeightedItems(Collection<ItemStack> stacks) {
     Map<ItemStack, Number> weightedItems = new HashMap<>();
     for (ItemStack stack : stacks) {
@@ -120,7 +134,6 @@ public final class ViewModelController {
     for (Number weight : weightedItems.values()) {
       weightedSum += weight.doubleValue();
     }
-    Bukkit.broadcastMessage(weightedItems + "");
     Set<ItemStack> result = new HashSet<>();
     while (result.size() < count) {
       double random = Math.random() * weightedSum;

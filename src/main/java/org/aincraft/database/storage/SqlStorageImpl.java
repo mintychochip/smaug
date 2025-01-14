@@ -123,7 +123,7 @@ public class SqlStorageImpl implements IStorage {
         int x = scanner.getInt("x");
         int y = scanner.getInt("y");
         int z = scanner.getInt("z");
-        return new Station(id, stationKey, worldName, x, y, z);
+        return Station.create(id, stationKey, worldName, x, y, z);
       } catch (Exception err) {
         throw new RuntimeException(err);
       }
@@ -134,7 +134,7 @@ public class SqlStorageImpl implements IStorage {
   public Station createStation(String stationKey, String worldName, int x, int y, int z) {
     String id = UUID.randomUUID().toString();
     executor.executeUpdate(CREATE_STATION, id, stationKey, worldName, x, y, z);
-    return new Station(id, stationKey, worldName, x, y, z);
+    return Station.create(id, stationKey, worldName, x, y, z);
   }
 
   @Override
@@ -148,7 +148,7 @@ public class SqlStorageImpl implements IStorage {
       try {
         String id = scanner.getString("id");
         String stationKey = scanner.getString("station_key");
-        return new Station(id, stationKey, worldName, x, y, z);
+        return Station.create(id, stationKey, worldName, x, y, z);
       } catch (Exception err) {
         throw new RuntimeException(err);
       }
@@ -164,7 +164,7 @@ public class SqlStorageImpl implements IStorage {
         int x = scanner.getInt("x");
         int y = scanner.getInt("y");
         int z = scanner.getInt("z");
-        return new Station(stationId, stationKey, worldName, x, y, z);
+        return Station.create(stationId, stationKey, worldName, x, y, z);
       } catch (SQLException err) {
         throw new RuntimeException(err);
       }

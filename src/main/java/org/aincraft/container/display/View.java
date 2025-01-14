@@ -4,11 +4,12 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Stream;
 import org.bukkit.entity.Display;
 import org.jetbrains.annotations.NotNull;
 
-public final class SmaugView implements Iterable<Display> {
+public final class View implements Iterable<Display> {
 
   private Collection<Display> displays = new ArrayList<>();
 
@@ -28,7 +29,7 @@ public final class SmaugView implements Iterable<Display> {
     return displays;
   }
 
-  public void setDisplays(Collection<Display> displays) {
+  public void setDisplays(List<Display> displays) {
     Preconditions.checkArgument(displays != null);
     this.displays = displays;
   }

@@ -13,6 +13,7 @@ import org.aincraft.container.StationHandler.Context;
 import org.aincraft.container.StationHandler.IActionContext;
 import org.aincraft.container.StationHandler.IInteractionContext;
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.StationInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -154,7 +155,8 @@ public class StationListener implements Listener {
 
   @EventHandler
   private void handleInventoryUpdate(final SmaugInventoryEvent event) {
-    Bukkit.broadcastMessage(event.getInventory().toString());
+    StationInventory inventory = event.getInventory();
+
   }
 
   static final class ActionContextImpl extends ContextImpl implements IActionContext {

@@ -1,4 +1,4 @@
-package org.aincraft.container.display;
+package org.aincraft.inject.implementation.view;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,7 @@ final class DisplayStrategySelector {
 
   interface DisplayStrategy {
 
-    List<DisplayWrapper> show(ItemStack stack, Location location, float scale);
+    List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale);
   }
 
   private static final class ItemPileStrategy implements DisplayStrategy {
@@ -54,7 +54,7 @@ final class DisplayStrategySelector {
     }
 
     @Override
-    public List<DisplayWrapper> show(ItemStack stack, Location location, float scale) {
+    public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
       int amount = stack.getAmount();
       int maxStackSize = stack.getMaxStackSize();
       int levels = amount * MAX_ITEM_DISPLAY_STACK / maxStackSize;
@@ -82,8 +82,8 @@ final class DisplayStrategySelector {
   private record FourBlock(DoubleBlock strategy) implements DisplayStrategy {
 
     @Override
-    public List<DisplayWrapper> show(ItemStack stack, Location location, float scale) {
-      List<DisplayWrapper> displays = strategy.show(stack, location, scale);
+    public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
+      List<DisplayWrapper> displays = strategy.createWrappers(stack, location, scale);
       DisplayWrapper d1 = displays.getFirst();
       DisplayWrapper d2 = displays.get(1);
       Location l1 = d1.getLocation();
@@ -118,25 +118,25 @@ final class DisplayStrategySelector {
   private record TripleBlock(DoubleBlock strategy) implements DisplayStrategy {
 
     @Override
-    public List<DisplayWrapper> show(ItemStack stack, Location location, float scale) {
-      List<DisplayWrapper> displays = strategy.show(stack, location, scale);
-      DisplayWrapper d1 = displays.getFirst();
-      Location l1 = d1.getLocation();
-      DisplayWrapper d2 = displays.get(1);
-      Location l2 = d2.getLocation();
-      DisplayWrapper third = DisplayWrapper.create(d2);
-      third.teleport(l1.clone()
-          .add(new Vector((l2.getX() - l1.getX()) / 2, scale, l2.getZ() - l1.getZ())));
+    public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
+      List<DisplayWrapper> displays = strategy.createWrappers(stack, location, scale);
+      DisplayWrapper first = displays.getFirst();
+      Location firstLocation = first.getLocation();
+      DisplayWrapper second = displays.get(1);
+      Location secondLocation = second.getLocation();
+      DisplayWrapper third = DisplayWrapper.create(second);
+      third.teleport(firstLocation.clone()
+          .add(new Vector((secondLocation.getX() - firstLocation.getX()) / 2, scale, secondLocation.getZ() - firstLocation.getZ())));
       third.setRotation(Mt.random(180, -180), 0);
-      return List.of(d1, d2, third);
+      return List.of(first, second, third);
     }
   }
 
   private record DoubleBlock(SingleBlock strategy) implements DisplayStrategy {
 
     @Override
-    public List<DisplayWrapper> show(ItemStack stack, Location location, float scale) {
-      List<DisplayWrapper> displays = strategy.show(stack, location, scale);
+    public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
+      List<DisplayWrapper> displays = strategy.createWrappers(stack, location, scale);
       DisplayWrapper first = displays.getFirst();
       DisplayWrapper second = DisplayWrapper.create(first);
       float randomRadian = (float) (Mt.random(180, -180) * Math.PI / 180);
@@ -155,7 +155,7 @@ final class DisplayStrategySelector {
     }
 
     @Override
-    public List<DisplayWrapper> show(ItemStack stack, Location location, float scale) {
+    public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
       DisplayWrapper l1 = DisplayWrapper.create(stack,
           location.clone().add(0, 0.5 * scale, 0));
       assert l1 != null;

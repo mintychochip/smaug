@@ -11,28 +11,52 @@ import org.jetbrains.annotations.NotNull;
 
 public final class Station {
 
-  private final String id;
-  private final String stationKey;
+  private final String idString;
+  private final String stationKeyString;
   private final String worldName;
   private final int x;
   private final int y;
   private final int z;
+  private final UUID id;
+  private final World world;
+  private final Key stationKey;
 
-  public Station(String id, String stationKey, String worldName, int x, int y, int z) {
-    this.id = id;
-    this.stationKey = stationKey;
+  private Station(String idString, String stationKeyString, String worldName, int x, int y, int z,
+      UUID id,
+      World world, Key stationKey) {
+    this.idString = idString;
+    this.stationKeyString = stationKeyString;
     this.worldName = worldName;
     this.x = x;
     this.y = y;
     this.z = z;
+    this.id = id;
+    this.world = world;
+    this.stationKey = stationKey;
+  }
+
+  public static Station create(String idString, String stationKeyString, String worldName, int x,
+      int y,
+      int z) {
+    final World world = Bukkit.getWorld(worldName);
+    final Key stationkey = NamespacedKey.fromString(stationKeyString);
+    if (world == null || stationkey == null) {
+      return null;
+    }
+    try {
+      UUID id = UUID.fromString(idString);
+      return new Station(idString, stationKeyString, worldName, x, y, z, id, world, stationkey);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   public UUID getId() {
-    return UUID.fromString(id);
+    return id;
   }
 
   public World getWorld() {
-    return Bukkit.getWorld(worldName);
+    return world;
   }
 
   public String getWorldName() {
@@ -67,7 +91,7 @@ public final class Station {
   }
 
   public Key getKey() {
-    return NamespacedKey.fromString(stationKey);
+    return stationKey;
   }
 
   public Location getLocation() {

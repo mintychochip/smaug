@@ -8,20 +8,17 @@ import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import org.aincraft.api.event.SmaugInventoryEvent;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
 import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.listener.IStationService;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 @Singleton
 final class StationServiceImpl implements IStationService {
@@ -29,19 +26,11 @@ final class StationServiceImpl implements IStationService {
   private final IStorage storage;
   private final Plugin plugin;
   //merge these two caches
-  private static final Cache<UUID, Station> station2Cache;
-  private static final Cache<Location, Station> stationCache;
-  private static final Cache<Player, StationUser> userCache;
-  private static final Cache<UUID, StationRecipeProgress> recipeCache;
-  private static final Cache<UUID, StationInventory> inventoryCache;
-
-  static {
-    station2Cache = createCache();
-    stationCache = createCache();
-    userCache = createCache();
-    recipeCache = createCache();
-    inventoryCache = createCache();
-  }
+  private final Cache<UUID, Station> station2Cache;
+  private final Cache<Location, Station> stationCache;
+  private final Cache<Player, StationUser> userCache;
+  private final Cache<UUID, StationRecipeProgress> recipeCache;
+  private final Cache<UUID, StationInventory> inventoryCache;
 
   private static <K, V> Cache<K, V> createCache() {
     return Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(1)).build();
@@ -51,6 +40,11 @@ final class StationServiceImpl implements IStationService {
   public StationServiceImpl(Plugin plugin, IStorage storage) {
     this.plugin = plugin;
     this.storage = storage;
+    station2Cache = createCache();
+    stationCache = createCache();
+    userCache = createCache();
+    recipeCache = createCache();
+    inventoryCache = createCache();
   }
 
   @Override

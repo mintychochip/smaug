@@ -4,10 +4,8 @@ import com.google.inject.Inject;
 import java.util.UUID;
 import org.aincraft.container.IRecipeFetcher;
 import org.aincraft.container.IRegistry.IItemRegistry;
-import org.aincraft.container.display.AnvilViewModel;
-import org.aincraft.container.display.ViewModelController;
+import org.aincraft.container.display.IViewModelController;
 import org.aincraft.listener.IStationService;
-import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,17 +19,16 @@ public class SmithCommand implements CommandExecutor {
   private final Plugin plugin;
   private final IRecipeFetcher fetcher;
   private final IStationService service;
-  private final AnvilViewModel anvilViewModel = new AnvilViewModel();
-  private final ViewModelController controller;
+  private final IViewModelController controller;
 
   @Inject
   public SmithCommand(IItemRegistry registry, Plugin plugin, IRecipeFetcher fetcher,
-      IStationService service) {
+      IStationService service, IViewModelController controller) {
     this.registry = registry;
     this.plugin = plugin;
     this.fetcher = fetcher;
     this.service = service;
-    controller = new ViewModelController(service);
+    this.controller = controller;
   }
 
   @Override
@@ -39,10 +36,6 @@ public class SmithCommand implements CommandExecutor {
       @NotNull String s, @NotNull String[] strings) {
     if (commandSender instanceof Player player) {
       UUID uuid = UUID.fromString("68a69f78-48de-420b-a1a5-00d6cddcd960");
-      if(!controller.isRegistered(new NamespacedKey(plugin,"anvil"))) {
-        controller.register(new NamespacedKey(plugin,"anvil"),anvilViewModel);
-      }
-      controller.get(new NamespacedKey(plugin,"anvil"));
       controller.update(uuid);
     }
     return true;

@@ -1,4 +1,4 @@
-package org.aincraft.container.display;
+package org.aincraft.inject.implementation.view;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
@@ -11,10 +11,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
+import org.aincraft.container.display.View;
+import org.aincraft.container.display.IViewModel;
 import org.aincraft.database.model.Station;
 import org.aincraft.util.Mt;
 import org.aincraft.util.Util;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -28,13 +29,15 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-public final class AnvilViewModel implements SmaugViewModel {
+final class AnvilViewModel implements IViewModel {
 
   private final Map<UUID, ViewBinding> bindings = new HashMap<>();
 
-  private static float ITEM_SCALE = 0.20f;
-  private static float BLOCK_SCALE = 0.15f;
-  private static float TOOL_SCALE = 0.35f;
+  AnvilViewModel() {}
+
+  private static float ITEM_SCALE;
+  private static float BLOCK_SCALE;
+  private static float TOOL_SCALE;
 
   private static final Set<Material> ITEM_WHITELIST;
   private static final Predicate<ItemStack> ITEM_MODEL_IS_ITEM;
@@ -53,6 +56,10 @@ public final class AnvilViewModel implements SmaugViewModel {
   }
 
   static {
+    ITEM_SCALE = 0.20f;
+    BLOCK_SCALE = 0.15f;
+    TOOL_SCALE = 0.35f;
+
     ITEM_WHITELIST = new HashSet<>();
     ITEM_WHITELIST.addAll(Set.of(Material.HOPPER, Material.TRIPWIRE_HOOK, Material.REPEATER,
         Material.COMPARATOR, Material.LEVER, Material.CAULDRON,
@@ -105,41 +112,41 @@ public final class AnvilViewModel implements SmaugViewModel {
       parent = parent.or(m);
     }
 
-    return Util.filterSet(Arrays.stream(Material.values()).toList(),parent);
+    return Util.filterSet(Arrays.stream(Material.values()).toList(), parent);
   }
 
   static final class ViewBinding {
 
     private final Station station;
-    private SmaugView view;
+    private Collection<Display> displays;
 
-    ViewBinding(Station station, SmaugView view) {
+    ViewBinding(Station station, Collection<Display> displays) {
       this.station = station;
-      this.view = view;
-    }
-
-    public void setView(SmaugView view) {
-      this.view = view;
+      this.displays = displays;
     }
 
     public Station getStation() {
       return station;
     }
 
-    public SmaugView getView() {
-      return view;
+    public void setDisplays(Collection<Display> displays) {
+      this.displays = displays;
+    }
+
+    public Collection<Display> getDisplays() {
+      return displays;
     }
   }
 
   @Override
-  public void bind(@NotNull Station station, @NotNull SmaugView view) {
+  public void bindView(@NotNull Station station, @NotNull View view) {
     Preconditions.checkArgument(station != null);
     Preconditions.checkArgument(view != null);
-    bindings.put(station.getId(), new ViewBinding(station, view));
+    bindings.put(station.getId(), new ViewBinding(station, view.getDisplays()));
   }
 
   @Override
-  public void update(@NotNull UUID stationId, @NotNull Collection<ItemStack> stacks) {
+  public void updateView(@NotNull UUID stationId, @NotNull Collection<ItemStack> stacks) {
     Preconditions.checkArgument(stationId != null);
     Preconditions.checkArgument(stacks != null);
     if (!bindings.containsKey(stationId)) {
@@ -147,31 +154,31 @@ public final class AnvilViewModel implements SmaugViewModel {
     }
     ViewBinding binding = bindings.get(stationId);
     Station station = binding.getStation();
-    SmaugView view = binding.getView();
 
     Map<ItemStack, Float> scaledStacks = createScaledStacks(stacks);
-    Bukkit.broadcastMessage(scaledStacks.toString());
     //TODO: split bounding box before release
     List<Display> displays = new ArrayList<>();
+
     scaledStacks.forEach((key, value) -> DisplayStrategySelector.select(key, ITEM_MODEL_IS_ITEM)
-        .show(key, randomLocation(station.getBoundingBox(4 * 0.0625f, 4 * 0.0625f), station.getWorld()), value)
+        .createWrappers(key,
+            randomLocation(station.getBoundingBox(4 * 0.0625f, 4 * 0.0625f), station.getWorld()),
+            value)
         .forEach(wrapper -> displays.add(wrapper.delegate())));
     World world = station.getWorld();
-    view.forEach(Entity::remove);
-    view.setDisplays(displays);
-    view.forEach(world::addEntity);
-    binding.setView(view);
+    binding.getDisplays().forEach(Entity::remove);
+    binding.setDisplays(displays);
+    displays.forEach(world::addEntity);
     bindings.put(stationId, binding);
   }
 
   @Override
-  public void remove(@NotNull UUID stationId) {
+  public void removeView(@NotNull UUID stationId) {
     Preconditions.checkArgument(stationId != null);
     if (!bindings.containsKey(stationId)) {
       return;
     }
     ViewBinding binding = bindings.get(stationId);
-    binding.getView().forEach(Entity::remove);
+    binding.getDisplays().forEach(Entity::remove);
     bindings.remove(stationId);
   }
 
