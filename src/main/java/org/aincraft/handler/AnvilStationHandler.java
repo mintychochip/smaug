@@ -2,36 +2,45 @@ package org.aincraft.handler;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+import java.util.Map;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.aincraft.api.event.StationInventoryEvent;
 import org.aincraft.container.IRecipeFetcher;
-import org.aincraft.container.RecipeResult;
-import org.aincraft.container.RecipeResult.Status;
+import org.aincraft.container.Result;
+import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.gui.RecipeMenu;
-import org.aincraft.container.ingredient.Ingredient;
+import org.aincraft.container.gui.StationInventoryGui;
+import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
-import org.aincraft.database.model.StationInventory.InventoryType;
+import org.aincraft.database.model.StationInventory.ItemAddResult;
 import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.listener.IStationService;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
 public class AnvilStationHandler implements StationHandler {
+
+  enum InteractionType {
+    RIGHT_CLICK,
+    LEFT_CLICK,
+    RIGHT_SHIFT_CLICK,
+    LEFT_SHIFT_CLICK
+  }
 
   private final IRecipeFetcher fetcher;
   private final IStationService service;
@@ -55,31 +64,21 @@ public class AnvilStationHandler implements StationHandler {
     StationInventory inventory =
         service.hasInventory(station.getId()) ? service.getInventory(station.getId())
             : service.createInventory(station.getId(), 5);
-
+    ctx.cancel();
     if (ctx.getAction().isRightClick()) {
-      ctx.cancel();
-      if (stack.getType().isAir()) {
-        return;
-      }
-      this.deposit(inventory, stack, player, player.isSneaking(), (success, items) -> {
-        Component message;
-        if (success) {
-          message = Component.empty().color(
+      if (stack != null) {
+        ItemAddResult result = inventory.addItems(List.of(stack), remain -> {
+        });
+        if (result.getStatus() == Result.Status.SUCCESS) {
+          Bukkit.getPluginManager().callEvent(new StationInventoryEvent(result.getInventory()));
+          player.sendMessage(Component.empty().color(
                   NamedTextColor.WHITE).append(Component.text("Deposited:"))
-              .append(stack.displayName());
-          new BukkitRunnable() {
-            @Override
-            public void run() {
-              for (ItemStack item : items) {
-                player.getInventory().removeItem(item);
-              }
-            }
-          }.runTask(plugin);
-        } else {
-          message = Component.text("Failed to deposit items");
+              .append(stack.displayName()));
         }
-        player.sendMessage(message);
-      });
+      } else {
+        StationInventoryGui gui = new StationInventoryGui(plugin, inventory);
+        player.openInventory(gui.getInventory());
+      }
     } else {
       if (!player.isSneaking()) {
         if (!ItemIdentifier.contains(stack, idKey, "hammer")) {
@@ -88,8 +87,8 @@ public class AnvilStationHandler implements StationHandler {
 
         ctx.cancel();
         List<SmaugRecipe> recipes = fetcher.all(
-            recipe -> recipe.getStationKey().equals(station.getKey())
-                && recipe.test(player, inventory.getItems(InventoryType.INPUT)).getStatus()
+            recipe -> recipe.getStationKey().equals(station.getStationKey())
+                && recipe.test(player, inventory.getContents()).getStatus()
                 == Status.SUCCESS);
         if (recipes.isEmpty()) {
           player.sendMessage("There are not any recipes available");
@@ -97,10 +96,10 @@ public class AnvilStationHandler implements StationHandler {
         SmaugRecipe selectedRecipe = new RecipeSelector(service, fetcher, plugin).select(station,
             recipes, player);
         if (selectedRecipe != null) {
-          if (!inventory.canAddItem(selectedRecipe.craft(), InventoryType.OUTPUT)) {
-            player.sendMessage("The output is full");
-            return;
-          }
+//          if (!inventory.canAddItem(selectedRecipe.craft())) {
+//            player.sendMessage("The output is full");
+//            return;
+//          }
           recipeConsumer.accept(selectedRecipe);
         }
       }
@@ -114,8 +113,9 @@ public class AnvilStationHandler implements StationHandler {
     final SmaugRecipe recipe = ctx.getRecipe();
     final Player player = ctx.getPlayer();
     final StationInventory stationInventory = service.getInventory(station.getId());
-    List<ItemStack> stacks = stationInventory.getItems(InventoryType.INPUT);
-    if (RecipeResult.Status.FAILURE == recipe.test(player,stacks).getStatus()) {
+    Map<Integer, ItemStack> stackMap = stationInventory.getMap();
+    if (Status.FAILURE == recipe.test(player, stationInventory.getContents())
+        .getStatus()) {
       return;
     }
     final Location location = station.getLocation();
@@ -123,61 +123,33 @@ public class AnvilStationHandler implements StationHandler {
       final StationRecipeProgress recipeProgress = service.getRecipeProgress(station.getId());
       int progress = recipeProgress.getProgress();
       if (progress < recipe.getActions()) {
-        player.spawnParticle(Particle.LAVA, location.clone().add(0.5, 1, 0.5), 0, 0, 0, 0, null);
+        successfulAction(location);
         recipeProgress.setProgress(progress + 1);
         service.updateRecipeProgress(recipeProgress);
       } else {
-        ItemStack craft = recipe.craft();
-        stationInventory.addItem(craft, InventoryType.OUTPUT);
-        CompletableFuture.supplyAsync(() -> service.updateInventory(stationInventory))
-            .thenAcceptAsync(b -> {
-              if (b) {
-                new BukkitRunnable() {
-                  @Override
-                  public void run() {
-                    for (Ingredient i : recipe.getIngredients()) {
-                      i.remove(player, stacks);
-                    }
-                    stationInventory.setItems(stacks, InventoryType.INPUT);
-                    CompletableFuture.runAsync(() -> {
-                      service.updateInventory(stationInventory);
-                      service.deleteRecipeProgress(station.getId());
-                    });
-                  }
-                }.runTask(plugin);
-              }
+        Map<Integer, ItemStack> removed = recipe.getIngredients().remove(player, stackMap);
+        IKeyedItem item = recipe.getOutput();
+        ItemStack reference = item.getReference();
+        ItemStack stack = new ItemStack(reference);
+        stack.setAmount(recipe.getAmount());
+        ItemAddResult result = stationInventory.setItems(removed)
+            .addItems(List.of(stack), remaining -> {
             });
+        if (result.getStatus() == Status.SUCCESS) {
+          Bukkit.getPluginManager().callEvent(new StationInventoryEvent(result.getInventory()));
+          service.deleteRecipeProgress(station.getId());
+        }
       }
     }
-//    } else {
-//      ItemStack stack = new ItemStack(recipe.getOutput().getReference());
-//      stack.setAmount(recipe.getAmount());
-//      StationInventory inventory = service.getInventory(station.getId());
-//      inventory.addItem(stack, InventoryType.OUTPUT);
-//      service.updateInventoryAsync(inventory, bool -> {
-//        service.deleteRecipeProgress(station.getId());
-//      });
-//    }
   }
 
-  private void deposit(StationInventory stationInventory, ItemStack item,
-      Player player, boolean bulk, BiConsumer<Boolean, Iterable<ItemStack>> callback) {
-
-    PlayerInventory playerInventory = player.getInventory();
-
-    List<ItemStack> stacks = bulk ? Arrays
-        .stream(playerInventory.getContents())
-        .filter(i -> i != null && i.isSimilar(item))
-        .toList() : List.of(item);
-
-    if (!stationInventory.canAddItems(stacks, InventoryType.INPUT)) {
-      callback.accept(false, stacks);
-      return;
-    }
-
-    stationInventory.addItems(stacks, InventoryType.INPUT);
-
-    service.updateInventoryAsync(stationInventory, success -> callback.accept(success, stacks));
+  private static void successfulAction(
+      @NotNull Location stationLocation) {
+    World world = stationLocation.getWorld();
+    assert world != null;
+    world.playSound(stationLocation, Sound.BLOCK_ANVIL_USE, 1f, 1f);
+    world.spawnParticle(Particle.LAVA, stationLocation.clone().add(0.5, 1, 0.5), 1, 0, 0, 0, 0,
+        null);
   }
 
   private record RecipeSelector(IStationService service, IRecipeFetcher recipeFetcher,

@@ -1,5 +1,6 @@
 package org.aincraft.listener;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 import org.aincraft.database.model.Station;
@@ -12,6 +13,8 @@ import org.bukkit.entity.Player;
 
 public interface IStationService {
 
+  List<Station> getAllStations();
+  List<StationInventory> getAllInventories();
   Station createStation(NamespacedKey stationKey, Location location);
 
   void deleteStation(Location location);

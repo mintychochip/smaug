@@ -8,11 +8,13 @@ import org.jetbrains.annotations.NotNull;
 
 public interface IViewModel {
 
-  void bindView(@NotNull Station station, @NotNull View view);
+  void bind(@NotNull Station station, @NotNull View view);
 
-  void updateView(@NotNull UUID stationId, @NotNull Collection<ItemStack> stacks);
+  void update(@NotNull UUID stationId, @NotNull Collection<ItemStack> stacks);
 
-  void removeView(@NotNull UUID stationId);
+  void remove(@NotNull UUID stationId);
+
+  void removeAll();
 
   boolean isBound(@NotNull UUID stationId);
 }

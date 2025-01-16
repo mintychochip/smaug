@@ -4,16 +4,18 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Map;
 import java.util.function.Predicate;
-import org.aincraft.api.event.SmaugInventoryEvent;
+import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationActionEvent;
+import org.aincraft.api.event.StationRemoveEvent;
+import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
 import org.aincraft.container.IRecipeFetcher;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.StationHandler.Context;
 import org.aincraft.container.StationHandler.IActionContext;
 import org.aincraft.container.StationHandler.IInteractionContext;
+import org.aincraft.container.display.IViewModelController;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -28,6 +30,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -50,21 +53,24 @@ public class StationListener implements Listener {
         material == Material.DAMAGED_ANVIL ||
         materialString.contains("CONCRETE_POWDER");
   };
-  private final Map<NamespacedKey, StationHandler> handlers;
+  private final Map<Key, StationHandler> handlers;
   private final Plugin plugin;
   private final IStationService stationService;
   private final NamespacedKey stationKey;
   private final IRecipeFetcher recipeFetcher;
+  private final IViewModelController controller;
 
   @Inject
-  public StationListener(Map<NamespacedKey, StationHandler> handlers,
+  public StationListener(Map<Key, StationHandler> handlers,
       Plugin plugin, IStationService stationService,
-      @Named("station") NamespacedKey stationKey, IRecipeFetcher recipeFetcher) {
+      @Named("station") NamespacedKey stationKey, IRecipeFetcher recipeFetcher,
+      IViewModelController controller) {
     this.handlers = handlers;
     this.plugin = plugin;
     this.stationService = stationService;
     this.stationKey = stationKey;
     this.recipeFetcher = recipeFetcher;
+    this.controller = controller;
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -103,8 +109,14 @@ public class StationListener implements Listener {
     if (world == null) {
       return;
     }
+    Station station = stationService.getStation(blockLocation);
+    if (station == null) {
+      return;
+    }
     Player player = event.getPlayer();
     stationService.deleteStation(blockLocation);
+    Bukkit.getPluginManager()
+        .callEvent(new StationRemoveEvent(station, player, RemovalCause.PLAYER));
     for (int y = blockLocation.getBlockY() + 1; y < world.getMaxHeight(); y++) {
       Block blockAbove = world.getBlockAt(
           new Location(world, blockLocation.getBlockX(), y, blockLocation.getBlockZ()));
@@ -112,6 +124,8 @@ public class StationListener implements Listener {
         break;
       }
       stationService.deleteStation(blockLocation);
+      Bukkit.getPluginManager()
+          .callEvent(new StationRemoveEvent(station, player, RemovalCause.PLAYER));
     }
   }
 
@@ -121,8 +135,8 @@ public class StationListener implements Listener {
       return;
     }
     Station station = event.getStation();
-    StationHandler handler = handlers.get(station.getKey());
-    if(handler == null) {
+    StationHandler handler = handlers.get(station.getStationKey());
+    if (handler == null) {
       return;
     }
     handler.handleAction(new ActionContextImpl(station, event.getPlayer(), event.getItem(),
@@ -142,8 +156,12 @@ public class StationListener implements Listener {
     if (station == null) {
       return;
     }
-    StationHandler handler = handlers.get(station.getKey());
+    StationHandler handler = handlers.get(station.getStationKey());
     if (handler == null) {
+      return;
+    }
+    EquipmentSlot hand = event.getHand();
+    if(hand == EquipmentSlot.OFF_HAND) {
       return;
     }
     InteractionContextImpl interactionContext = new InteractionContextImpl(station, event);
@@ -153,11 +171,7 @@ public class StationListener implements Listener {
     });
   }
 
-  @EventHandler
-  private void handleInventoryUpdate(final SmaugInventoryEvent event) {
-    StationInventory inventory = event.getInventory();
 
-  }
 
   static final class ActionContextImpl extends ContextImpl implements IActionContext {
 
@@ -218,7 +232,7 @@ public class StationListener implements Listener {
     }
 
     @Override
-    public @NotNull ItemStack getItem() {
+    public @Nullable ItemStack getItem() {
       return stack;
     }
 

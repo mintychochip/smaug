@@ -42,6 +42,7 @@ public class SqlStorageImpl implements IStorage {
   private static final String GET_STATION_BY_ID = "SELECT station_key,world_name,x,y,z FROM stations WHERE id=?";
 
   private static final String GET_ALL_STATIONS = "SELECT * FROM stations";
+  private static final String GET_ALL_STATION_INVENTORIES = "SELECT * FROM station_inventory";
 
   private static final String HAS_STATION_USER = "SELECT EXISTS (SELECT 1 FROM station_user WHERE id=?)";
 
@@ -61,13 +62,13 @@ public class SqlStorageImpl implements IStorage {
 
   private static final String UPDATE_RECIPE_PROGRESS = "UPDATE station_recipe_progress SET progress=?, recipe_key=? WHERE station_id=?";
 
-  private static final String CREATE_INVENTORY = "INSERT INTO station_inventory(id,station_id,input_inventory,output_inventory, inventory_limit) VALUES (?,?,?,?,?)";
+  private static final String CREATE_INVENTORY = "INSERT INTO station_inventory(id,station_id,inventory,inventory_limit) VALUES (?,?,?,?)";
 
   private static final String HAS_INVENTORY = "SELECT EXISTS (SELECT 1 FROM station_inventory WHERE station_id=?)";
 
-  private static final String GET_INVENTORY = "SELECT id,input_inventory,output_inventory, inventory_limit FROM station_inventory WHERE station_id=?";
+  private static final String GET_INVENTORY = "SELECT id,inventory, inventory_limit FROM station_inventory WHERE station_id=?";
 
-  private static final String UPDATE_INVENTORY = "UPDATE station_inventory SET input_inventory=?, output_inventory=?, inventory_limit=? WHERE station_id=?";
+  private static final String UPDATE_INVENTORY = "UPDATE station_inventory SET inventory=?, inventory_limit=? WHERE station_id=?";
 
   public SqlStorageImpl(IConnectionSource source, @Named("logger") Logger logger,
       ResourceExtractor extractor) {
@@ -128,6 +129,21 @@ public class SqlStorageImpl implements IStorage {
         throw new RuntimeException(err);
       }
     }, GET_ALL_STATIONS);
+  }
+
+  @Override
+  public List<StationInventory> getAllInventories() {
+    return executor.queryTable(scanner -> {
+      try {
+        String id = scanner.getString("id");
+        String stationId = scanner.getString("station_id");
+        String inventory = scanner.getString("inventory");
+        int limit = scanner.getInt("inventory_limit");
+        return new StationInventory(id, stationId, inventory, limit);
+      } catch (SQLException err) {
+        throw new RuntimeException(err);
+      }
+    }, GET_ALL_STATION_INVENTORIES);
   }
 
   @Override
@@ -249,8 +265,8 @@ public class SqlStorageImpl implements IStorage {
   public StationInventory createInventory(String stationId, int inventoryLimit) {
     String id = UUID.randomUUID().toString();
     StationInventory inventory = StationInventory.create(id, stationId, inventoryLimit);
-    executor.executeUpdate(CREATE_INVENTORY, id, inventory.getStationId(), inventory.getInput(),
-        inventory.getOutput(), inventoryLimit);
+    executor.executeUpdate(CREATE_INVENTORY, id, inventory.getStationId(),
+        inventory.getInventoryString(), inventoryLimit);
     return inventory;
   }
 
@@ -264,10 +280,9 @@ public class SqlStorageImpl implements IStorage {
     return executor.queryRow(scanner -> {
       try {
         String id = scanner.getString("id");
-        String input = scanner.getString("input_inventory");
-        String output = scanner.getString("output_inventory");
+        String inventory = scanner.getString("inventory");
         int inventoryLimit = scanner.getInt("inventory_limit");
-        return new StationInventory(id, stationId, input, output, inventoryLimit);
+        return new StationInventory(id, stationId, inventory, inventoryLimit);
       } catch (SQLException err) {
         throw new RuntimeException(err);
       }
@@ -276,13 +291,7 @@ public class SqlStorageImpl implements IStorage {
 
   @Override
   public boolean updateInventory(StationInventory inventory) {
-    new BukkitRunnable() {
-      @Override
-      public void run() {
-        Bukkit.broadcastMessage(inventory.toString());
-      }
-    }.runTask(SmaugBootstrap.getPlugin());
-    return executor.executeUpdate(UPDATE_INVENTORY, inventory.getInput(), inventory.getOutput(),
+    return executor.executeUpdate(UPDATE_INVENTORY, inventory.getInventoryString(),
         inventory.getInventoryLimit(),
         inventory.getStationId().toString());
   }

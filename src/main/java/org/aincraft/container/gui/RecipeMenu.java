@@ -1,10 +1,14 @@
 package org.aincraft.container.gui;
 
+import com.google.common.base.Preconditions;
+import io.papermc.paper.datacomponent.DataComponentBuilder;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.Tag;
@@ -15,7 +19,6 @@ import org.aincraft.container.item.ItemStackBuilder;
 import org.aincraft.database.model.Station;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -38,11 +41,8 @@ public final class RecipeMenu implements InventoryHolder {
       ItemMeta itemMeta = reference.getItemMeta();
       assert itemMeta != null;
       ItemStackBuilder builder = ItemStackBuilder.create(Material.RABBIT_FOOT);
+
       builder.setMeta(meta -> {
-        NamespacedKey itemModel = itemMeta.getItemModel();
-        if (itemModel != null) {
-          meta.setItemModel(itemModel);
-        }
         TagResolver resolver = TagResolver.resolver("a", (args, ctx) -> Tag.inserting(
             itemMeta.hasDisplayName() ? itemMeta.displayName()
                 : Component.text(reference.getType().toString())));
@@ -52,7 +52,13 @@ public final class RecipeMenu implements InventoryHolder {
         lore.add(Component.empty());
         meta.setLore(lore);
       });
-      return builder.build();
+      ItemStack stack = builder.build();
+      @SuppressWarnings("UnstableApiUsage")
+      Key data = reference.getDataOrDefault(
+          DataComponentTypes.ITEM_MODEL,
+          reference.getType().getKey());
+      stack.setData(DataComponentTypes.ITEM_MODEL, data);
+      return stack;
     }
   }
 
@@ -62,12 +68,17 @@ public final class RecipeMenu implements InventoryHolder {
   private final Map<Integer, RecipeButton> buttons = new HashMap<>();
   private final Consumer<SmaugRecipe> recipeConsumer;
 
+
   public RecipeMenu(Plugin plugin, List<SmaugRecipe> recipes, Station station,
       Consumer<SmaugRecipe> recipeConsumer) {
     this.plugin = plugin;
     this.recipes = recipes;
     this.station = station;
     this.recipeConsumer = recipeConsumer;
+  }
+
+  public Plugin getPlugin() {
+    return plugin;
   }
 
   public void addButton(SmaugRecipe recipe) {
@@ -77,10 +88,6 @@ public final class RecipeMenu implements InventoryHolder {
 
   public Consumer<SmaugRecipe> getRecipeConsumer() {
     return recipeConsumer;
-  }
-
-  public Plugin getPlugin() {
-    return plugin;
   }
 
   @NotNull
@@ -103,7 +110,15 @@ public final class RecipeMenu implements InventoryHolder {
     return inventory;
   }
 
-  private static int inventorySize(int size) {
-    return (size % 9 == 0) ? size * 9 : (size % 9 + 1) * 9;
+  static int inventorySize(int size) {
+    if (size <= 9) {
+      return 9;
+    }
+
+    if (size > 54) {
+      return 54;
+    }
+
+    return (int) Math.ceil(size / 9.0) * 9;
   }
 }

@@ -1,8 +1,13 @@
 package org.aincraft.container.ingredient;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import javax.xml.crypto.Data;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.aincraft.container.item.IKeyedItem;
@@ -71,6 +76,36 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
+  @Contract(value = "_,null->fail", pure = true)
+  public Map<Integer, ItemStack> remove(Player player, Map<Integer, ItemStack> stackMap) {
+    Preconditions.checkArgument(stackMap != null);
+    int current = getRequired().intValue();
+    Map<Integer, ItemStack> newStackMap = new HashMap<>();
+
+    for (Entry<Integer, ItemStack> entry : stackMap.entrySet()) {
+      ItemStack stack = entry.getValue();
+
+      if (this.stackIsEqual(stack)) {
+        int amount = stack.getAmount();
+        if (current >= amount) {
+          current -= amount;
+          stack.setAmount(0);
+        } else {
+          stack.setAmount(amount - current);
+          current = 0;
+        }
+      } else {
+        newStackMap.put(entry.getKey(), stack.clone());
+      }
+      if (stack.getAmount() > 0) {
+        newStackMap.put(entry.getKey(), stack.clone());
+      }
+    }
+
+    return newStackMap;
+  }
+
+  @Override
   public Number getCurrentAmount(Player player, List<ItemStack> stacks) {
     Preconditions.checkArgument(stacks != null);
     int amount = 0;
@@ -99,11 +134,12 @@ public final class ItemIngredient implements Ingredient {
     ItemStack reference = item.getReference();
     ItemMeta itemMeta = reference.getItemMeta();
     assert itemMeta != null;
-    Component displayName = itemMeta.displayName();
-    assert displayName != null;
+    Component name = itemMeta.hasDisplayName() ? itemMeta.displayName()
+        : Component.text(reference.getType().name());
+    assert name != null;
     return Component.empty()
         .append(Component.text("[ ")
-            .append(displayName).hoverEvent(reference))
+            .append(name).hoverEvent(reference))
         .append(Component.text(" ]"))
         .append(Component.text(" x ")
             .append(Component.text(amount)).color(NamedTextColor.WHITE))
@@ -115,4 +151,10 @@ public final class ItemIngredient implements Ingredient {
   public Ingredient copy(Number amount) {
     return new ItemIngredient(item, idKey, amount.intValue());
   }
+
+  @Override
+  public String toString() {
+    return item.getReference().toString();
+  }
+
 }

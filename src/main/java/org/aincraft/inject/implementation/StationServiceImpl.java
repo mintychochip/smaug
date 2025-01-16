@@ -5,20 +5,24 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
 import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.listener.IStationService;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 @Singleton
 final class StationServiceImpl implements IStationService {
@@ -45,6 +49,25 @@ final class StationServiceImpl implements IStationService {
     userCache = createCache();
     recipeCache = createCache();
     inventoryCache = createCache();
+  }
+
+  @Override
+  public List<Station> getAllStations() {
+    List<Station> stations = storage.getAllStations();
+    for (Station station : stations) {
+     station2Cache.put(station.getId(),station);
+     stationCache.put(station.getLocation(),station);
+    }
+    return stations;
+  }
+
+  @Override
+  public List<StationInventory> getAllInventories() {
+    List<StationInventory> inventories = storage.getAllInventories();
+    for(StationInventory inventory : inventories) {
+      inventoryCache.put(inventory.getStationId(),inventory);
+    }
+    return inventories;
   }
 
   @Override

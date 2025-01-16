@@ -1,17 +1,46 @@
 package org.aincraft.container;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import org.aincraft.container.RecipeResult.Status;
+import java.util.Map;
+import org.aincraft.container.Result.Status;
 import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.container.item.IKeyedItem;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SmaugRecipe {
+
+  public static final class RecipeResult implements Result {
+
+    private final Status status;
+    private final IngredientList missing;
+    private final String error;
+
+    RecipeResult(@NotNull Status status, @Nullable IngredientList missing,
+        @Nullable String error) {
+      this.status = status;
+      this.missing = missing;
+      this.error = error;
+    }
+
+    public Status getStatus() {
+      return status;
+    }
+
+    public IngredientList getMissing() {
+      return missing;
+    }
+
+    public String getError() {
+      return error;
+    }
+  }
 
   private final IKeyedItem output;
   private final int amount;
@@ -40,9 +69,10 @@ public final class SmaugRecipe {
     return stack;
   }
 
-  public RecipeResult test(Player player, ItemStack ... stacks) {
+  public RecipeResult test(Player player, ItemStack... stacks) {
     return test(player, Arrays.asList(stacks));
   }
+
   public RecipeResult test(Player player,
       List<ItemStack> stacks) {
     if (permission != null && !player.hasPermission(permission)) {

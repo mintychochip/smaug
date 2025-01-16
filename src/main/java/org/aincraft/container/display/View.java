@@ -1,17 +1,16 @@
 package org.aincraft.container.display;
 
-import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.stream.Stream;
 import org.bukkit.entity.Display;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 public final class View implements Iterable<Display> {
 
-  private Collection<Display> displays = new ArrayList<>();
+  private final Collection<Display> displays = new ArrayList<>();
 
   @NotNull
   @Override
@@ -24,13 +23,8 @@ public final class View implements Iterable<Display> {
     return displays.stream();
   }
 
-  @NotNull
   public Collection<Display> getDisplays() {
     return displays;
   }
 
-  public void setDisplays(List<Display> displays) {
-    Preconditions.checkArgument(displays != null);
-    this.displays = displays;
-  }
 }

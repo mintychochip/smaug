@@ -15,6 +15,7 @@ allprojects {
     repositories {
         mavenCentral()
         gradlePluginPortal()
+        maven("https://repo.triumphteam.dev/snapshots")
         maven("https://oss.sonatype.org/content/repositories/snapshots/")
         maven {
             name="papermc"
@@ -40,6 +41,7 @@ allprojects {
             archiveClassifier.set("")
             archiveFileName.set("${project.property("artifactName")}-${project.version}.jar")
             destinationDirectory.set(file("C:\\Users\\justi\\Desktop\\paper\\plugins"))
+            relocate("dev.triumphteam.gui","org.aincraft.gui")
         }
         build {
             dependsOn(shadowJar)
@@ -81,6 +83,7 @@ dependencies {
     implementation("org.fusesource.jansi:jansi:2.4.0")
     implementation("com.google.inject:guice:7.0.0")
     implementation("com.zaxxer:HikariCP:5.0.1")
+    implementation("dev.triumphteam:triumph-gui-paper:4.0.0-SNAPSHOT")
     compileOnly(libs.adventureApi)
     implementation(libs.adventureMinimessage)
     implementation(libs.adventureLegacy)
@@ -90,3 +93,4 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.0.0")
 }
+

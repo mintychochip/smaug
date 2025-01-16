@@ -8,32 +8,49 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.function.Consumer;
+import org.aincraft.container.Result;
+import org.aincraft.container.Result.Status;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 public class StationInventory {
 
-  public enum InventoryType {
-    INPUT,
-    OUTPUT
+  public static final class ItemAddResult implements Result {
+
+    private final Status status;
+    private final StationInventory inventory;
+
+    private ItemAddResult(Status status, StationInventory inventory) {
+      this.status = status;
+      this.inventory = inventory;
+    }
+
+    @Override
+    public Status getStatus() {
+      return status;
+    }
+
+    public StationInventory getInventory() {
+      return inventory;
+    }
   }
 
   private final String id;
   private final String stationId;
-  private String input;
-  private String output;
+  private final String inventoryString;
   private int inventoryLimit;
 
-  public StationInventory(String id, String stationId, String input,
-      String output, int inventoryLimit) {
+  public StationInventory(String id, String stationId, String inventory, int inventoryLimit) {
     this.id = id;
     this.stationId = stationId;
-    this.input = input;
-    this.output = output;
+    this.inventoryString = inventory;
     this.inventoryLimit = inventoryLimit;
   }
 
@@ -47,15 +64,11 @@ public class StationInventory {
 
   public static StationInventory create(String id, String stationId, int limit) {
     String empty = serialize(new ItemStack[0]);
-    return new StationInventory(id, stationId, empty, empty, limit);
+    return new StationInventory(id, stationId, empty, limit);
   }
 
-  public String getInput() {
-    return input;
-  }
-
-  public String getOutput() {
-    return output;
+  public String getInventoryString() {
+    return inventoryString;
   }
 
   public UUID getId() {
@@ -66,44 +79,72 @@ public class StationInventory {
     return UUID.fromString(stationId);
   }
 
-  public boolean canAddItem(ItemStack stack, InventoryType type) {
-    return canAddItems(List.of(stack), type);
-  }
+  public ItemAddResult addItems(List<ItemStack> stacks,
+      Consumer<List<ItemStack>> remainingConsumer) {
+    Map<Integer, ItemStack> stackMap = this.getMap();
+    List<ItemStack> remaining = new ArrayList<>();
 
-  public boolean canAddItems(List<ItemStack> stacks, InventoryType type) {
-    Preconditions.checkState(stacks != null);
-    List<ItemStack> merged = merge(this.getItems(type), stacks);
-    return merged.size() <= inventoryLimit;
-  }
+    for (ItemStack stack : stacks) {
+      int amountToAdd = stack.getAmount();
+      for (Entry<Integer, ItemStack> entry : stackMap.entrySet()) {
+        ItemStack existingItem = entry.getValue();
 
-  public void addItems(List<ItemStack> stacks, InventoryType type) {
-    List<ItemStack> s = this.getItems(type);
-    this.setItems(merge(s,stacks), type);
-  }
+        if (existingItem.isSimilar(stack)
+            && existingItem.getAmount() < existingItem.getMaxStackSize()) {
+          int space = existingItem.getMaxStackSize() - existingItem.getAmount();
+          int toAdd = Math.min(space, amountToAdd);
+          existingItem.setAmount(existingItem.getAmount() + toAdd);
+          amountToAdd -= toAdd;
 
+          if (amountToAdd == 0) {
+            break;
+          }
+        }
+      }
 
-  public void addItem(ItemStack itemStack, InventoryType type) {
-    addItems(List.of(itemStack), type);
-  }
+      while (amountToAdd > 0) {
+        for (int i = 0; i < inventoryLimit; i++) {
+          if (!stackMap.containsKey(i)) {
+            ItemStack newStack = stack.clone();
+            newStack.setAmount(Math.min(amountToAdd, newStack.getMaxStackSize()));
+            stackMap.put(i, newStack);
+            amountToAdd -= newStack.getAmount();
+            break;
+          }
+        }
 
-  public void setItems(List<ItemStack> stacks, InventoryType type) {
-    Preconditions.checkArgument(stacks != null);
-    String serialized = serialize(
-        stacks.stream().filter(s -> s != null && !s.getType().isAir()).toList().toArray(new ItemStack[0]));
-    if (type == InventoryType.INPUT) {
-      this.input = serialized;
-      return;
+        if (amountToAdd > 0) {
+          stack.setAmount(amountToAdd);
+          remaining.add(stack);
+          amountToAdd = 0;
+        }
+      }
     }
-    this.output = serialized;
+    StationInventory inventory = this.setItems(stackMap);
+    if (!remaining.isEmpty()) {
+      remainingConsumer.accept(remaining);
+      return new ItemAddResult(Status.FAILURE, inventory);
+    }
+    return new ItemAddResult(Status.SUCCESS, inventory);
   }
 
-  public boolean hasItems(InventoryType type) {
-    return !getItems(type).isEmpty();
+  public StationInventory setItems(Map<Integer, ItemStack> stacks) {
+    String serialized = serialize(stacks);
+    return new StationInventory(id, stationId, serialized, inventoryLimit);
   }
-  public List<ItemStack> getItems(InventoryType type) {
-    ItemStack[] contents =
-        type == InventoryType.INPUT ? deserialize(this.input) : deserialize(this.output);
-    return new ArrayList<>(Arrays.stream(contents).toList());
+
+  public boolean hasItems() {
+    return !getContents().isEmpty();
+  }
+
+
+  public List<ItemStack> getContents() {
+    Map<Integer, ItemStack> deserialize = deserialize(this.inventoryString);
+    return new ArrayList<>(deserialize.values());
+  }
+
+  public Map<Integer, ItemStack> getMap() {
+    return deserialize(this.inventoryString);
   }
 
   private static List<ItemStack> merge(@NotNull List<ItemStack> one, @NotNull List<ItemStack> two) {
@@ -159,6 +200,44 @@ public class StationInventory {
     return mergedList;
   }
 
+  //items shouldn't contain nulls
+  private static String serialize(Map<Integer, ItemStack> items) {
+    try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+      DataOutput output = new DataOutputStream(outputStream);
+      output.writeInt(items.size());
+      for (Entry<Integer, ItemStack> entry : items.entrySet()) {
+        ItemStack item = entry.getValue();
+        int slot = entry.getKey();
+        output.writeInt(slot);
+        byte[] bytes = item.serializeAsBytes();
+        output.writeInt(bytes.length);
+        output.write(bytes);
+      }
+      return Base64Coder.encodeLines(outputStream.toByteArray());
+    } catch (IOException e) {
+      throw new RuntimeException("Error while writing itemstack", e);
+    }
+  }
+
+  private static Map<Integer, ItemStack> deserialize(String itemString) {
+    byte[] bytes = Base64Coder.decodeLines(itemString);
+    try (ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes)) {
+      DataInputStream input = new DataInputStream(inputStream);
+      int count = input.readInt();
+      Map<Integer, ItemStack> map = new HashMap<>();
+      for (int i = 0; i < count; i++) {
+        int slot = input.readInt();
+        int length = input.readInt();
+        byte[] itemBytes = new byte[length];
+        input.read(itemBytes);
+        map.put(slot, ItemStack.deserializeBytes(itemBytes));
+      }
+      return map;
+    } catch (IOException e) {
+      throw new RuntimeException("Error while reading itemstack", e);
+    }
+  }
+
   private static String serialize(ItemStack[] items) {
     try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
       DataOutput output = new DataOutputStream(outputStream);
@@ -178,28 +257,6 @@ public class StationInventory {
           outputStream.toByteArray());
     } catch (IOException e) {
       throw new RuntimeException("Error while writing itemstack", e);
-    }
-  }
-
-  private static ItemStack[] deserialize(String encodedItems) {
-    byte[] bytes = Base64Coder.decodeLines(encodedItems);
-    try (ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes)) {
-      DataInputStream input = new DataInputStream(inputStream);
-      int count = input.readInt();
-      ItemStack[] items = new ItemStack[count];
-      for (int i = 0; i < count; i++) {
-        int length = input.readInt();
-        if (length == 0) {
-          continue;
-        }
-
-        byte[] itemBytes = new byte[length];
-        input.read(itemBytes);
-        items[i] = ItemStack.deserializeBytes(itemBytes);
-      }
-      return items;
-    } catch (IOException e) {
-      throw new RuntimeException("Error while reading itemstack", e);
     }
   }
 }

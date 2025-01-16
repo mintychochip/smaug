@@ -2,6 +2,7 @@ package org.aincraft.container.ingredient;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
+import java.util.Map;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -37,6 +38,11 @@ public final class ExperienceIngredient implements Ingredient {
   @Override
   public void remove(Player player, List<ItemStack> stacks) {
 
+  }
+
+  @Override
+  public Map<Integer, ItemStack> remove(Player player, Map<Integer, ItemStack> stackMap) {
+    return Map.of();
   }
 
   @Override

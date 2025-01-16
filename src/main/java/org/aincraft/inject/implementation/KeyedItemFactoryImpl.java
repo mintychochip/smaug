@@ -49,6 +49,9 @@ final class KeyedItemFactoryImpl implements IKeyedItemFactory {
       return null;
     }
     stack.setAmount(1);
+    if(identifier.getKey().getNamespace().equals("minecraft")) {
+      return new KeyedItemImpl(stack,identifier.getKey());
+    }
     ItemMeta meta = stack.getItemMeta();
     PersistentDataContainer pdc = meta.getPersistentDataContainer();
     pdc.set(identifierKey,PersistentDataType.STRING,gson.toJson(identifier));

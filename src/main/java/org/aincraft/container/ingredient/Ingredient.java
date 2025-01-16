@@ -1,6 +1,7 @@
 package org.aincraft.container.ingredient;
 
 import java.util.List;
+import java.util.Map;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -15,6 +16,8 @@ public interface Ingredient {
   void add(Player player, Inventory inventory);
 
   void remove(Player player, List<ItemStack> stacks);
+
+  Map<Integer,ItemStack> remove(Player player, Map<Integer,ItemStack> stackMap);
 
   Number getCurrentAmount(Player player, @Nullable List<ItemStack> stacks);
 

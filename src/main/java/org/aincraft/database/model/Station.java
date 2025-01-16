@@ -1,5 +1,6 @@
 package org.aincraft.database.model;
 
+import com.google.common.base.Preconditions;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import org.bukkit.Bukkit;
@@ -8,6 +9,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class Station {
 
@@ -35,9 +37,13 @@ public final class Station {
     this.stationKey = stationKey;
   }
 
-  public static Station create(String idString, String stationKeyString, String worldName, int x,
+  @Nullable
+  public static Station create(@NotNull String idString, @NotNull String stationKeyString,
+      @NotNull String worldName, int x,
       int y,
       int z) {
+    Preconditions.checkArgument(
+        !(idString == null || stationKeyString == null || worldName == null));
     final World world = Bukkit.getWorld(worldName);
     final Key stationkey = NamespacedKey.fromString(stationKeyString);
     if (world == null || stationkey == null) {
@@ -75,6 +81,11 @@ public final class Station {
     return z;
   }
 
+  public String getIdString() {
+    return idString;
+  }
+
+
   @NotNull
   public BoundingBox getBoundingBox(double horizontalOffset) {
     return this.getBoundingBox(horizontalOffset, horizontalOffset);
@@ -90,7 +101,11 @@ public final class Station {
         x - offsetX, y, z - offsetZ);
   }
 
-  public Key getKey() {
+  public String getStationKeyString() {
+    return stationKeyString;
+  }
+
+  public Key getStationKey() {
     return stationKey;
   }
 

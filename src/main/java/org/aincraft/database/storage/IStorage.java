@@ -11,6 +11,8 @@ public interface IStorage {
   //  // Table-related methods
   List<Station> getAllStations();
 
+  List<StationInventory> getAllInventories();
+
   Station createStation(String stationKey, String worldName, int x, int y, int z);
 
   void deleteStation(String worldName, int x, int y, int z);

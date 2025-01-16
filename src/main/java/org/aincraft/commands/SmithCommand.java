@@ -1,11 +1,15 @@
 package org.aincraft.commands;
 
 import com.google.inject.Inject;
+import dev.triumphteam.gui.paper.Gui;
+import dev.triumphteam.gui.paper.builder.item.ItemBuilder;
 import java.util.UUID;
+import net.kyori.adventure.text.Component;
 import org.aincraft.container.IRecipeFetcher;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.listener.IStationService;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -35,8 +39,7 @@ public class SmithCommand implements CommandExecutor {
   public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command,
       @NotNull String s, @NotNull String[] strings) {
     if (commandSender instanceof Player player) {
-      UUID uuid = UUID.fromString("68a69f78-48de-420b-a1a5-00d6cddcd960");
-      controller.update(uuid);
+      UUID uuid = UUID.fromString(strings[0]);
     }
     return true;
   }

@@ -1,6 +1,8 @@
 package org.aincraft.inject.implementation.view;
 
 import com.google.common.base.Preconditions;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,11 +13,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
-import org.aincraft.container.display.View;
+import org.aincraft.Smaug;
+import org.aincraft.SmaugBootstrap;
 import org.aincraft.container.display.IViewModel;
+import org.aincraft.container.display.View;
 import org.aincraft.database.model.Station;
 import org.aincraft.util.Mt;
 import org.aincraft.util.Util;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -25,6 +30,7 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +39,8 @@ final class AnvilViewModel implements IViewModel {
 
   private final Map<UUID, ViewBinding> bindings = new HashMap<>();
 
-  AnvilViewModel() {}
+  AnvilViewModel() {
+  }
 
   private static float ITEM_SCALE;
   private static float BLOCK_SCALE;
@@ -139,14 +146,14 @@ final class AnvilViewModel implements IViewModel {
   }
 
   @Override
-  public void bindView(@NotNull Station station, @NotNull View view) {
+  public void bind(@NotNull Station station, @NotNull View view) {
     Preconditions.checkArgument(station != null);
     Preconditions.checkArgument(view != null);
     bindings.put(station.getId(), new ViewBinding(station, view.getDisplays()));
   }
 
   @Override
-  public void updateView(@NotNull UUID stationId, @NotNull Collection<ItemStack> stacks) {
+  public void update(@NotNull UUID stationId, @NotNull Collection<ItemStack> stacks) {
     Preconditions.checkArgument(stationId != null);
     Preconditions.checkArgument(stacks != null);
     if (!bindings.containsKey(stationId)) {
@@ -158,7 +165,6 @@ final class AnvilViewModel implements IViewModel {
     Map<ItemStack, Float> scaledStacks = createScaledStacks(stacks);
     //TODO: split bounding box before release
     List<Display> displays = new ArrayList<>();
-
     scaledStacks.forEach((key, value) -> DisplayStrategySelector.select(key, ITEM_MODEL_IS_ITEM)
         .createWrappers(key,
             randomLocation(station.getBoundingBox(4 * 0.0625f, 4 * 0.0625f), station.getWorld()),
@@ -172,7 +178,7 @@ final class AnvilViewModel implements IViewModel {
   }
 
   @Override
-  public void removeView(@NotNull UUID stationId) {
+  public void remove(@NotNull UUID stationId) {
     Preconditions.checkArgument(stationId != null);
     if (!bindings.containsKey(stationId)) {
       return;
@@ -180,6 +186,12 @@ final class AnvilViewModel implements IViewModel {
     ViewBinding binding = bindings.get(stationId);
     binding.getDisplays().forEach(Entity::remove);
     bindings.remove(stationId);
+  }
+
+  @Override
+  public void removeAll() {
+    bindings.values().forEach(b -> b.getDisplays().forEach(Entity::remove));
+    bindings.clear();
   }
 
   @Override
