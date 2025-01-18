@@ -1,0 +1,137 @@
+package org.aincraft.inject.implementation.view;
+
+import com.google.common.base.Preconditions;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.bossbar.BossBar.Color;
+import net.kyori.adventure.bossbar.BossBar.Overlay;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.aincraft.container.display.IViewModel;
+import org.aincraft.database.model.RecipeProgress;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
+
+public class BossBarModel implements IViewModel<RecipeProgress, BossBar> {
+
+  private final long fadeAwayTime = 20L;
+  //recipe progress ids
+
+  private static final String[] test = new String[]{"Smithing", "Forging", "Crafting"};
+  private final Map<UUID, ViewBinding> bindings = new HashMap<>();
+  private final Plugin plugin;
+
+  public BossBarModel(Plugin plugin) {
+    this.plugin = plugin;
+  }
+
+  static final class ViewBinding {
+
+    private Component name;
+    private final BossBar bossBar;
+    private int taskId = -1;
+
+    ViewBinding(Component name, BossBar bossBar) {
+      this.bossBar = bossBar;
+    }
+
+    public BossBar getBossBar() {
+      return bossBar;
+    }
+
+    public void setTaskId(int taskId) {
+      this.taskId = taskId;
+    }
+
+    public int getTaskId() {
+      return taskId;
+    }
+  }
+
+  @Override
+  public void bind(@NotNull RecipeProgress model, @NotNull BossBar view) {
+    bindings.put(model.getId(), new ViewBinding(view.name(), view));
+  }
+
+
+  @Override
+  public void update(@NotNull Object modelKey, @NotNull Object... data) {
+    Preconditions.checkArgument(modelKey instanceof UUID);
+    final int progress = (int) data[0];
+    final int actions = (int) data[1];
+    final Component itemName = (Component) data[2]; //represents the item name
+    final Player player = (Player) data[3];
+
+    final Component displayName = bossBarName(itemName,actions - progress);
+    if (!isBound(modelKey)) {
+      BossBar bossBar = createBossBar(displayName, (float) progress / actions);
+      bindings.put((UUID) modelKey, new ViewBinding(bossBar.name(), bossBar));
+    }
+    final ViewBinding binding = bindings.get((UUID) modelKey);
+    final BossBar bossBar = binding.getBossBar().progress((float) progress / actions)
+        .name(displayName);
+
+    if (!playerIsViewingBossBar(player, bossBar)) {
+      player.showBossBar(bossBar);
+    }
+
+    if (binding.getTaskId() != -1) {
+      Bukkit.getScheduler().cancelTask(binding.getTaskId());
+    }
+
+    int taskId = new BukkitRunnable() {
+      @Override
+      public void run() {
+        player.hideBossBar(bossBar);
+        binding.setTaskId(-1);
+      }
+    }.runTaskLater(plugin, fadeAwayTime).getTaskId();
+    binding.setTaskId(taskId);
+    bindings.put((UUID) modelKey, binding);
+  }
+
+  @Override
+  public void remove(@NotNull Object modelKey) {
+
+  }
+
+  @Override
+  public void removeAll() {
+
+  }
+
+  @Override
+  public boolean isBound(@NotNull Object modelKey) {
+    return bindings.containsKey((UUID) modelKey);
+  }
+
+  private static boolean playerIsViewingBossBar(Player player, BossBar bossBar) {
+    for (BossBar activeBossBar : player.activeBossBars()) {
+      if (activeBossBar.equals(bossBar)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static BossBar createBossBar(Component name, float progress) {
+    return BossBar.bossBar(name, progress, Color.BLUE, Overlay.PROGRESS);
+  }
+
+  private static Component bossBarName(Component itemName, int remainingActions) {
+    String format = "Forging: <item> (<number>)";
+    return MiniMessage.miniMessage()
+        .deserialize(format, Placeholder.component("item", itemName),Placeholder.component("number",Component.text(remainingActions)));
+  }
+
+  private static String selectRandomVerb() {
+    int idx = (int) (Math.random() * (3));
+    return test[idx];
+  }
+}

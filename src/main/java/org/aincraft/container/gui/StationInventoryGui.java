@@ -1,6 +1,5 @@
 package org.aincraft.container.gui;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.aincraft.database.model.StationInventory;
@@ -32,7 +31,7 @@ public class StationInventoryGui implements InventoryHolder {
   @Override
   public @NotNull Inventory getInventory() {
     Map<Integer, ItemStack> map = stationInventory.getMap();
-    int i = RecipeMenu.inventorySize(map.size());
+    int i = inventorySize(map.size());
     Inventory inventory = Bukkit.createInventory(this, i);
     for (Entry<Integer, ItemStack> entry : map.entrySet()) {
       inventory.setItem(entry.getKey(),entry.getValue());
@@ -40,7 +39,15 @@ public class StationInventoryGui implements InventoryHolder {
     return inventory;
   }
 
-  private static boolean requiresPagination(int size) {
-    return size > 54;
+  static int inventorySize(int size) {
+    if (size <= 9) {
+      return 9;
+    }
+
+    if (size > 54) {
+      return 54;
+    }
+
+    return (int) Math.ceil(size / 9.0) * 9;
   }
 }

@@ -6,14 +6,14 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-public class StationInventoryEvent extends Event implements Cancellable {
+public class StationUpdateInventoryEvent extends Event implements Cancellable {
 
   private static final HandlerList handlers = new HandlerList();
 
   private final StationInventory inventory;
 
   private boolean cancelled = false;
-  public StationInventoryEvent(StationInventory inventory) {
+  public StationUpdateInventoryEvent(StationInventory inventory) {
     this.inventory = inventory;
   }
 

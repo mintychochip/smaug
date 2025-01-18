@@ -10,7 +10,6 @@ import org.aincraft.container.IRegistry;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.IKeyedItemFactory;
 import org.aincraft.inject.IKeyFactory;
-import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;

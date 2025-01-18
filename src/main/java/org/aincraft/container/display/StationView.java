@@ -5,10 +5,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.stream.Stream;
 import org.bukkit.entity.Display;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-public final class View implements Iterable<Display> {
+public final class StationView implements Iterable<Display> {
 
   private final Collection<Display> displays = new ArrayList<>();
 

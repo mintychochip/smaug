@@ -1,9 +1,9 @@
 package org.aincraft.database.storage;
 
 import java.util.List;
+import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
-import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
 
 public interface IStorage {
@@ -31,15 +31,15 @@ public interface IStorage {
 
   boolean updateStationUser(StationUser user);
 
-  StationRecipeProgress createRecipeProgress(String stationId, String recipeKey);
+  RecipeProgress createRecipeProgress(String stationId, String recipeKey);
 
-  StationRecipeProgress getRecipeProgress(String stationId);
+  RecipeProgress getRecipeProgress(String stationId);
 
   void deleteRecipeProgress(String stationId);
 
   boolean hasRecipeProgress(String stationId);
 
-  boolean updateRecipeProgress(StationRecipeProgress progress);
+  boolean updateRecipeProgress(RecipeProgress progress);
 
   StationInventory createInventory(String stationId, int inventoryLimit);
 

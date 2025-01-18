@@ -3,9 +3,9 @@ package org.aincraft.listener;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
-import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -33,17 +33,17 @@ public interface IStationService {
 
   boolean updateStationUser(Player player);
 
-  StationRecipeProgress createRecipeProgress(UUID stationId, String recipeKey);
+  RecipeProgress createRecipeProgress(UUID stationId, String recipeKey);
 
-  StationRecipeProgress getRecipeProgress(UUID stationId);
+  RecipeProgress getRecipeProgress(UUID stationId);
 
   void deleteRecipeProgress(UUID stationId);
 
   boolean hasRecipeProgress(UUID stationId);
 
-  boolean updateRecipeProgress(StationRecipeProgress progress);
+  boolean updateRecipeProgress(RecipeProgress progress);
 
-  boolean updateRecipeProgress(UUID stationId, Consumer<StationRecipeProgress> progressConsumer);
+  boolean updateRecipeProgress(UUID stationId, Consumer<RecipeProgress> progressConsumer);
 
   StationInventory createInventory(UUID stationId, int inventoryLimit);
 

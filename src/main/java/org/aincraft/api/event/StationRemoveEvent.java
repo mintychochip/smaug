@@ -5,9 +5,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This event is called when a station is supposed to be removed
+ */
 public final class StationRemoveEvent extends StationEvent implements Cancellable {
 
   private boolean cancelled = false;
+
   public enum RemovalCause {
     PLAYER,
     EXPLOSION

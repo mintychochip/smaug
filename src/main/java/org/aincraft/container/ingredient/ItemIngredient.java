@@ -7,9 +7,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.xml.crypto.Data;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
 import org.bukkit.NamespacedKey;
@@ -130,21 +131,18 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
-  public @NotNull Component asComponent() {
-    ItemStack reference = item.getReference();
-    ItemMeta itemMeta = reference.getItemMeta();
+  public @NotNull Component component() {
+    final ItemStack reference = item.getReference();
+    final ItemMeta itemMeta = reference.getItemMeta();
     assert itemMeta != null;
-    Component name = itemMeta.hasDisplayName() ? itemMeta.displayName()
-        : Component.text(reference.getType().name());
-    assert name != null;
-    return Component.empty()
-        .append(Component.text("[ ")
-            .append(name).hoverEvent(reference))
-        .append(Component.text(" ]"))
-        .append(Component.text(" x ")
-            .append(Component.text(amount)).color(NamedTextColor.WHITE))
-        .color(NamedTextColor.DARK_GRAY);
 
+    @SuppressWarnings("UnstableApiUsage") final Component displayName =
+        itemMeta.hasDisplayName() ? itemMeta.displayName()
+            : reference.getDataOrDefault(DataComponentTypes.ITEM_NAME,
+                Component.text(reference.getType().toString())).color(NamedTextColor.GRAY);
+    assert displayName != null;
+    return MiniMessage.miniMessage().deserialize("<dark_gray><a> x <b>", Placeholder.component("a",displayName),Placeholder.component("b",
+        Component.text(amount).color(NamedTextColor.GRAY)));
   }
 
   @Override

@@ -13,6 +13,9 @@ import org.jetbrains.annotations.Nullable;
 
 public final class Station {
 
+  private static final double HORIZONTAL_OFFSET = 0.5;
+  private static final double VERTICAL_OFFSET = 1;
+
   private final String idString;
   private final String stationKeyString;
   private final String worldName;
@@ -22,6 +25,8 @@ public final class Station {
   private final UUID id;
   private final World world;
   private final Key stationKey;
+  private final Location blockLocation;
+  private Location location = null;
 
   private Station(String idString, String stationKeyString, String worldName, int x, int y, int z,
       UUID id,
@@ -35,6 +40,7 @@ public final class Station {
     this.id = id;
     this.world = world;
     this.stationKey = stationKey;
+    this.blockLocation = new Location(world, x, y, z);
   }
 
   @Nullable
@@ -69,15 +75,15 @@ public final class Station {
     return worldName;
   }
 
-  public int getX() {
+  public int getBlockX() {
     return x;
   }
 
-  public int getY() {
+  public int getBlockY() {
     return y;
   }
 
-  public int getZ() {
+  public int getBlockZ() {
     return z;
   }
 
@@ -93,7 +99,7 @@ public final class Station {
 
   @NotNull
   public BoundingBox getBoundingBox(double offsetX, double offsetZ) {
-    Location location = this.getLocation().add(0.5, 1, 0.5);
+    Location location = this.getBlockLocation().clone().add(0.5, 1, 0.5);
     double x = location.getX();
     double y = location.getY();
     double z = location.getZ();
@@ -109,10 +115,17 @@ public final class Station {
     return stationKey;
   }
 
+  public Location getBlockLocation() {
+    return blockLocation;
+  }
+
   public Location getLocation() {
-    World world = Bukkit.getWorld(worldName);
-    assert world != null;
-    return new Location(world, x, y, z);
+    if (location == null) {
+      final Location blockLocation = this.getBlockLocation();
+      this.location = blockLocation.clone()
+          .add(HORIZONTAL_OFFSET, VERTICAL_OFFSET, HORIZONTAL_OFFSET);
+    }
+    return location;
   }
 
 }

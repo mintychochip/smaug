@@ -3,16 +3,22 @@ package org.aincraft.inject.implementation;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import net.kyori.adventure.bossbar.BossBar;
 import org.aincraft.container.IRecipeFetcher;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.display.IViewModelController;
+import org.aincraft.container.display.StationView;
 import org.aincraft.container.item.IKeyedItemFactory;
+import org.aincraft.database.model.RecipeProgress;
+import org.aincraft.database.model.Station;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.database.storage.SqlConfig;
 import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeParser;
-import org.aincraft.inject.implementation.view.ViewModelControllerProvider;
+import org.aincraft.inject.implementation.view.BossBarViewModelControllerProvider;
+import org.aincraft.inject.implementation.view.ItemDisplayControllerProvider;
 import org.aincraft.listener.IStationService;
 
 public final class PluginImplementationModule extends AbstractModule {
@@ -26,7 +32,8 @@ public final class PluginImplementationModule extends AbstractModule {
   private Class<? extends Provider<IItemRegistry>> itemRegistryProviderClazz = ItemRegistryProvider.class;
   private Class<? extends Provider<IStorage>> storageProviderClazz = StorageProvider.class;
   private Class<? extends Provider<SqlConfig>> sqlConfigProviderClazz = SqlConfigProvider.class;
-  private Class<? extends Provider<IViewModelController>> viewModelControllerClazz = ViewModelControllerProvider.class;
+  private Class<? extends Provider<IViewModelController<Station, StationView>>> stationViewModelControllerClazz = ItemDisplayControllerProvider.class;
+  private Class<? extends Provider<IViewModelController<RecipeProgress, BossBar>>> barViewControllerClazz = BossBarViewModelControllerProvider.class;
 
   @Override
   protected void configure() {
@@ -39,7 +46,10 @@ public final class PluginImplementationModule extends AbstractModule {
     bind(IItemRegistry.class).toProvider(itemRegistryProviderClazz).in(Singleton.class);
     bind(IStorage.class).toProvider(storageProviderClazz).in(Singleton.class);
     bind(SqlConfig.class).toProvider(sqlConfigProviderClazz).in(Singleton.class);
-    bind(IViewModelController.class).toProvider(viewModelControllerClazz).in(Singleton.class);
+    bind(new TypeLiteral<IViewModelController<Station, StationView>>() {
+    }).toProvider(stationViewModelControllerClazz)
+        .in(Singleton.class);
+    bind(new TypeLiteral<IViewModelController<RecipeProgress,BossBar>>(){}).toProvider(barViewControllerClazz).in(Singleton.class);
   }
 
   public void setKeyedItemFactoryClazz(
@@ -87,8 +97,13 @@ public final class PluginImplementationModule extends AbstractModule {
     this.sqlConfigProviderClazz = sqlConfigProviderClazz;
   }
 
-  public void setViewModelControllerClazz(
-      Class<? extends Provider<IViewModelController>> viewModelControllerClazz) {
-    this.viewModelControllerClazz = viewModelControllerClazz;
+  public void setStationViewModelControllerClazz(
+      Class<? extends Provider<IViewModelController<Station, StationView>>> stationViewModelControllerClazz) {
+    this.stationViewModelControllerClazz = stationViewModelControllerClazz;
+  }
+
+  public void setBarViewControllerClazz(
+      Class<? extends Provider<IViewModelController<RecipeProgress, BossBar>>> barViewControllerClazz) {
+    this.barViewControllerClazz = barViewControllerClazz;
   }
 }

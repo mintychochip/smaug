@@ -15,11 +15,11 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
-import org.aincraft.api.event.StationInventoryEvent;
 import org.aincraft.api.event.StationRemoveEvent;
+import org.aincraft.api.event.StationUpdateInventoryEvent;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModelController;
-import org.aincraft.container.display.View;
+import org.aincraft.container.display.StationView;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
 import org.aincraft.listener.IStationService;
@@ -32,9 +32,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
-final class ViewModelControllerImpl implements IViewModelController {
+final class ItemDisplayControllerImpl implements IViewModelController<Station, StationView> {
 
-  private final Map<Key, IViewModel> viewModels;
+  private final Map<Key, IViewModel<Station, StationView>> viewModels;
   private final IStationService stationService;
   private final Plugin plugin;
   private static int MAX_DISPLAY = 3;
@@ -64,37 +64,39 @@ final class ViewModelControllerImpl implements IViewModelController {
     return modelWeights;
   }
 
-  public ViewModelControllerImpl(Map<Key, IViewModel> viewModels, IStationService stationService, Plugin plugin) {
+  public ItemDisplayControllerImpl(Map<Key, IViewModel<Station, StationView>> viewModels,
+      IStationService stationService, Plugin plugin) {
     this.viewModels = viewModels;
     this.stationService = stationService;
     this.plugin = plugin;
   }
 
   @Override
-  public void register(@NotNull Key key, @NotNull IViewModel viewModel) {
-    viewModels.put(key, viewModel);
+  public void register(@NotNull Key stationKey, @NotNull IViewModel<Station, StationView> viewModel) {
+    viewModels.put(stationKey, viewModel);
   }
 
   @Override
-  public boolean isRegistered(@NotNull Key key) {
-    Preconditions.checkArgument(key != null);
-    return viewModels.containsKey(key);
+  public boolean isRegistered(@NotNull Key stationKey) {
+    Preconditions.checkArgument(stationKey != null);
+    return viewModels.containsKey(stationKey);
   }
 
   @Override
-  public IViewModel get(@NotNull Key key) {
-    return viewModels.get(key);
+  public IViewModel<Station, StationView> get(@NotNull Key stationKey) {
+    return viewModels.get(stationKey);
   }
 
   @Override
-  public Collection<IViewModel> getAll() {
+  public Collection<IViewModel<Station, StationView>> getAll() {
     return viewModels.values();
   }
 
   @Override
-  public void update(UUID stationId) {
-    Station station = stationService.getStation(stationId);
-    StationInventory inventory = stationService.getInventory(stationId);
+  public void update(Object modelKey, Object ... args) {
+    Preconditions.checkArgument(modelKey instanceof UUID);
+    Station station = stationService.getStation((UUID) modelKey);
+    StationInventory inventory = stationService.getInventory((UUID) modelKey);
     if (station == null || inventory == null) {
       return;
     }
@@ -104,12 +106,12 @@ final class ViewModelControllerImpl implements IViewModelController {
 
   @NotNull
   @Override
-  public Iterator<IViewModel> iterator() {
+  public Iterator<IViewModel<Station, StationView>> iterator() {
     return viewModels.values().iterator();
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
-  private void handleInventoryUpdate(final StationInventoryEvent event) {
+  private void handleInventoryUpdate(final StationUpdateInventoryEvent event) {
     if (event.isCancelled()) {
       return;
     }
@@ -117,27 +119,24 @@ final class ViewModelControllerImpl implements IViewModelController {
     if (inventory == null) {
       return;
     }
-   // this.update(inventory.getStationId());
-    CompletableFuture.supplyAsync(() -> stationService.updateInventory(inventory))
-        .thenAcceptAsync(b -> {
-          new BukkitRunnable() {
-            @Override
-            public void run() {
-              if (b) {
-                update(inventory.getStationId());
-              }
-            }
-          }.runTask(plugin);
-        });
+    CompletableFuture.supplyAsync(() -> stationService.updateInventory(inventory)).thenAcceptAsync(b -> {
+      new BukkitRunnable() {
+        @Override
+        public void run() {
+          update(inventory.getStationId());
+        }
+      }.runTask(plugin);
+    });
+    //TODO: remove update inventory from viewmodel controller
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   private void handleStationRemove(final StationRemoveEvent event) {
-    if(event.isCancelled()) {
+    if (event.isCancelled()) {
       return;
     }
     Station station = event.getStation();
-    IViewModel viewModel = this.get(station.getStationKey());
+    IViewModel<Station, StationView> viewModel = this.get(station.getStationKey());
     if (viewModel == null) {
       return;
     }
@@ -145,9 +144,9 @@ final class ViewModelControllerImpl implements IViewModelController {
   }
 
   private static void update(Station station, List<ItemStack> stacks,
-      IViewModel viewModel) {
+      IViewModel<Station, StationView> viewModel) {
     if (!viewModel.isBound(station.getId())) {
-      viewModel.bind(station, new View());
+      viewModel.bind(station, new StationView());
     }
     if (stacks.isEmpty()) {
       viewModel.remove(station.getId());
@@ -190,7 +189,8 @@ final class ViewModelControllerImpl implements IViewModelController {
         .entrySet()
         .stream()
         .sorted(
-            (one, two) -> Double.compare(two.getValue().doubleValue(), one.getValue().doubleValue()))
+            (one, two) -> Double.compare(two.getValue().doubleValue(),
+                one.getValue().doubleValue()))
         .limit(3)
         .map(Entry::getKey)
         .collect(Collectors.toSet());

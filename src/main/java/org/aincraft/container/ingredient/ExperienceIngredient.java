@@ -51,7 +51,7 @@ public final class ExperienceIngredient implements Ingredient {
   }
 
   @Override
-  public @NotNull Component asComponent() {
+  public @NotNull Component component() {
     return Component.text("XP " + amount);
   }
 

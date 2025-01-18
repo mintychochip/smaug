@@ -15,14 +15,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.aincraft.SmaugBootstrap;
+import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
-import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.inject.implementation.ResourceExtractor;
-import org.bukkit.Bukkit;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class SqlStorageImpl implements IStorage {
 
@@ -224,20 +221,20 @@ public class SqlStorageImpl implements IStorage {
   }
 
   @Override
-  public StationRecipeProgress createRecipeProgress(String stationId, String recipeKey) {
+  public RecipeProgress createRecipeProgress(String stationId, String recipeKey) {
     String id = UUID.randomUUID().toString();
     executor.executeUpdate(CREATE_RECIPE_PROGRESS, id, stationId, recipeKey, 0);
-    return new StationRecipeProgress(id, stationId, recipeKey, 0);
+    return new RecipeProgress(id, stationId, recipeKey, 0);
   }
 
   @Override
-  public StationRecipeProgress getRecipeProgress(String stationId) {
+  public RecipeProgress getRecipeProgress(String stationId) {
     return executor.queryRow(scanner -> {
       try {
         String id = scanner.getString("id");
         String recipeKey = scanner.getString("recipe_key");
         int progress = scanner.getInt("progress");
-        return new StationRecipeProgress(id, stationId, recipeKey, progress);
+        return new RecipeProgress(id, stationId, recipeKey, progress);
       } catch (SQLException err) {
         throw new RuntimeException(err);
       }
@@ -255,7 +252,7 @@ public class SqlStorageImpl implements IStorage {
   }
 
   @Override
-  public boolean updateRecipeProgress(StationRecipeProgress progress) {
+  public boolean updateRecipeProgress(RecipeProgress progress) {
     return executor.executeUpdate(UPDATE_RECIPE_PROGRESS, progress.getProgress(),
         progress.getRecipeKey(),
         progress.getStationId().toString());

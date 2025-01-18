@@ -2,10 +2,12 @@ package org.aincraft.listener;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
-import org.aincraft.api.event.StationActionEvent;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
 import org.aincraft.container.IRecipeFetcher;
@@ -15,6 +17,7 @@ import org.aincraft.container.StationHandler.Context;
 import org.aincraft.container.StationHandler.IActionContext;
 import org.aincraft.container.StationHandler.IInteractionContext;
 import org.aincraft.container.display.IViewModelController;
+import org.aincraft.container.display.StationView;
 import org.aincraft.database.model.Station;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -36,6 +39,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,13 +62,13 @@ public class StationListener implements Listener {
   private final IStationService stationService;
   private final NamespacedKey stationKey;
   private final IRecipeFetcher recipeFetcher;
-  private final IViewModelController controller;
+  private final IViewModelController<Station, StationView> controller;
 
   @Inject
   public StationListener(Map<Key, StationHandler> handlers,
       Plugin plugin, IStationService stationService,
       @Named("station") NamespacedKey stationKey, IRecipeFetcher recipeFetcher,
-      IViewModelController controller) {
+      IViewModelController<Station, StationView> controller) {
     this.handlers = handlers;
     this.plugin = plugin;
     this.stationService = stationService;
@@ -102,7 +106,7 @@ public class StationListener implements Listener {
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
-  private void onRemoveStation(final BlockBreakEvent event) {
+  private void removeBlocksCheckForStation(final BlockBreakEvent event) {
     Block block = event.getBlock();
     Location blockLocation = block.getLocation();
     World world = blockLocation.getWorld();
@@ -129,18 +133,28 @@ public class StationListener implements Listener {
     }
   }
 
-  @EventHandler(priority = EventPriority.HIGHEST)
-  private void handleAction(final StationActionEvent event) {
+  @EventHandler(priority = EventPriority.MONITOR)
+  private void handleRemoveStation(final StationRemoveEvent event) {
     if (event.isCancelled()) {
       return;
     }
-    Station station = event.getStation();
-    StationHandler handler = handlers.get(station.getStationKey());
-    if (handler == null) {
-      return;
-    }
-    handler.handleAction(new ActionContextImpl(station, event.getPlayer(), event.getItem(),
-        event.getContext().getAction(), event.getRecipe()));
+    final Station station = event.getStation();
+    final World world = station.getWorld();
+    CompletableFuture.supplyAsync(() -> stationService.getInventory(station.getId()))
+        .thenAcceptAsync(inventory -> {
+          final Location location = station.getLocation();
+          new BukkitRunnable() {
+            @Override
+            public void run() {
+              List<ItemStack> contents = inventory.getContents();
+              for (ItemStack content : contents) {
+                if (content != null) {
+                  world.dropItemNaturally(location, content);
+                }
+              }
+            }
+          }.runTask(plugin);
+        });
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -161,16 +175,15 @@ public class StationListener implements Listener {
       return;
     }
     EquipmentSlot hand = event.getHand();
-    if(hand == EquipmentSlot.OFF_HAND) {
+    if (hand == EquipmentSlot.OFF_HAND) {
       return;
     }
     InteractionContextImpl interactionContext = new InteractionContextImpl(station, event);
     handler.handleInteraction(interactionContext, recipe -> {
-      Bukkit.getPluginManager()
-          .callEvent(new StationActionEvent(recipe, interactionContext));
+      handler.handleAction(new ActionContextImpl(station, event.getPlayer(), event.getItem(),
+          event.getAction(), recipe));
     });
   }
-
 
 
   static final class ActionContextImpl extends ContextImpl implements IActionContext {
@@ -242,38 +255,11 @@ public class StationListener implements Listener {
       return player;
     }
   }
-  //  @EventHandler
-//  private void handleDropItemsOnStationRemove(final StationBeforeRemoveEvent event) {
-//    Station station = event.getStation();
-//    Location stationLocation = station.getLocation();
-//    World world = stationLocation.getWorld();
-//    if (world == null) {
-//      return;
-//    }
-//    service.getStationInventory(station.id(), model -> {
-//      if (model == null) {
-//        return;
-//      }
-//      new BukkitRunnable() {
-//        @Override
-//        public void run() {
-//          Inventory[] inventories = model.getInventories();
-//          for (Inventory inventory : inventories) {
-//            if (inventory != null) {
-//              ItemStack[] contents = inventory.getContents();
-//              if (contents != null) {
-//                for (ItemStack content : contents) {
-//                  if (content != null && content.getAmount() > 0) {
-//                    world.dropItemNaturally(stationLocation, content);
-//                  }
-//                }
-//              }
-//            }
-//          }
-//        }
-//      }.runTask(plugin);
-//    });
-//
+
+  private static List<Location> getAllStationLocations(Location location) {
+    List<Location> locations = new ArrayList<>();
+    return null;
+  }
 
   //TODO: Add Explosion/Piston handling
 

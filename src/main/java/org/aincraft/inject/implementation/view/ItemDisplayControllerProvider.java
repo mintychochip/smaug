@@ -7,25 +7,27 @@ import java.util.Map;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModelController;
+import org.aincraft.container.display.StationView;
+import org.aincraft.database.model.Station;
 import org.aincraft.listener.IStationService;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.Plugin;
 
-public final class ViewModelControllerProvider implements Provider<IViewModelController> {
+public final class ItemDisplayControllerProvider implements Provider<IViewModelController<Station, StationView>> {
 
   private final IStationService stationService;
   private final Plugin plugin;
 
   @Inject
-  public ViewModelControllerProvider(IStationService stationService, Plugin plugin) {
+  public ItemDisplayControllerProvider(IStationService stationService, Plugin plugin) {
     this.stationService = stationService;
     this.plugin = plugin;
   }
 
   @Override
-  public IViewModelController get() {
-    Map<Key, IViewModel> viewModels = new HashMap<>();
-    ViewModelControllerImpl controller = new ViewModelControllerImpl(viewModels,
+  public IViewModelController<Station, StationView> get() {
+    Map<Key, IViewModel<Station, StationView>> viewModels = new HashMap<>();
+    ItemDisplayControllerImpl controller = new ItemDisplayControllerImpl(viewModels,
         stationService, plugin);
     controller.register(new NamespacedKey(plugin, "anvil"), new AnvilViewModel());
     return controller;

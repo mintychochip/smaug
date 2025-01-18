@@ -2,15 +2,15 @@ package org.aincraft.database.model;
 
 import java.util.UUID;
 
-public final class StationRecipeProgress {
+public final class RecipeProgress {
 
-  private final String id;
+  private final String idString;
   private final String stationId;
   private String recipeKey;
   private int progress;
 
-  public StationRecipeProgress(String id, String stationId, String recipeKey, int progress) {
-    this.id = id;
+  public RecipeProgress(String idString, String stationId, String recipeKey, int progress) {
+    this.idString = idString;
     this.stationId = stationId;
     this.recipeKey = recipeKey;
     this.progress = progress;
@@ -33,7 +33,7 @@ public final class StationRecipeProgress {
   }
 
   public UUID getId() {
-    return UUID.fromString(id);
+    return UUID.fromString(idString);
   }
 
   public String getRecipeKey() {

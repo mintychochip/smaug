@@ -15,7 +15,6 @@ allprojects {
     repositories {
         mavenCentral()
         gradlePluginPortal()
-        maven("https://repo.triumphteam.dev/snapshots")
         maven("https://oss.sonatype.org/content/repositories/snapshots/")
         maven {
             name="papermc"
@@ -83,7 +82,7 @@ dependencies {
     implementation("org.fusesource.jansi:jansi:2.4.0")
     implementation("com.google.inject:guice:7.0.0")
     implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("dev.triumphteam:triumph-gui-paper:4.0.0-SNAPSHOT")
+    implementation("dev.triumphteam:triumph-gui:3.1.11")
     compileOnly(libs.adventureApi)
     implementation(libs.adventureMinimessage)
     implementation(libs.adventureLegacy)

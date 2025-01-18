@@ -9,37 +9,30 @@ import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.Tag;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class IngredientList implements Iterable<Ingredient> {
 
-  String format = "<italic:false><white> * <ingredient>";
-
   private List<Ingredient> ingredients;
 
   public List<Component> components() {
-    List<Component> list = new ArrayList<>();
-    list.add(MiniMessage.miniMessage().deserialize("<italic:false><white>Ingredients:"));
-    for (Ingredient i : ingredients) {
-      TagResolver resolver = TagResolver.resolver("ingredient",
-          (args, ctx) -> Tag.inserting(i.asComponent()));
-      Component component = MiniMessage.miniMessage().deserialize(format, resolver);
-      list.add(component);
-    }
-    return list;
+    return ingredients.stream().map(i -> MiniMessage.miniMessage()
+            .deserialize("<italic:false><white> * <a>", Placeholder.component("a", i.component())))
+        .toList();
   }
 
-  public Map<Integer,ItemStack> remove(Player player, Map<Integer,ItemStack> stackMap) {
-    Map<Integer,ItemStack> removed = new HashMap<>(stackMap);
-    for(Ingredient i : ingredients) {
-      removed = i.remove(player,removed);
+  public Map<Integer, ItemStack> remove(Player player, Map<Integer, ItemStack> stackMap) {
+    Map<Integer, ItemStack> removed = new HashMap<>(stackMap);
+    for (Ingredient i : ingredients) {
+      removed = i.remove(player, removed);
     }
     return removed;
   }
+
   public IngredientList(List<Ingredient> ingredients) {
     this.ingredients = ingredients;
   }

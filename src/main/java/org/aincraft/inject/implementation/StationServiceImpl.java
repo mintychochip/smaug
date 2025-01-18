@@ -9,20 +9,17 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import org.aincraft.api.event.StationRemoveEvent;
+import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
-import org.aincraft.database.model.StationRecipeProgress;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.listener.IStationService;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 @Singleton
 final class StationServiceImpl implements IStationService {
@@ -33,7 +30,7 @@ final class StationServiceImpl implements IStationService {
   private final Cache<UUID, Station> station2Cache;
   private final Cache<Location, Station> stationCache;
   private final Cache<Player, StationUser> userCache;
-  private final Cache<UUID, StationRecipeProgress> recipeCache;
+  private final Cache<UUID, RecipeProgress> recipeCache;
   private final Cache<UUID, StationInventory> inventoryCache;
 
   private static <K, V> Cache<K, V> createCache() {
@@ -56,7 +53,7 @@ final class StationServiceImpl implements IStationService {
     List<Station> stations = storage.getAllStations();
     for (Station station : stations) {
      station2Cache.put(station.getId(),station);
-     stationCache.put(station.getLocation(),station);
+     stationCache.put(station.getBlockLocation(),station);
     }
     return stations;
   }
@@ -146,15 +143,15 @@ final class StationServiceImpl implements IStationService {
   }
 
   @Override
-  public StationRecipeProgress createRecipeProgress(UUID stationId, String recipeKey) {
-    StationRecipeProgress recipeProgress = storage.createRecipeProgress(stationId.toString(),
+  public RecipeProgress createRecipeProgress(UUID stationId, String recipeKey) {
+    RecipeProgress recipeProgress = storage.createRecipeProgress(stationId.toString(),
         recipeKey);
     recipeCache.put(stationId, recipeProgress);
     return recipeProgress;
   }
 
   @Override
-  public StationRecipeProgress getRecipeProgress(UUID stationId) {
+  public RecipeProgress getRecipeProgress(UUID stationId) {
     return recipeCache.get(stationId,
         k -> storage.getRecipeProgress(stationId.toString()));
   }
@@ -171,14 +168,14 @@ final class StationServiceImpl implements IStationService {
   }
 
   @Override
-  public boolean updateRecipeProgress(StationRecipeProgress progress) {
+  public boolean updateRecipeProgress(RecipeProgress progress) {
     return storage.updateRecipeProgress(progress);
   }
 
   @Override
   public boolean updateRecipeProgress(UUID stationId,
-      Consumer<StationRecipeProgress> progressConsumer) {
-    StationRecipeProgress recipeProgress = this.getRecipeProgress(stationId);
+      Consumer<RecipeProgress> progressConsumer) {
+    RecipeProgress recipeProgress = this.getRecipeProgress(stationId);
     progressConsumer.accept(recipeProgress);
     return storage.updateRecipeProgress(recipeProgress);
   }

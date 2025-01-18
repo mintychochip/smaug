@@ -25,7 +25,7 @@ public interface Ingredient {
   Number getRequired();
 
   @NotNull
-  Component asComponent();
+  Component component();
 
   Ingredient copy(Number amount);
 }

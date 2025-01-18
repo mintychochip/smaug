@@ -1,9 +1,7 @@
 package org.aincraft.container;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientList;

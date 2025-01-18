@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS station_inventory
 
 CREATE TABLE IF NOT EXISTS station_recipe_progress
 (
-    id         TEXT    NOT NULL,
+    id         TEXT    PRIMARY KEY,
     station_id TEXT    NOT NULL,
     recipe_key TEXT    NOT NULL,
     progress   INTEGER NOT NULL,

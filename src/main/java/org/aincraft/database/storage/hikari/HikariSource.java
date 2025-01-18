@@ -9,8 +9,8 @@ import org.aincraft.database.storage.StorageType;
 
 public class HikariSource implements IConnectionSource {
 
-  private StorageType type;
-  private HikariDataSource source;
+  private final StorageType type;
+  private final HikariDataSource source;
   public HikariSource(StorageType type, HikariConfig config) {
     this.type = type;
     this.source = new HikariDataSource(config);

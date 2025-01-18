@@ -5,7 +5,6 @@ import com.google.inject.TypeLiteral;
 import java.util.Map;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.StationHandler;
-import org.bukkit.NamespacedKey;
 
 public class StationModule extends AbstractModule {
 

@@ -1,20 +1,16 @@
 package org.aincraft.container.display;
 
-import java.util.Collection;
-import java.util.UUID;
-import org.aincraft.database.model.Station;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public interface IViewModel {
+public interface IViewModel<M,V> {
 
-  void bind(@NotNull Station station, @NotNull View view);
+  void bind(@NotNull M model, @NotNull V view);
 
-  void update(@NotNull UUID stationId, @NotNull Collection<ItemStack> stacks);
+  void update(@NotNull Object modelKey, @NotNull Object ... data);
 
-  void remove(@NotNull UUID stationId);
+  void remove(@NotNull Object modelKey);
 
   void removeAll();
 
-  boolean isBound(@NotNull UUID stationId);
+  boolean isBound(@NotNull Object modelKey);
 }
