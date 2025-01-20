@@ -1,37 +1,41 @@
 package org.aincraft.api.event;
 
 import org.aincraft.database.model.RecipeProgress;
+import org.aincraft.database.model.StationInventory;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-public final class RecipeProgressUpdateEvent extends Event implements Cancellable {
+abstract class ModelUpdateEvent<T> extends Event implements Cancellable {
 
   private static HandlerList handlers = new HandlerList();
-  private final RecipeProgress progress;
+
+  private final T model;
+
   private final Player player;
+
   private boolean cancelled = false;
 
-  public RecipeProgressUpdateEvent(RecipeProgress progress, Player player) {
-    this.progress = progress;
+  public ModelUpdateEvent(T t, Player player) {
+    this.model = t;
     this.player = player;
   }
 
-  public Player getPlayer() {
+  public Player getViewer() {
     return player;
   }
 
-  public RecipeProgress getProgress() {
-    return progress;
+  public T getModel() {
+    return model;
   }
 
   @Override
   public @NotNull HandlerList getHandlers() {
     return handlers;
   }
-
   public static HandlerList getHandlerList() {
     return handlers;
   }
@@ -44,5 +48,12 @@ public final class RecipeProgressUpdateEvent extends Event implements Cancellabl
   @Override
   public void setCancelled(boolean cancel) {
     this.cancelled = cancel;
+  }
+
+  static final class InventoryUpdateEvent extends ModelUpdateEvent<StationInventory> {
+
+    public InventoryUpdateEvent(StationInventory inventory, Player player) {
+      super(inventory, player);
+    }
   }
 }

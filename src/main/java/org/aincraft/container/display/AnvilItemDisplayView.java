@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 import org.bukkit.entity.Display;
 import org.jetbrains.annotations.NotNull;
 
-public final class StationView implements Iterable<Display> {
+public final class AnvilItemDisplayView implements Iterable<Display> {
 
   private final Collection<Display> displays = new ArrayList<>();
 

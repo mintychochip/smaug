@@ -42,9 +42,6 @@ final class IngredientParser {
         ingredients.addAll(items);
       }
     }
-    if (ingredientSection.contains("experience")) {
-      ingredients.add(ingredientFactory.experience(ingredientSection.getInt("experience")));
-    }
     return ingredients;
   }
 

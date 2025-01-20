@@ -12,7 +12,7 @@ public final class SmaugBootstrap extends JavaPlugin {
 
   private static SmaugBootstrap plugin;
 
-  private static SmaugPlugin smaugPlugin;
+  private static SmaugPluginImpl smaugPlugin;
 
   @Override
   public void onEnable() {
@@ -21,7 +21,7 @@ public final class SmaugBootstrap extends JavaPlugin {
         new PluginModule(super.getLogger(), this, new NamespacedKey(this, "id"), 1,
             Component.text("*")),
         new PluginImplementationModule());
-    smaugPlugin = injector.getInstance(SmaugPlugin.class);
+    smaugPlugin = injector.getInstance(SmaugPluginImpl.class);
     if (smaugPlugin != null) {
       smaugPlugin.enable();
     }

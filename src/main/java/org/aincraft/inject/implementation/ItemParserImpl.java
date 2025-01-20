@@ -56,7 +56,7 @@ final class ItemParserImpl implements IItemParser {
       return null;
     }
     if (section.contains("inherits")) {
-      NamespacedKey key = keyFactory.getKeyFromString(
+      NamespacedKey key = keyFactory.resolveKey(
           section.getString("inherits"), false);
       if (key != null) {
         Optional<IKeyedItem> itemOptional = registry.get(key);
@@ -89,7 +89,7 @@ final class ItemParserImpl implements IItemParser {
         builder.setType(material);
       }
     }
-    NamespacedKey key = keyFactory.getKeyFromString(section.getName(), false);
+    NamespacedKey key = keyFactory.resolveKey(section.getName(), false);
     if (key == null) {
       return null;
     }
@@ -106,7 +106,7 @@ final class ItemParserImpl implements IItemParser {
       if (section.contains("item-model")) {
         String itemModelString = section.getString("item-model");
         if (itemModelString != null) {
-          NamespacedKey itemModelKey = keyFactory.getKeyFromString(itemModelString, true);
+          NamespacedKey itemModelKey = keyFactory.resolveKey(itemModelString, true);
           if (itemModelKey != null) {
             meta.setItemModel(itemModelKey);
           }

@@ -8,17 +8,18 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
+import org.aincraft.api.event.RecipeProgressUpdateEvent;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
-import org.aincraft.container.IRecipeFetcher;
+import org.aincraft.api.event.StationUpdateInventoryEvent;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.StationHandler.Context;
 import org.aincraft.container.StationHandler.IActionContext;
 import org.aincraft.container.StationHandler.IInteractionContext;
-import org.aincraft.container.display.IViewModelController;
-import org.aincraft.container.display.StationView;
+import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.StationInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -61,20 +62,15 @@ public class StationListener implements Listener {
   private final Plugin plugin;
   private final IStationService stationService;
   private final NamespacedKey stationKey;
-  private final IRecipeFetcher recipeFetcher;
-  private final IViewModelController<Station, StationView> controller;
 
   @Inject
   public StationListener(Map<Key, StationHandler> handlers,
       Plugin plugin, IStationService stationService,
-      @Named("station") NamespacedKey stationKey, IRecipeFetcher recipeFetcher,
-      IViewModelController<Station, StationView> controller) {
+      @Named("station") NamespacedKey stationKey) {
     this.handlers = handlers;
     this.plugin = plugin;
     this.stationService = stationService;
     this.stationKey = stationKey;
-    this.recipeFetcher = recipeFetcher;
-    this.controller = controller;
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -155,6 +151,23 @@ public class StationListener implements Listener {
             }
           }.runTask(plugin);
         });
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  private void handleUpdateItemDisplay(final StationUpdateInventoryEvent event) {
+    if(event.isCancelled()) {
+      return;
+    }
+    final StationInventory inventory = event.getInventory();
+    CompletableFuture.runAsync(() -> stationService.updateInventory(inventory));
+  }
+  @EventHandler(priority = EventPriority.MONITOR)
+  private void handleUpdateRecipeProgress(final RecipeProgressUpdateEvent event) {
+    if (event.isCancelled()) {
+      return;
+    }
+    final RecipeProgress progress = event.getProgress();
+    CompletableFuture.runAsync(() -> stationService.updateRecipeProgress(progress));
   }
 
   @EventHandler(priority = EventPriority.MONITOR)

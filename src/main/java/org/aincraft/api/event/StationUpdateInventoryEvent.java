@@ -1,5 +1,6 @@
 package org.aincraft.api.event;
 
+import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -10,11 +11,17 @@ public class StationUpdateInventoryEvent extends Event implements Cancellable {
 
   private static final HandlerList handlers = new HandlerList();
 
+  private final Station station;
   private final StationInventory inventory;
 
   private boolean cancelled = false;
-  public StationUpdateInventoryEvent(StationInventory inventory) {
+  public StationUpdateInventoryEvent(Station station, StationInventory inventory) {
+    this.station = station;
     this.inventory = inventory;
+  }
+
+  public Station getStation() {
+    return station;
   }
 
   public StationInventory getInventory() {

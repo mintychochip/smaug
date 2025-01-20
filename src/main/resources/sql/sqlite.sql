@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS station_recipe_progress
     id         TEXT    PRIMARY KEY,
     station_id TEXT    NOT NULL,
     recipe_key TEXT    NOT NULL,
-    progress   INTEGER NOT NULL,
+    progress   REAL NOT NULL,
     FOREIGN KEY (station_id) REFERENCES stations (id) ON DELETE CASCADE
 );
 

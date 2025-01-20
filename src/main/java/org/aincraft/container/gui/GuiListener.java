@@ -1,11 +1,10 @@
 package org.aincraft.container.gui;
 
-import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
+import org.aincraft.Smaug;
 import org.aincraft.api.event.StationUpdateInventoryEvent;
 import org.aincraft.database.model.StationInventory;
-import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -13,18 +12,8 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 
 public class GuiListener implements Listener {
-
-  private final Plugin plugin;
-  private final IStationService stationService;
-
-  @Inject
-  public GuiListener(Plugin plugin, IStationService stationService) {
-    this.plugin = plugin;
-    this.stationService = stationService;
-  }
 
   @EventHandler
   private void listenToStationGuiMenuClose(final InventoryCloseEvent event) {
@@ -33,7 +22,7 @@ public class GuiListener implements Listener {
     if (!(holder instanceof StationInventoryGui gui)) {
       return;
     }
-    if (!(plugin.equals(gui.getPlugin()))) {
+    if (!(Smaug.getPlugin().equals(gui.getPlugin()))) {
       return;
     }
     final StationInventory stationInventory = gui.getStationInventory();
@@ -46,7 +35,7 @@ public class GuiListener implements Listener {
       return;
     }
     Bukkit.getPluginManager()
-        .callEvent(new StationUpdateInventoryEvent(stationInventory.setItems(inventoryMap)));
+        .callEvent(new StationUpdateInventoryEvent(gui.getStation(),stationInventory.setItems(inventoryMap)));
   }
 
   private static Map<Integer,ItemStack> inventoryToMap(Inventory inventory) {

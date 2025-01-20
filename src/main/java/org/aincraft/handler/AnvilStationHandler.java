@@ -2,34 +2,24 @@ package org.aincraft.handler;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import dev.triumphteam.gui.builder.item.ItemBuilder;
-import dev.triumphteam.gui.components.GuiType;
-import dev.triumphteam.gui.guis.BaseGui;
-import dev.triumphteam.gui.guis.Gui;
-import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.PaginatedGui;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.Tag;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import org.aincraft.Smaug;
 import org.aincraft.api.event.RecipeProgressUpdateEvent;
 import org.aincraft.api.event.StationUpdateInventoryEvent;
-import org.aincraft.container.IRecipeFetcher;
 import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
+import org.aincraft.container.gui.RecipeGui;
 import org.aincraft.container.gui.StationInventoryGui;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
-import org.aincraft.container.item.ItemStackBuilder;
 import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
@@ -37,36 +27,26 @@ import org.aincraft.database.model.StationInventory.ItemAddResult;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 public class AnvilStationHandler implements StationHandler {
 
-  enum InteractionType {
-    RIGHT_CLICK,
-    LEFT_CLICK,
-    RIGHT_SHIFT_CLICK,
-    LEFT_SHIFT_CLICK
-  }
-  private final IRecipeFetcher fetcher;
   private final IStationService service;
-  private final Plugin plugin;
   private final NamespacedKey idKey;
+
+  private static final Key STATION_KEY = Key.key("smaug:anvil");
+
+
   @Inject
-  public AnvilStationHandler(IRecipeFetcher fetcher, IStationService service, Plugin plugin,
+  public AnvilStationHandler(IStationService service,
       @Named("id") NamespacedKey idKey) {
-    this.fetcher = fetcher;
     this.service = service;
-    this.plugin = plugin;
     this.idKey = idKey;
   }
 
@@ -78,6 +58,7 @@ public class AnvilStationHandler implements StationHandler {
     StationInventory inventory =
         service.hasInventory(station.getId()) ? service.getInventory(station.getId())
             : service.createInventory(station.getId(), 5);
+    final RecipeProgress recipeProgress = service.getRecipeProgress(station.getId());
     if (ctx.getAction().isRightClick()) {
       ctx.cancel();
       if (stack != null) {
@@ -85,13 +66,13 @@ public class AnvilStationHandler implements StationHandler {
         });
         if (result.getStatus() == Result.Status.SUCCESS) {
           Bukkit.getPluginManager()
-              .callEvent(new StationUpdateInventoryEvent(result.getInventory()));
+              .callEvent(new StationUpdateInventoryEvent(station, result.getInventory()));
           player.sendMessage(Component.empty().color(
                   NamedTextColor.WHITE).append(Component.text("Deposited:"))
               .append(stack.displayName()));
         }
       } else {
-        StationInventoryGui gui = new StationInventoryGui(plugin, inventory);
+        StationInventoryGui gui = new StationInventoryGui(Smaug.getPlugin(), inventory, station);
         player.openInventory(gui.getInventory());
       }
     } else {
@@ -101,14 +82,13 @@ public class AnvilStationHandler implements StationHandler {
         }
 
         ctx.cancel();
-        List<SmaugRecipe> recipes = fetcher.all(
+        List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(
             recipe -> recipe.getStationKey().equals(station.getStationKey())
-                && recipe.test(player, inventory.getContents()).getStatus()
-                == Status.SUCCESS);
+                && recipe.test(inventory.getContents()).getStatus() == Status.SUCCESS);
         if (recipes.isEmpty()) {
           player.sendMessage("There are not any recipes available");
         }
-        SmaugRecipe selectedRecipe = new RecipeSelector(service, fetcher, plugin).select(station,
+        SmaugRecipe selectedRecipe = new RecipeSelector(Smaug.getStationService()).select(station,
             recipes, player);
         if (selectedRecipe != null) {
 //          if (!inventory.canAddItem(selectedRecipe.craft())) {
@@ -129,20 +109,21 @@ public class AnvilStationHandler implements StationHandler {
     final Player player = ctx.getPlayer();
     final StationInventory stationInventory = service.getInventory(station.getId());
     Map<Integer, ItemStack> stackMap = stationInventory.getMap();
-    if (Status.FAILURE == recipe.test(player, stationInventory.getContents())
+    if (Status.FAILURE == recipe.test(stationInventory.getContents())
         .getStatus()) {
       return;
     }
     final Location location = station.getBlockLocation();
     if (recipe.getActions() > 0) {
       final RecipeProgress recipeProgress = service.getRecipeProgress(station.getId());
-      int progress = recipeProgress.getProgress();
+      float progress = recipeProgress.getProgress();
       if (progress < recipe.getActions()) {
         successfulAction(location);
-        recipeProgress.setProgress(progress + 1);
-        Bukkit.getPluginManager().callEvent(new RecipeProgressUpdateEvent(station,recipeProgress, player));
+        recipeProgress.increment(1);
+        Bukkit.getPluginManager()
+            .callEvent(new RecipeProgressUpdateEvent(recipeProgress,player));
       } else {
-        Map<Integer, ItemStack> removed = recipe.getIngredients().remove(player, stackMap);
+        Map<Integer, ItemStack> removed = recipe.getIngredients().remove(stackMap);
         IKeyedItem item = recipe.getOutput();
         ItemStack reference = item.getReference();
         ItemStack stack = new ItemStack(reference);
@@ -152,7 +133,7 @@ public class AnvilStationHandler implements StationHandler {
             });
         if (result.getStatus() == Status.SUCCESS) {
           Bukkit.getPluginManager()
-              .callEvent(new StationUpdateInventoryEvent(result.getInventory()));
+              .callEvent(new StationUpdateInventoryEvent(station, result.getInventory()));
           service.deleteRecipeProgress(station.getId());
         }
       }
@@ -168,87 +149,115 @@ public class AnvilStationHandler implements StationHandler {
         null);
   }
 
-  private static BaseGui populatePaginatedGui(List<SmaugRecipe> recipes,
-      Consumer<SmaugRecipe> recipeConsumer) {
-    PaginatedGui gui = Gui
-        .paginated()
-        .title(Component.text("test"))
-        .rows(6)
-        .disableAllInteractions()
-        .apply(g -> {
-          if (g.getRows() == 6) {
-            g.setItem(6, 1,
-                ItemBuilder.from(Material.PAPER).setName("Previous")
-                    .asGuiItem(event -> g.previous()));
-            g.setItem(6, 9,
-                ItemBuilder.from(Material.STONE).name(Component.text("Next"))
-                    .asGuiItem(event -> g.next()));
-          }
-        })
-        .create();
-    for (SmaugRecipe recipe : recipes) {
-      ItemStack item = formattedRecipeItem(recipe);
-      gui.addItem(new GuiItem(item, event -> {
-        recipeConsumer.accept(recipe);
-      }));
-    }
-    return gui;
-  }
 
-  private static ItemStack formattedRecipeItem(SmaugRecipe recipe) {
-    IKeyedItem item = recipe.getOutput();
-    ItemStack reference = item.getReference();
-    if (reference.getType().isAir()) {
-      return new ItemStack(Material.STONE);
-    }
-    ItemMeta itemMeta = reference.getItemMeta();
-    assert itemMeta != null;
-    ItemStackBuilder builder = ItemStackBuilder.create(Material.RABBIT_FOOT);
-    builder.setMeta(meta -> {
-      TagResolver resolver = TagResolver.resolver("a", (args, ctx) -> Tag.inserting(
-          itemMeta.hasDisplayName() ? itemMeta.displayName()
-              : Component.text(reference.getType().toString())));
-      meta.setDisplayName(MiniMessage.miniMessage()
-          .deserialize("<italic:false>Recipe: <a>", resolver));
-      List<Component> lore = new ArrayList<>(recipe.getIngredients().components());
-      lore.add(Component.empty());
-      meta.setLore(lore);
-    });
-    ItemStack stack = builder.build();
-    @SuppressWarnings("UnstableApiUsage")
-    Key data = reference.getDataOrDefault(
-        DataComponentTypes.ITEM_MODEL,
-        reference.getType().getKey());
-    stack.setData(DataComponentTypes.ITEM_MODEL, data);
-    return stack;
-  }
+  static final class SubMenu {
 
-//  private static BaseGui subMenu(ItemStack recipeItem) {
-//    Gui gui = Gui.gui(GuiType.HOPPER).disableAllInteractions().create();
-//    gui.addItem(new GuiItem(recipeItem,event -> {
-//      ClickType clickType = event.getClick();
-//      if(clickType.isRightClick()) {
-//
-//      } else {
+    private final IStationService stationService;
+
+    SubMenu(IStationService stationService) {
+      this.stationService = stationService;
+    }
+//    public BaseGui create(Station station) {
+//      Gui gui = Gui.gui(GuiType.DISPENSER).title(Component.text("Menu")).disableAllInteractions()
+//          .create();
+//      RecipeProgress recipeProgress = Smaug.getStationService().getRecipeProgress(station.getId());
+//      if(recipeProgress == null) {
 //
 //      }
-//    }));
+//      GuiItem item = new GuiItem(Material.BOOK, e -> {
+//        Player player = (Player) e.getWhoClicked();
+//        UUID id = station.getId();
+//        if (!stationService.hasInventory(id)) {
+//          return;
+//        }
+//        final StationInventory inventory = stationService.getInventory(id);
+//        final List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(
+//            recipe -> recipe.test(player, inventory.getContents()).getStatus() == Status.SUCCESS
+//                && recipe.getStationKey().equals(STATION_KEY));
+//        if (recipes.isEmpty()) {
+//          player.sendMessage("There aren't any available recipes");
+//          return;
+//        }
+//        BaseGui recipeGui = createRecipeGui(recipes, gui,
+//            (event, r) -> {
+//              final String recipeKey = r.getKey();
+//              RecipeProgress recipeProgress = stationService.getRecipeProgress(id);
+//              if (recipeProgress == null) {
+//                stationService.createRecipeProgress(id, recipeKey);
+//              } else {
+//                if (!recipeKey.equals(recipeProgress.getRecipeKey())) {
+//                  stationService.updateRecipeProgress(id, progress -> {
+//                    progress.setRecipeKey(recipeKey);
+//                    progress.setProgress(0);
+//                  });
+//                }
+//              }
+//              player.closeInventory(Reason.PLUGIN);
+//            });
+//        recipeGui.open(player);
+//      });
+//      gui.addItem(item);
+//      return gui;
+//    }
+//
+//    private static BaseGui createRecipeGui(List<SmaugRecipe> recipes, BaseGui previous,
+//        BiConsumer<InventoryClickEvent, SmaugRecipe> biConsumer) {
+//      final PaginatedGui gui = RecipeGui.create(recipes, biConsumer);
+//      final int rows = gui.getRows();
+//      gui.setItem(rows, 8, new GuiItem(Material.ENDER_PEARL, e -> {
+//        HumanEntity entity = e.getWhoClicked();
+//        previous.open(entity);
+//      }));
+//      return gui;
+//    }
+
+    static final class AnvilMenu {
+
+
+    }
+
+  }
+
+//  //recipe item is the item that holds the gui of the recipe selector
+//  static final class RecipeItem {
+//    private static Key DEFAULT_RECIPE_ITEM_MODEL = Material.MAP.getKey();
+//
+//    private static Component
+//    private static List<Component> RECIPE_ITEM_LORE;
+//    static {
+//      RECIPE_ITEM_LORE =
+//    }
+//    private static GuiItem createRecipeItem(SmaugRecipe recipe) {
+//      final ItemStack reference = recipe.getOutput().getReference();
+//      ItemMeta meta = reference.getItemMeta();
+//      ItemStack stack = new ItemStack(Material.RABBIT_FOOT);
+//      stack.setData(DataComponentTypes.ITEM_NAME,Component.text("Recipe"));
+//      stack.setData(DataComponentTypes.ITEM_MODEL,Material.ANVIL.getKey());
+//      stack.setData(DataComponentTypes.LORE,Material.);
+//      ItemLore.lore()
+//    }
+//
+//    private static List<SmaugRecipe> availableRecipes(Player player, List<ItemStack> contents) {
+//      return Smaug.fetchAllRecipes(
+//          recipe -> recipe.getStationKey().equals(STATION_KEY)
+//              && recipe.test(player, contents).getStatus() == Status.SUCCESS);
+//    }
 //  }
-  private record RecipeSelector(IStationService service, IRecipeFetcher recipeFetcher,
-                                Plugin plugin) {
+
+  private record RecipeSelector(IStationService service) {
 
     public SmaugRecipe select(Station station, List<SmaugRecipe> recipes, Player player) {
       RecipeProgress recipeProgress = service.getRecipeProgress(station.getId());
       if (recipeProgress != null) {
         String recipeKey = recipeProgress.getRecipeKey();
-        return recipeFetcher.fetch(recipeKey);
+        return Smaug.fetchRecipe(recipeKey);
       }
       int size = recipes.size();
       if (size > 1) {
-        BaseGui baseGui = populatePaginatedGui(recipes, recipe -> {
-          service.createRecipeProgress(station.getId(), recipe.getKey());
+        PaginatedGui gui = RecipeGui.create(recipes, Component.text("Recipes"), (e, r) -> {
+          service.createRecipeProgress(station.getId(), r.getKey());
         });
-        baseGui.open(player);
+        gui.open(player);
       }
       if (size == 1) {
         SmaugRecipe recipe = recipes.getFirst();

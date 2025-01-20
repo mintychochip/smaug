@@ -7,9 +7,9 @@ public final class RecipeProgress {
   private final String idString;
   private final String stationId;
   private String recipeKey;
-  private int progress;
+  private float progress;
 
-  public RecipeProgress(String idString, String stationId, String recipeKey, int progress) {
+  public RecipeProgress(String idString, String stationId, String recipeKey, float progress) {
     this.idString = idString;
     this.stationId = stationId;
     this.recipeKey = recipeKey;
@@ -20,11 +20,11 @@ public final class RecipeProgress {
     this.recipeKey = recipeKey;
   }
 
-  public void setProgress(int progress) {
+  public void setProgress(float progress) {
     this.progress = progress;
   }
 
-  public int getProgress() {
+  public float getProgress() {
     return progress;
   }
 
@@ -38,5 +38,9 @@ public final class RecipeProgress {
 
   public String getRecipeKey() {
     return recipeKey;
+  }
+
+  public void increment(int i) {
+    this.progress += i;
   }
 }

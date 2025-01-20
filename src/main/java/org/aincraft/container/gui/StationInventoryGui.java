@@ -2,6 +2,7 @@ package org.aincraft.container.gui;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.Inventory;
@@ -14,10 +15,15 @@ public class StationInventoryGui implements InventoryHolder {
 
   private final Plugin plugin;
   private final StationInventory stationInventory;
-
-  public StationInventoryGui(Plugin plugin, StationInventory inventory) {
+  private final Station station;
+  public StationInventoryGui(Plugin plugin, StationInventory inventory, Station station) {
     this.plugin = plugin;
     this.stationInventory = inventory;
+    this.station = station;
+  }
+
+  public Station getStation() {
+    return station;
   }
 
   public Plugin getPlugin() {

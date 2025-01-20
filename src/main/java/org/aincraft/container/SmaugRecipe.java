@@ -1,13 +1,12 @@
 package org.aincraft.container;
 
-import java.util.Arrays;
+import io.papermc.paper.datacomponent.item.ItemLore;
 import java.util.List;
+import net.kyori.adventure.key.Key;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.container.item.IKeyedItem;
-import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,13 +43,13 @@ public final class SmaugRecipe {
   private final int amount;
   private final IngredientList ingredientList;
   private final String recipeKey;
-  private final NamespacedKey stationKey;
+  private final Key stationKey;
   private final @Nullable String permission;
-  private final int actions;
+  private final float actions;
 
   public SmaugRecipe(IKeyedItem output, int amount, IngredientList ingredientList,
-      String recipeKey, NamespacedKey stationKey,
-      @Nullable String permission, int actions) {
+      String recipeKey, Key stationKey,
+      @Nullable String permission, float actions) {
     this.output = output;
     this.amount = amount;
     this.ingredientList = ingredientList;
@@ -67,19 +66,12 @@ public final class SmaugRecipe {
     return stack;
   }
 
-  public RecipeResult test(Player player, ItemStack... stacks) {
-    return test(player, Arrays.asList(stacks));
-  }
-
-  public RecipeResult test(Player player,
+  public RecipeResult test(
       List<ItemStack> stacks) {
-    if (permission != null && !player.hasPermission(permission)) {
-      return new RecipeResult(Status.FAILURE, null, "permission failure");
-    }
     for (Ingredient ingredient : ingredientList) {
-      if (!ingredient.test(player, stacks)) {
+      if (!ingredient.test(stacks)) {
         return new RecipeResult(Status.FAILURE,
-            ingredientList.missing(player, stacks),
+            ingredientList.findMissing(stacks),
             "missing ingredients");
       }
     }
@@ -90,7 +82,7 @@ public final class SmaugRecipe {
     return recipeKey;
   }
 
-  public int getActions() {
+  public float getActions() {
     return actions;
   }
 
@@ -98,12 +90,17 @@ public final class SmaugRecipe {
     return permission;
   }
 
-  public NamespacedKey getStationKey() {
+  public Key getStationKey() {
     return stationKey;
   }
 
   public IngredientList getIngredients() {
     return ingredientList;
+  }
+
+  @SuppressWarnings("UnstableApiUsage")
+  public ItemLore lore() {
+    return ItemLore.lore(ingredientList.components());
   }
 
   public IKeyedItem getOutput() {

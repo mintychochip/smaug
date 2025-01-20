@@ -20,7 +20,7 @@ final class KeyFactoryImpl implements IKeyFactory {
 
   @Override
   @Nullable
-  public NamespacedKey getKeyFromString(String keyString, boolean minecraft) {
+  public NamespacedKey resolveKey(String keyString, boolean minecraft) {
     if (keyString == null) {
       return null;
     }

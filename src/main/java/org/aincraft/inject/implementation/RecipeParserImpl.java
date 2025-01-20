@@ -10,7 +10,6 @@ import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.inject.IKeyFactory;
-import org.aincraft.inject.IRecipeParser;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.Nullable;
@@ -50,9 +49,9 @@ final class RecipeParserImpl implements IRecipeParser {
       return null;
     }
     String typeString = section.getString("type");
-    NamespacedKey stationKey = keyFactory.getKeyFromString(typeString, false);
+    NamespacedKey stationKey = keyFactory.resolveKey(typeString, false);
     String permissionString = section.getString("permission", null);
-    int actions = section.getInt("actions", 1);
+    float actions = (float) section.getDouble("actions", 1);
     return new SmaugRecipe(output, amount,
         new IngredientList(ingredients),
         section.getName(),

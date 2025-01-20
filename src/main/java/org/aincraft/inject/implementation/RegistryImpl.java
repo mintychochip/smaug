@@ -54,7 +54,7 @@ class RegistryImpl<T extends Keyed> implements IRegistry<T> {
 
     @Override
     public @Nullable IKeyedItem resolve(String key, boolean minecraft) {
-      NamespacedKey namespacedKey = keyFactory.getKeyFromString(key, minecraft);
+      NamespacedKey namespacedKey = keyFactory.resolveKey(key, minecraft);
       return resolve(namespacedKey, minecraft);
     }
 

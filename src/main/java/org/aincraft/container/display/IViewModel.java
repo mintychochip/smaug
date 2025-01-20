@@ -6,7 +6,7 @@ public interface IViewModel<M,V> {
 
   void bind(@NotNull M model, @NotNull V view);
 
-  void update(@NotNull Object modelKey, @NotNull Object ... data);
+  void update(@NotNull M model, @NotNull Object ... data);
 
   void remove(@NotNull Object modelKey);
 

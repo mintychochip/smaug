@@ -11,12 +11,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModel;
-import org.aincraft.container.display.StationView;
 import org.aincraft.database.model.Station;
 import org.aincraft.util.Mt;
 import org.aincraft.util.Util;
@@ -33,7 +29,7 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-final class AnvilViewModel implements IViewModel<Station, StationView> {
+final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> {
 
   private final Map<UUID, ViewBinding> bindings = new HashMap<>();
 
@@ -122,16 +118,10 @@ final class AnvilViewModel implements IViewModel<Station, StationView> {
 
   static final class ViewBinding {
 
-    private final Station model;
     private Collection<Display> displays;
 
-    ViewBinding(Station model, Collection<Display> displays) {
-      this.model = model;
+    ViewBinding(Collection<Display> displays) {
       this.displays = displays;
-    }
-
-    public Station getModel() {
-      return model;
     }
 
     public void setDisplays(Collection<Display> displays) {
@@ -144,23 +134,21 @@ final class AnvilViewModel implements IViewModel<Station, StationView> {
   }
 
   @Override
-  public void bind(@NotNull Station station, @NotNull StationView view) {
+  public void bind(@NotNull Station station, @NotNull AnvilItemDisplayView view) {
     Preconditions.checkArgument(station != null);
     Preconditions.checkArgument(view != null);
-    bindings.put(station.getId(), new ViewBinding(station, view.getDisplays()));
+    bindings.put(station.getId(), new ViewBinding(view.getDisplays()));
   }
 
   @Override
-  public void update(@NotNull Object modelKey, @NotNull Object... data) {
-    Preconditions.checkArgument(modelKey != null && modelKey instanceof UUID);
+  public void update(@NotNull Station model, @NotNull Object... data) {
     Preconditions.checkArgument(data.length == 1);
     Object datum = data[0];
     Preconditions.checkArgument(datum != null && datum instanceof Collection<?>);
-    if (!bindings.containsKey(modelKey)) {
+    if (!bindings.containsKey(model.getId())) {
       return;
     }
-    ViewBinding binding = bindings.get(modelKey);
-    Station station = binding.getModel();
+    ViewBinding binding = bindings.get(model.getId());
     @SuppressWarnings("unchecked")
     Collection<ItemStack> stacks = (Collection<ItemStack>) datum;
     Map<ItemStack, Float> scaledStacks = createScaledStacks(stacks);
@@ -168,14 +156,14 @@ final class AnvilViewModel implements IViewModel<Station, StationView> {
     List<Display> displays = new ArrayList<>();
     scaledStacks.forEach((key, value) -> DisplayStrategySelector.select(key, ITEM_MODEL_IS_ITEM)
         .createWrappers(key,
-            randomLocation(station.getBoundingBox(4 * 0.0625f, 4 * 0.0625f), station.getWorld()),
+            randomLocation(model.getBoundingBox(4 * 0.0625f, 4 * 0.0625f), model.getWorld()),
             value)
         .forEach(wrapper -> displays.add(wrapper.delegate())));
-    World world = station.getWorld();
+    World world = model.getWorld();
     binding.getDisplays().forEach(Entity::remove);
     binding.setDisplays(displays);
     displays.forEach(world::addEntity);
-    bindings.put((UUID) modelKey, binding);
+    bindings.put(model.getId(), binding);
   }
 
   @Override

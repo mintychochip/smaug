@@ -6,6 +6,8 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import java.util.logging.Logger;
 import net.kyori.adventure.text.Component;
+import org.aincraft.ISmaugPlugin;
+import org.aincraft.SmaugPluginImpl;
 import org.aincraft.config.ConfigurationFactory;
 import org.aincraft.config.PluginConfiguration;
 import org.bukkit.NamespacedKey;
@@ -34,6 +36,7 @@ public class PluginModule extends AbstractModule {
     bind(Logger.class).annotatedWith(Names.named("logger")).toInstance(logger);
     bind(NamespacedKey.class).annotatedWith(Names.named("id")).toInstance(identifierKey);
     bind(Component.class).toInstance(itemizedListMarker);
+    bind(ISmaugPlugin.class).to(SmaugPluginImpl.class);
     ConfigurationFactory factory = new ConfigurationFactory(plugin);
     bind(PluginConfiguration.class)
         .toInstance(factory.create("config.yml"));

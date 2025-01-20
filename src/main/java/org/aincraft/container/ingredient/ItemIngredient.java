@@ -14,7 +14,6 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -44,20 +43,20 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
-  public boolean test(Player player, List<ItemStack> stacks) {
+  public boolean test(List<ItemStack> stacks) {
     Preconditions.checkArgument(stacks != null);
-    return this.getCurrentAmount(player, stacks).doubleValue() >= this.getRequired()
+    return this.getCurrentAmount(stacks).doubleValue() >= this.getRequired()
         .doubleValue();
   }
 
   @Override
-  public void add(Player player, Inventory inventory) {
+  public void add(Inventory inventory) {
 
   }
 
   @Override
-  @Contract(value = "_,null->fail", pure = true)
-  public void remove(Player player, List<ItemStack> contents) {
+  @Contract(value = "null->fail", pure = true)
+  public void remove(List<ItemStack> contents) {
     Preconditions.checkArgument(contents != null);
     int current = getRequired().intValue();
     Iterator<ItemStack> iter = contents.iterator();
@@ -77,8 +76,8 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
-  @Contract(value = "_,null->fail", pure = true)
-  public Map<Integer, ItemStack> remove(Player player, Map<Integer, ItemStack> stackMap) {
+  @Contract(value = "null->fail", pure = true)
+  public Map<Integer, ItemStack> remove(Map<Integer, ItemStack> stackMap) {
     Preconditions.checkArgument(stackMap != null);
     int current = getRequired().intValue();
     Map<Integer, ItemStack> newStackMap = new HashMap<>();
@@ -107,7 +106,7 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
-  public Number getCurrentAmount(Player player, List<ItemStack> stacks) {
+  public Number getCurrentAmount(List<ItemStack> stacks) {
     Preconditions.checkArgument(stacks != null);
     int amount = 0;
     for (ItemStack content : stacks) {
@@ -141,8 +140,10 @@ public final class ItemIngredient implements Ingredient {
             : reference.getDataOrDefault(DataComponentTypes.ITEM_NAME,
                 Component.text(reference.getType().toString())).color(NamedTextColor.GRAY);
     assert displayName != null;
-    return MiniMessage.miniMessage().deserialize("<dark_gray><a> x <b>", Placeholder.component("a",displayName),Placeholder.component("b",
-        Component.text(amount).color(NamedTextColor.GRAY)));
+    return MiniMessage.miniMessage()
+        .deserialize("<dark_gray><a> x <b>", Placeholder.component("a", displayName),
+            Placeholder.component("b",
+                Component.text(amount).color(NamedTextColor.GRAY)));
   }
 
   @Override

@@ -11,15 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationUpdateInventoryEvent;
+import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModelController;
-import org.aincraft.container.display.StationView;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationInventory;
 import org.aincraft.listener.IStationService;
@@ -28,13 +26,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
-final class ItemDisplayControllerImpl implements IViewModelController<Station, StationView> {
+final class ItemDisplayControllerImpl implements IViewModelController<Station, AnvilItemDisplayView> {
 
-  private final Map<Key, IViewModel<Station, StationView>> viewModels;
+  private final Map<Key, IViewModel<Station, AnvilItemDisplayView>> viewModels;
   private final IStationService stationService;
   private final Plugin plugin;
   private static int MAX_DISPLAY = 3;
@@ -64,7 +61,7 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, S
     return modelWeights;
   }
 
-  public ItemDisplayControllerImpl(Map<Key, IViewModel<Station, StationView>> viewModels,
+  public ItemDisplayControllerImpl(Map<Key, IViewModel<Station, AnvilItemDisplayView>> viewModels,
       IStationService stationService, Plugin plugin) {
     this.viewModels = viewModels;
     this.stationService = stationService;
@@ -72,7 +69,8 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, S
   }
 
   @Override
-  public void register(@NotNull Key stationKey, @NotNull IViewModel<Station, StationView> viewModel) {
+  public void register(@NotNull Key stationKey,
+      @NotNull IViewModel<Station, AnvilItemDisplayView> viewModel) {
     viewModels.put(stationKey, viewModel);
   }
 
@@ -83,73 +81,18 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, S
   }
 
   @Override
-  public IViewModel<Station, StationView> get(@NotNull Key stationKey) {
+  public IViewModel<Station, AnvilItemDisplayView> get(@NotNull Key stationKey) {
     return viewModels.get(stationKey);
   }
 
-  @Override
-  public Collection<IViewModel<Station, StationView>> getAll() {
-    return viewModels.values();
-  }
-
-  @Override
-  public void update(Object modelKey, Object ... args) {
-    Preconditions.checkArgument(modelKey instanceof UUID);
-    Station station = stationService.getStation((UUID) modelKey);
-    StationInventory inventory = stationService.getInventory((UUID) modelKey);
-    if (station == null || inventory == null) {
-      return;
-    }
+  private void update(Station model, StationInventory inventory) {
     List<ItemStack> stacks = inventory.getContents();
-    update(station, stacks, viewModels.get(station.getStationKey()));
-  }
-
-  @NotNull
-  @Override
-  public Iterator<IViewModel<Station, StationView>> iterator() {
-    return viewModels.values().iterator();
-  }
-
-  @EventHandler(priority = EventPriority.MONITOR)
-  private void handleInventoryUpdate(final StationUpdateInventoryEvent event) {
-    if (event.isCancelled()) {
-      return;
+    final IViewModel<Station, AnvilItemDisplayView> viewModel = viewModels.get(model.getStationKey());
+    if(!viewModel.isBound(model.getId())) {
+      viewModel.bind(model,new AnvilItemDisplayView());
     }
-    final StationInventory inventory = event.getInventory();
-    if (inventory == null) {
-      return;
-    }
-    CompletableFuture.supplyAsync(() -> stationService.updateInventory(inventory)).thenAcceptAsync(b -> {
-      new BukkitRunnable() {
-        @Override
-        public void run() {
-          update(inventory.getStationId());
-        }
-      }.runTask(plugin);
-    });
-    //TODO: remove update inventory from viewmodel controller
-  }
-
-  @EventHandler(priority = EventPriority.MONITOR)
-  private void handleStationRemove(final StationRemoveEvent event) {
-    if (event.isCancelled()) {
-      return;
-    }
-    Station station = event.getStation();
-    IViewModel<Station, StationView> viewModel = this.get(station.getStationKey());
-    if (viewModel == null) {
-      return;
-    }
-    viewModel.remove(station.getId());
-  }
-
-  private static void update(Station station, List<ItemStack> stacks,
-      IViewModel<Station, StationView> viewModel) {
-    if (!viewModel.isBound(station.getId())) {
-      viewModel.bind(station, new StationView());
-    }
-    if (stacks.isEmpty()) {
-      viewModel.remove(station.getId());
+    if(stacks.isEmpty()) {
+      viewModel.remove(model.getId());
       return;
     }
     Map<ItemStack, Number> weightedItems = createWeightedItems(stacks);
@@ -157,7 +100,41 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, S
       return;
     }
     Set<ItemStack> items = selectWeightedItems(weightedItems);
-    viewModel.update(station.getId(), items);
+    viewModel.update(model, items);
+  }
+
+  @Override
+  public Collection<IViewModel<Station, AnvilItemDisplayView>> getAll() {
+    return viewModels.values();
+  }
+
+  @NotNull
+  @Override
+  public Iterator<IViewModel<Station, AnvilItemDisplayView>> iterator() {
+    return viewModels.values().iterator();
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  private void handleUpdateItemDisplay(final StationUpdateInventoryEvent event) {
+    if (event.isCancelled()) {
+      return;
+    }
+    final StationInventory inventory = event.getInventory();
+    final Station station = event.getStation();
+    this.update(station, inventory);
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  private void handleRemoveItemDisplay(final StationRemoveEvent event) {
+    if (event.isCancelled()) {
+      return;
+    }
+    Station station = event.getStation();
+    IViewModel<Station, AnvilItemDisplayView> viewModel = this.get(station.getStationKey());
+    if (viewModel == null) {
+      return;
+    }
+    viewModel.remove(station.getId());
   }
 
   @NotNull

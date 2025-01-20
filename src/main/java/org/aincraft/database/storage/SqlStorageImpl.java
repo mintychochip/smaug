@@ -233,7 +233,7 @@ public class SqlStorageImpl implements IStorage {
       try {
         String id = scanner.getString("id");
         String recipeKey = scanner.getString("recipe_key");
-        int progress = scanner.getInt("progress");
+        float progress = scanner.getFloat("progress");
         return new RecipeProgress(id, stationId, recipeKey, progress);
       } catch (SQLException err) {
         throw new RuntimeException(err);

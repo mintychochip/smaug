@@ -5,7 +5,6 @@ import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.IKeyedItemFactory;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class IngredientFactory {
@@ -30,10 +29,5 @@ public final class IngredientFactory {
       return null;
     }
     return item(keyedItemFactory.create(itemStack, key), itemStack.getAmount());
-  }
-
-  @NotNull
-  public Ingredient experience(int amount) {
-    return new ExperienceIngredient(amount);
   }
 }

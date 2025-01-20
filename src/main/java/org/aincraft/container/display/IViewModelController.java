@@ -13,7 +13,5 @@ public interface IViewModelController<M, V> extends Iterable<IViewModel<M, V>>, 
 
   IViewModel<M, V> get(@NotNull Key stationKey);
 
-  void update(Object modelKey, Object ... args);
-
   Collection<IViewModel<M, V>> getAll();
 }

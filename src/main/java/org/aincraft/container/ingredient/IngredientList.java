@@ -8,10 +8,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,10 +22,10 @@ public final class IngredientList implements Iterable<Ingredient> {
         .toList();
   }
 
-  public Map<Integer, ItemStack> remove(Player player, Map<Integer, ItemStack> stackMap) {
+  public Map<Integer, ItemStack> remove(Map<Integer, ItemStack> stackMap) {
     Map<Integer, ItemStack> removed = new HashMap<>(stackMap);
     for (Ingredient i : ingredients) {
-      removed = i.remove(player, removed);
+      removed = i.remove(removed);
     }
     return removed;
   }
@@ -57,13 +54,13 @@ public final class IngredientList implements Iterable<Ingredient> {
     return ingredients.stream();
   }
 
-  public IngredientList missing(Player player,
+  public IngredientList findMissing(
       List<ItemStack> stacks) {
     List<Ingredient> missing = new ArrayList<>();
     for (Ingredient ingredient : this.ingredients) {
-      if (!ingredient.test(player, stacks)) {
+      if (!ingredient.test(stacks)) {
         double amount =
-            ingredient.getRequired().doubleValue() - ingredient.getCurrentAmount(player, stacks)
+            ingredient.getRequired().doubleValue() - ingredient.getCurrentAmount(stacks)
                 .doubleValue();
         missing.add(ingredient.copy(amount));
       }

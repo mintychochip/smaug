@@ -2,25 +2,46 @@ package org.aincraft;
 
 import java.util.List;
 import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
 import org.aincraft.container.SmaugRecipe;
-import org.bukkit.NamespacedKey;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.aincraft.listener.IStationService;
+import org.bukkit.plugin.Plugin;
 
-public interface Smaug {
+public final class Smaug {
 
-  @Nullable
-  SmaugRecipe fetch(String recipeKey);
+  private static ISmaugPlugin smaug;
 
-  @NotNull
-  List<SmaugRecipe> all(@NotNull Predicate<SmaugRecipe> recipePredicate);
-
-  default List<SmaugRecipe> all(NamespacedKey stationKey) {
-    return all(recipe -> recipe.getStationKey().equals(stationKey));
+  static void setSmaug(ISmaugPlugin smaug) {
+    if (smaug != null) {
+      Smaug.smaug = smaug;
+    }
   }
 
-  default List<SmaugRecipe> all() {
-    return all(recipe -> true);
+  public static SmaugRecipe fetchRecipe(String recipeKey) {
+    return smaug.getRecipeFetcher().fetch(recipeKey);
   }
 
+  public static List<SmaugRecipe> fetchAllRecipes(Predicate<SmaugRecipe> recipePredicate) {
+    return smaug.getRecipeFetcher().all(recipePredicate);
+  }
+
+  public static List<SmaugRecipe> fetchAllRecipes(Key stationKey) {
+    return fetchAllRecipes(recipe -> recipe.getStationKey().equals(stationKey));
+  }
+
+  public static Key resolveKey(String keyString, boolean minecraft) {
+    return smaug.getKeyFactory().resolveKey(keyString, minecraft);
+  }
+
+  public static Key resolveKey(String keyString) {
+    return resolveKey(keyString, false);
+  }
+
+  public static Plugin getPlugin() {
+    return smaug.getPlugin();
+  }
+
+  public static IStationService getStationService() {
+    return smaug.getStationService();
+  }
 }
