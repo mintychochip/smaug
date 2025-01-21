@@ -8,18 +8,17 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
-import org.aincraft.api.event.RecipeProgressUpdateEvent;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
-import org.aincraft.api.event.StationUpdateInventoryEvent;
+import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.StationHandler.Context;
 import org.aincraft.container.StationHandler.IActionContext;
 import org.aincraft.container.StationHandler.IInteractionContext;
-import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationInventory;
+import org.aincraft.database.model.Station.StationInventory;
+import org.aincraft.database.model.Station.StationMeta;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -135,39 +134,29 @@ public class StationListener implements Listener {
       return;
     }
     final Station station = event.getStation();
-    final World world = station.getWorld();
-    CompletableFuture.supplyAsync(() -> stationService.getInventory(station.getId()))
-        .thenAcceptAsync(inventory -> {
-          final Location location = station.getLocation();
-          new BukkitRunnable() {
-            @Override
-            public void run() {
-              List<ItemStack> contents = inventory.getContents();
-              for (ItemStack content : contents) {
-                if (content != null) {
-                  world.dropItemNaturally(location, content);
-                }
-              }
-            }
-          }.runTask(plugin);
-        });
+    final World world = station.world();
+    StationMeta meta = station.getMeta();
+    StationInventory stationInventory = meta.getInventory();
+    final Location location = station.centerLocation();
+    new BukkitRunnable() {
+      @Override
+      public void run() {
+        List<ItemStack> contents = stationInventory.getContents();
+        for (ItemStack content : contents) {
+          if (content != null) {
+            world.dropItemNaturally(location, content);
+          }
+        }
+      }
+    }.runTask(plugin);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
-  private void handleUpdateItemDisplay(final StationUpdateInventoryEvent event) {
-    if(event.isCancelled()) {
-      return;
-    }
-    final StationInventory inventory = event.getInventory();
-    CompletableFuture.runAsync(() -> stationService.updateInventory(inventory));
-  }
-  @EventHandler(priority = EventPriority.MONITOR)
-  private void handleUpdateRecipeProgress(final RecipeProgressUpdateEvent event) {
+  private void handleUpdateItemDisplay(final StationUpdateEvent event) {
     if (event.isCancelled()) {
       return;
     }
-    final RecipeProgress progress = event.getProgress();
-    CompletableFuture.runAsync(() -> stationService.updateRecipeProgress(progress));
+    CompletableFuture.runAsync(() -> stationService.updateStation(event.getModel()));
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -183,7 +172,7 @@ public class StationListener implements Listener {
     if (station == null) {
       return;
     }
-    StationHandler handler = handlers.get(station.getStationKey());
+    StationHandler handler = handlers.get(station.stationKey());
     if (handler == null) {
       return;
     }

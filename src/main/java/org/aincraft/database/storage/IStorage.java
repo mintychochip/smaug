@@ -1,9 +1,7 @@
 package org.aincraft.database.storage;
 
 import java.util.List;
-import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationInventory;
 import org.aincraft.database.model.StationUser;
 
 public interface IStorage {
@@ -11,7 +9,7 @@ public interface IStorage {
   //  // Table-related methods
   List<Station> getAllStations();
 
-  List<StationInventory> getAllInventories();
+  void updateStation(Station model);
 
   Station createStation(String stationKey, String worldName, int x, int y, int z);
 
@@ -21,8 +19,6 @@ public interface IStorage {
 
   Station getStation(String stationId);
 
-  boolean hasStation(String worldName, int x, int y, int z);
-
   boolean hasStationUser(String playerId);
 
   StationUser createStationUser(String playerId, String playerName);
@@ -30,32 +26,6 @@ public interface IStorage {
   StationUser getStationUser(String playerId);
 
   boolean updateStationUser(StationUser user);
-
-  RecipeProgress createRecipeProgress(String stationId, String recipeKey);
-
-  RecipeProgress getRecipeProgress(String stationId);
-
-  void deleteRecipeProgress(String stationId);
-
-  boolean hasRecipeProgress(String stationId);
-
-  boolean updateRecipeProgress(RecipeProgress progress);
-
-  StationInventory createInventory(String stationId, int inventoryLimit);
-
-  StationInventory getInventory(String stationId);
-
-  boolean hasInventory(String stationId);
-
-  boolean updateInventory(StationInventory inventory);
-//
-//  StationUserPermission createUserPermission(String stationId, String playerId, int permission);
-//
-//  StationUserPermission getUserPermission(String stationId, String playerId);
-//
-//  boolean updateUserPermission(StationUserPermission permission);
-//
-//  void deleteUserPermission(String stationId, String playerId);
 
   void close();
 }

@@ -9,9 +9,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationInventory;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.listener.IStationService;
@@ -30,8 +28,6 @@ final class StationServiceImpl implements IStationService {
   private final Cache<UUID, Station> station2Cache;
   private final Cache<Location, Station> stationCache;
   private final Cache<Player, StationUser> userCache;
-  private final Cache<UUID, RecipeProgress> recipeCache;
-  private final Cache<UUID, StationInventory> inventoryCache;
 
   private static <K, V> Cache<K, V> createCache() {
     return Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(1)).build();
@@ -44,27 +40,23 @@ final class StationServiceImpl implements IStationService {
     station2Cache = createCache();
     stationCache = createCache();
     userCache = createCache();
-    recipeCache = createCache();
-    inventoryCache = createCache();
   }
 
   @Override
   public List<Station> getAllStations() {
     List<Station> stations = storage.getAllStations();
     for (Station station : stations) {
-     station2Cache.put(station.getId(),station);
-     stationCache.put(station.getBlockLocation(),station);
+      station2Cache.put(station.id(), station);
+      stationCache.put(station.blockLocation(), station);
     }
     return stations;
   }
 
   @Override
-  public List<StationInventory> getAllInventories() {
-    List<StationInventory> inventories = storage.getAllInventories();
-    for(StationInventory inventory : inventories) {
-      inventoryCache.put(inventory.getStationId(),inventory);
-    }
-    return inventories;
+  public void updateStation(Station station) {
+    stationCache.put(station.blockLocation(), station);
+    station2Cache.put(station.id(), station);
+    storage.updateStation(station);
   }
 
   @Override
@@ -141,135 +133,4 @@ final class StationServiceImpl implements IStationService {
     }
     return storage.updateStationUser(user);
   }
-
-  @Override
-  public RecipeProgress createRecipeProgress(UUID stationId, String recipeKey) {
-    RecipeProgress recipeProgress = storage.createRecipeProgress(stationId.toString(),
-        recipeKey);
-    recipeCache.put(stationId, recipeProgress);
-    return recipeProgress;
-  }
-
-  @Override
-  public RecipeProgress getRecipeProgress(UUID stationId) {
-    return recipeCache.get(stationId,
-        k -> storage.getRecipeProgress(stationId.toString()));
-  }
-
-  @Override
-  public void deleteRecipeProgress(UUID stationId) {
-    storage.deleteRecipeProgress(stationId.toString());
-    recipeCache.invalidate(stationId);
-  }
-
-  @Override
-  public boolean hasRecipeProgress(UUID stationId) {
-    return this.getRecipeProgress(stationId) != null;
-  }
-
-  @Override
-  public boolean updateRecipeProgress(RecipeProgress progress) {
-    return storage.updateRecipeProgress(progress);
-  }
-
-  @Override
-  public boolean updateRecipeProgress(UUID stationId,
-      Consumer<RecipeProgress> progressConsumer) {
-    RecipeProgress recipeProgress = this.getRecipeProgress(stationId);
-    progressConsumer.accept(recipeProgress);
-    return storage.updateRecipeProgress(recipeProgress);
-  }
-
-  @Override
-  public StationInventory createInventory(UUID stationId, int inventoryLimit) {
-    StationInventory inventory = storage.createInventory(stationId.toString(), inventoryLimit);
-    inventoryCache.put(stationId, inventory);
-    return inventory;
-  }
-
-  @Override
-  public StationInventory getInventory(UUID stationId) {
-    return inventoryCache.get(stationId, k -> storage.getInventory(k.toString()));
-  }
-
-  @Override
-  public boolean hasInventory(UUID stationId) {
-    if (inventoryCache.getIfPresent(stationId) != null) {
-      return true;
-    }
-    return storage.hasInventory(stationId.toString());
-  }
-
-  @Override
-  public boolean updateInventory(StationInventory inventory) {
-    boolean b = storage.updateInventory(inventory);
-    if(b) {
-      inventoryCache.put(inventory.getStationId(), inventory);
-    }
-    return b;
-  }
-
-  @Override
-  public void updateInventoryAsync(StationInventory inventory, Consumer<Boolean> callback) {
-    CompletableFuture.supplyAsync(() -> this.updateInventory(inventory))
-        .thenAcceptAsync(callback);
-  }
-
-  @Override
-  public boolean updateInventory(UUID stationId, Consumer<StationInventory> inventoryConsumer) {
-    StationInventory inventory = this.getInventory(stationId);
-    inventoryConsumer.accept(inventory);
-    return this.updateInventory(inventory);
-  }
-//
-//  public void createStation(String stationKey, Location location,
-//      @Nullable Player player) {
-//    CompletableFuture.supplyAsync(() -> storage.hasStation(location))
-//        .thenAcceptAsync(exists -> {
-//          if (exists) {
-//            return;
-//          }
-//          CompletableFuture.supplyAsync(() -> storage.createStation(stationKey, location))
-//              .thenAccept(station -> {
-//                if (station != null) {
-//                  new BukkitRunnable() {
-//                    @Override
-//                    public void run() {
-//                      stationCache.put(location, station);
-//                      Bukkit.getPluginManager()
-//                          .callEvent(new StationCreatedEvent(station, player));
-//                    }
-//                  }.runTask(plugin);
-//                }
-//              });
-//        });
-//  }
-//
-//  public void deleteStation(Location location, @Nullable Player player,
-//      RemovalCause removalCause) {
-//    CompletableFuture.supplyAsync(() -> storage.getStation(location)).thenAcceptAsync(station -> {
-//      if (station == null) {
-//        return;
-//      }
-//      new BukkitRunnable() {
-//        @Override
-//        public void run() {
-//          Bukkit.getPluginManager()
-//              .callEvent(new StationBeforeRemoveEvent(station, player, removalCause));
-//          CompletableFuture.runAsync(() -> {
-//            storage.deleteStation(location);
-//            stationCache.invalidate(location);
-//            new BukkitRunnable() {
-//              @Override
-//              public void run() {
-//                Bukkit.getPluginManager()
-//                    .callEvent(new StationAfterRemoveEvent(station, player, removalCause));
-//              }
-//            }.runTask(plugin);
-//          });
-//        }
-//      }.runTask(plugin);
-//    });
-//  }
-
 }

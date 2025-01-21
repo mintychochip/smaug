@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationInventory;
+import org.aincraft.database.model.Station.StationInventory;
+import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.inject.implementation.ResourceExtractor;
 
@@ -30,16 +30,14 @@ public class SqlStorageImpl implements IStorage {
 
   private static final String DELETE_STATION = "DELETE FROM stations WHERE world_name=? AND x=? AND y=? AND z=?";
 
-  private static final String HAS_STATION = "SELECT EXISTS (SELECT 1 FROM stations WHERE world_name=? AND x=? AND y=? AND z=?)";
+  private static final String CREATE_STATION = "INSERT INTO stations (id,station_key,world_name,x,y,z, inventory, recipe_key, progress) VALUES (?,?,?,?,?,?,?,?,?)";
 
-  private static final String CREATE_STATION = "INSERT INTO stations (id,station_key,world_name,x,y,z) VALUES (?,?,?,?,?,?)";
+  private static final String GET_STATION_BY_LOCATION = "SELECT id,station_key,inventory,recipe_key,progress FROM stations WHERE world_name=? AND x=? AND y=? AND z=?";
 
-  private static final String GET_STATION_BY_LOCATION = "SELECT id,station_key FROM stations WHERE world_name=? AND x=? AND y=? AND z=?";
+  private static final String GET_STATION_BY_ID = "SELECT station_key,world_name,x,y,z,inventory,recipe_key,progress FROM stations WHERE id=?";
 
-  private static final String GET_STATION_BY_ID = "SELECT station_key,world_name,x,y,z FROM stations WHERE id=?";
-
+  private static final String UPDATE_STATION = "UPDATE stations SET recipe_key=?, progress=?,inventory=? WHERE id=?";
   private static final String GET_ALL_STATIONS = "SELECT * FROM stations";
-  private static final String GET_ALL_STATION_INVENTORIES = "SELECT * FROM station_inventory";
 
   private static final String HAS_STATION_USER = "SELECT EXISTS (SELECT 1 FROM station_user WHERE id=?)";
 
@@ -48,24 +46,6 @@ public class SqlStorageImpl implements IStorage {
   private static final String UPDATE_STATION_USER = "UPDATE station_user SET name=? WHERE id=?";
 
   private static final String GET_STATION_USER = "SELECT name, joined FROM station_user WHERE id=?";
-
-  private static final String CREATE_RECIPE_PROGRESS = "INSERT INTO station_recipe_progress (id,station_id,recipe_key,progress) VALUES (?,?,?,?)";
-
-  private static final String GET_RECIPE_PROGRESS = "SELECT id,recipe_key,progress FROM station_recipe_progress WHERE station_id=?";
-
-  private static final String DELETE_RECIPE_PROGRESS = "DELETE FROM station_recipe_progress WHERE station_id=?";
-
-  private static final String HAS_RECIPE_PROGRESS = "SELECT EXISTS (SELECT 1 FROM station_recipe_progress WHERE station_id=?)";
-
-  private static final String UPDATE_RECIPE_PROGRESS = "UPDATE station_recipe_progress SET progress=?, recipe_key=? WHERE station_id=?";
-
-  private static final String CREATE_INVENTORY = "INSERT INTO station_inventory(id,station_id,inventory,inventory_limit) VALUES (?,?,?,?)";
-
-  private static final String HAS_INVENTORY = "SELECT EXISTS (SELECT 1 FROM station_inventory WHERE station_id=?)";
-
-  private static final String GET_INVENTORY = "SELECT id,inventory, inventory_limit FROM station_inventory WHERE station_id=?";
-
-  private static final String UPDATE_INVENTORY = "UPDATE station_inventory SET inventory=?, inventory_limit=? WHERE station_id=?";
 
   public SqlStorageImpl(IConnectionSource source, @Named("logger") Logger logger,
       ResourceExtractor extractor) {
@@ -115,13 +95,17 @@ public class SqlStorageImpl implements IStorage {
   public List<Station> getAllStations() {
     return executor.queryTable(scanner -> {
       try {
-        String id = scanner.getString("id");
+        String stationId = scanner.getString("id");
         String stationKey = scanner.getString("station_key");
         String worldName = scanner.getString("world_name");
         int x = scanner.getInt("x");
         int y = scanner.getInt("y");
         int z = scanner.getInt("z");
-        return Station.create(id, stationKey, worldName, x, y, z);
+        String inventoryString = scanner.getString("inventory");
+        String recipeKey = scanner.getString("recipe_key");
+        float progress = scanner.getFloat("progress");
+        return Station.create(stationId, stationKey, worldName, x, y, z,
+            new StationMeta(recipeKey, progress, new StationInventory(inventoryString)));
       } catch (Exception err) {
         throw new RuntimeException(err);
       }
@@ -129,25 +113,22 @@ public class SqlStorageImpl implements IStorage {
   }
 
   @Override
-  public List<StationInventory> getAllInventories() {
-    return executor.queryTable(scanner -> {
-      try {
-        String id = scanner.getString("id");
-        String stationId = scanner.getString("station_id");
-        String inventory = scanner.getString("inventory");
-        int limit = scanner.getInt("inventory_limit");
-        return new StationInventory(id, stationId, inventory, limit);
-      } catch (SQLException err) {
-        throw new RuntimeException(err);
-      }
-    }, GET_ALL_STATION_INVENTORIES);
+  public void updateStation(Station model) {
+    StationMeta meta = model.getMeta();
+    StationInventory inventory = meta.getInventory();
+    executor.executeUpdate(UPDATE_STATION, meta.getRecipeKey(), meta.getProgress(),
+        inventory.inventoryString(), model.idString());
   }
 
   @Override
   public Station createStation(String stationKey, String worldName, int x, int y, int z) {
     String id = UUID.randomUUID().toString();
-    executor.executeUpdate(CREATE_STATION, id, stationKey, worldName, x, y, z);
-    return Station.create(id, stationKey, worldName, x, y, z);
+    StationInventory stationInventory = StationInventory.create();
+    StationMeta meta = new StationMeta(null, 0f, stationInventory);
+    executor.executeUpdate(CREATE_STATION, id, stationKey, worldName, x, y, z,
+        stationInventory.inventoryString(), null, 0f);
+    return Station.create(id, stationKey, worldName, x, y, z, meta
+    );
   }
 
   @Override
@@ -159,9 +140,13 @@ public class SqlStorageImpl implements IStorage {
   public Station getStation(String worldName, int x, int y, int z) {
     return executor.queryRow(scanner -> {
       try {
-        String id = scanner.getString("id");
+        String stationId = scanner.getString("id");
         String stationKey = scanner.getString("station_key");
-        return Station.create(id, stationKey, worldName, x, y, z);
+        String inventoryString = scanner.getString("inventory");
+        String recipeKey = scanner.getString("recipe_key");
+        float progress = scanner.getFloat("progress");
+        return Station.create(stationId, stationKey, worldName, x, y, z,
+            new StationMeta(recipeKey, progress, new StationInventory(inventoryString)));
       } catch (Exception err) {
         throw new RuntimeException(err);
       }
@@ -177,16 +162,15 @@ public class SqlStorageImpl implements IStorage {
         int x = scanner.getInt("x");
         int y = scanner.getInt("y");
         int z = scanner.getInt("z");
-        return Station.create(stationId, stationKey, worldName, x, y, z);
+        String inventoryString = scanner.getString("inventory");
+        String recipeKey = scanner.getString("recipe_key");
+        float progress = scanner.getFloat("progress");
+        return Station.create(stationId, stationKey, worldName, x, y, z,
+            new StationMeta(recipeKey, progress, new StationInventory(inventoryString)));
       } catch (SQLException err) {
         throw new RuntimeException(err);
       }
     }, GET_STATION_BY_ID, stationId);
-  }
-
-  @Override
-  public boolean hasStation(String worldName, int x, int y, int z) {
-    return executor.queryExists(HAS_STATION, worldName, x, y, z);
   }
 
   @Override
@@ -219,80 +203,6 @@ public class SqlStorageImpl implements IStorage {
   public boolean updateStationUser(StationUser user) {
     return executor.executeUpdate(UPDATE_STATION_USER, user.getName(), user.getId());
   }
-
-  @Override
-  public RecipeProgress createRecipeProgress(String stationId, String recipeKey) {
-    String id = UUID.randomUUID().toString();
-    executor.executeUpdate(CREATE_RECIPE_PROGRESS, id, stationId, recipeKey, 0);
-    return new RecipeProgress(id, stationId, recipeKey, 0);
-  }
-
-  @Override
-  public RecipeProgress getRecipeProgress(String stationId) {
-    return executor.queryRow(scanner -> {
-      try {
-        String id = scanner.getString("id");
-        String recipeKey = scanner.getString("recipe_key");
-        float progress = scanner.getFloat("progress");
-        return new RecipeProgress(id, stationId, recipeKey, progress);
-      } catch (SQLException err) {
-        throw new RuntimeException(err);
-      }
-    }, GET_RECIPE_PROGRESS, stationId);
-  }
-
-  @Override
-  public void deleteRecipeProgress(String stationId) {
-    executor.executeUpdate(DELETE_RECIPE_PROGRESS, stationId);
-  }
-
-  @Override
-  public boolean hasRecipeProgress(String stationId) {
-    return executor.queryExists(HAS_RECIPE_PROGRESS, stationId);
-  }
-
-  @Override
-  public boolean updateRecipeProgress(RecipeProgress progress) {
-    return executor.executeUpdate(UPDATE_RECIPE_PROGRESS, progress.getProgress(),
-        progress.getRecipeKey(),
-        progress.getStationId().toString());
-  }
-
-  @Override
-  public StationInventory createInventory(String stationId, int inventoryLimit) {
-    String id = UUID.randomUUID().toString();
-    StationInventory inventory = StationInventory.create(id, stationId, inventoryLimit);
-    executor.executeUpdate(CREATE_INVENTORY, id, inventory.getStationId(),
-        inventory.getInventoryString(), inventoryLimit);
-    return inventory;
-  }
-
-  @Override
-  public boolean hasInventory(String stationId) {
-    return executor.queryExists(HAS_INVENTORY, stationId);
-  }
-
-  @Override
-  public StationInventory getInventory(String stationId) {
-    return executor.queryRow(scanner -> {
-      try {
-        String id = scanner.getString("id");
-        String inventory = scanner.getString("inventory");
-        int inventoryLimit = scanner.getInt("inventory_limit");
-        return new StationInventory(id, stationId, inventory, inventoryLimit);
-      } catch (SQLException err) {
-        throw new RuntimeException(err);
-      }
-    }, GET_INVENTORY, stationId);
-  }
-
-  @Override
-  public boolean updateInventory(StationInventory inventory) {
-    return executor.executeUpdate(UPDATE_INVENTORY, inventory.getInventoryString(),
-        inventory.getInventoryLimit(),
-        inventory.getStationId().toString());
-  }
-
 
   @Override
   public void close() {

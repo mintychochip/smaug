@@ -14,12 +14,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationRemoveEvent;
-import org.aincraft.api.event.StationUpdateInventoryEvent;
+import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationInventory;
+import org.aincraft.database.model.Station.StationInventory;
+import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
@@ -85,14 +86,16 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, A
     return viewModels.get(stationKey);
   }
 
-  private void update(Station model, StationInventory inventory) {
+  private void update(Station model) {
+    StationMeta meta = model.getMeta();
+    StationInventory inventory = meta.getInventory();
     List<ItemStack> stacks = inventory.getContents();
-    final IViewModel<Station, AnvilItemDisplayView> viewModel = viewModels.get(model.getStationKey());
-    if(!viewModel.isBound(model.getId())) {
+    final IViewModel<Station, AnvilItemDisplayView> viewModel = viewModels.get(model.stationKey());
+    if(!viewModel.isBound(model.id())) {
       viewModel.bind(model,new AnvilItemDisplayView());
     }
     if(stacks.isEmpty()) {
-      viewModel.remove(model.getId());
+      viewModel.remove(model.id());
       return;
     }
     Map<ItemStack, Number> weightedItems = createWeightedItems(stacks);
@@ -115,13 +118,12 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, A
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
-  private void handleUpdateItemDisplay(final StationUpdateInventoryEvent event) {
+  private void handleUpdateItemDisplay(final StationUpdateEvent event) {
     if (event.isCancelled()) {
       return;
     }
-    final StationInventory inventory = event.getInventory();
-    final Station station = event.getStation();
-    this.update(station, inventory);
+    Station model = event.getModel();
+    this.update(model);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -130,11 +132,11 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, A
       return;
     }
     Station station = event.getStation();
-    IViewModel<Station, AnvilItemDisplayView> viewModel = this.get(station.getStationKey());
+    IViewModel<Station, AnvilItemDisplayView> viewModel = this.get(station.stationKey());
     if (viewModel == null) {
       return;
     }
-    viewModel.remove(station.getId());
+    viewModel.remove(station.id());
   }
 
   @NotNull

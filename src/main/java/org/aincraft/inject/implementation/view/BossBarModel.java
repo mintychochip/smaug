@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.bossbar.BossBar.Color;
 import net.kyori.adventure.bossbar.BossBar.Overlay;
@@ -12,7 +11,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.container.display.IViewModel;
-import org.aincraft.database.model.RecipeProgress;
+import org.aincraft.database.model.Station;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -20,7 +19,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 //make this use a proxy
-public class BossBarModel implements IViewModel<RecipeProgress, BossBar> {
+public class BossBarModel implements IViewModel<Station, BossBar> {
 
   private final long fadeAwayTime = 20L;
   //recipe progress ids
@@ -54,24 +53,24 @@ public class BossBarModel implements IViewModel<RecipeProgress, BossBar> {
   }
 
   @Override
-  public void bind(@NotNull RecipeProgress model, @NotNull BossBar view) {
-    bindings.put(model.getId(), new ViewBinding(view));
+  public void bind(@NotNull Station model, @NotNull BossBar view) {
+    bindings.put(model.id(), new ViewBinding(view));
   }
 
 
   @Override
-  public void update(@NotNull RecipeProgress model, @NotNull Object... data) {
+  public void update(@NotNull Station model, @NotNull Object... data) {
     final float progress = (float) data[0];
     final float actions = (float) data[1];
     final Component itemName = (Component) data[2]; //represents the item name
     final Player player = (Player) data[3];
 
     final Component displayName = bossBarName(itemName,actions - progress);
-    if (!isBound(model.getStationId())) {
+    if (!isBound(model.id())) {
       BossBar bossBar = createBossBar(displayName, progress / actions);
-      bindings.put(model.getStationId(), new ViewBinding(bossBar));
+      bindings.put(model.id(), new ViewBinding(bossBar));
     }
-    final ViewBinding binding = bindings.get(model.getStationId());
+    final ViewBinding binding = bindings.get(model.id());
     final BossBar bossBar = binding.getBossBar().progress(progress / actions)
         .name(displayName);
 
@@ -91,7 +90,7 @@ public class BossBarModel implements IViewModel<RecipeProgress, BossBar> {
       }
     }.runTaskLater(plugin, fadeAwayTime).getTaskId();
     binding.setTaskId(taskId);
-    bindings.put(model.getStationId(), binding);
+    bindings.put(model.id(), binding);
   }
 
   @Override
