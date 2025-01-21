@@ -5,25 +5,10 @@ CREATE TABLE IF NOT EXISTS stations
     world_name  TEXT    NOT NULL,
     x           INTEGER NOT NULL,
     y           INTEGER NOT NULL,
-    z           INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS station_inventory
-(
-    id              TEXT PRIMARY KEY,
-    station_id      TEXT    NOT NULL,
-    inventory       TEXT    NOT NULL,
-    inventory_limit INTEGER NOT NULL,
-    FOREIGN KEY (station_id) REFERENCES stations (id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS station_recipe_progress
-(
-    id         TEXT    PRIMARY KEY,
-    station_id TEXT    NOT NULL,
-    recipe_key TEXT    NOT NULL,
-    progress   REAL NOT NULL,
-    FOREIGN KEY (station_id) REFERENCES stations (id) ON DELETE CASCADE
+    z           INTEGER NOT NULL,
+    inventory   TEXT    NOT NULL,
+    recipe_key  TEXT,
+    progress    REAL
 );
 
 CREATE TABLE IF NOT EXISTS station_user

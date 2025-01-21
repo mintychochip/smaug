@@ -36,8 +36,9 @@ public class AnvilGuiViewModel implements IViewModel<StationPlayerModelProxy, An
     final Gui mainGui = binding.mainGui();
     final Player player = model.player();
     recipeSelectorItem.update(
-        RecipeSelectorItemFactory.retrieveRecipeProgressItemModel(model.recipeProgress()),
-        RecipeSelectorItemFactory.retrieveAllAvailableRecipes(model.inventory(),model.player()));
+        RecipeSelectorItemFactory.retrieveRecipeProgressItemModel(model.station().getMeta()),
+        RecipeSelectorItemFactory.retrieveAllAvailableRecipes(model.station().getMeta(),
+            model.player()));
     if (playerIsViewing(player, mainGui)) {
       mainGui.update();
     }

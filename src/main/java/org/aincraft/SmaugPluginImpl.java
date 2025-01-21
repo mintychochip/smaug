@@ -14,7 +14,6 @@ import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.gui.GuiListener;
-import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.handler.AnvilStationHandler;
@@ -39,14 +38,14 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   private final Map<Key, StationHandler> handlers = new HashMap<>();
   private final IRecipeFetcher recipeFetcher;
   private final IViewModelController<Station, AnvilItemDisplayView> controller;
-  private final IViewModelController<RecipeProgress, BossBar> bossBarController;
+  private final IViewModelController<Station, BossBar> bossBarController;
   private final IStationService stationService;
   private final IItemRegistry itemRegistry;
   @Inject
   SmaugPluginImpl(Plugin bootstrap, IStorage storage,
       Injector injector, IKeyFactory keyFactory,
       IRecipeFetcher recipeFetcher, IViewModelController<Station, AnvilItemDisplayView> controller,
-      IViewModelController<RecipeProgress, BossBar> bossBarController, IStationService stationService,
+      IViewModelController<Station, BossBar> bossBarController, IStationService stationService,
       IItemRegistry itemRegistry) {
     this.bootstrap = bootstrap;
     this.storage = storage;

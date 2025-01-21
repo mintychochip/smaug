@@ -1,31 +1,34 @@
 package org.aincraft.api.event;
 
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationInventory;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-public class StationUpdateInventoryEvent extends Event implements Cancellable {
+public class StationUpdateEvent extends Event implements Cancellable {
 
-  private static final HandlerList handlers = new HandlerList();
+  private static HandlerList handlers = new HandlerList();
 
-  private final Station station;
-  private final StationInventory inventory;
+  private final Station model;
+
+  private final Player player;
 
   private boolean cancelled = false;
-  public StationUpdateInventoryEvent(Station station, StationInventory inventory) {
-    this.station = station;
-    this.inventory = inventory;
+
+  public StationUpdateEvent(Station model, Player player) {
+    this.model = model;
+    this.player = player;
   }
 
-  public Station getStation() {
-    return station;
+
+  public Player getViewer() {
+    return player;
   }
 
-  public StationInventory getInventory() {
-    return inventory;
+  public Station getModel() {
+    return model;
   }
 
   @Override

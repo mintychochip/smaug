@@ -10,8 +10,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.aincraft.Smaug;
-import org.aincraft.api.event.RecipeProgressUpdateEvent;
-import org.aincraft.api.event.StationUpdateInventoryEvent;
+import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
@@ -20,10 +19,10 @@ import org.aincraft.container.gui.RecipeGui;
 import org.aincraft.container.gui.StationInventoryGui;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
-import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationInventory;
-import org.aincraft.database.model.StationInventory.ItemAddResult;
+import org.aincraft.database.model.Station.StationInventory;
+import org.aincraft.database.model.Station.StationInventory.ItemAddResult;
+import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -55,24 +54,23 @@ public class AnvilStationHandler implements StationHandler {
     final Station station = ctx.getStation();
     final Player player = ctx.getPlayer();
     final ItemStack stack = ctx.getItem();
-    StationInventory inventory =
-        service.hasInventory(station.getId()) ? service.getInventory(station.getId())
-            : service.createInventory(station.getId(), 5);
-    final RecipeProgress recipeProgress = service.getRecipeProgress(station.getId());
+    final StationMeta meta = station.getMeta();
+    StationInventory inventory = meta.getInventory();
     if (ctx.getAction().isRightClick()) {
       ctx.cancel();
       if (stack != null) {
-        ItemAddResult result = inventory.addItems(List.of(stack), remain -> {
-        });
+        ItemAddResult result = inventory.add(List.of(stack));
         if (result.getStatus() == Result.Status.SUCCESS) {
+          meta.setInventory(result.getInventory());
+          station.setMeta(meta);
           Bukkit.getPluginManager()
-              .callEvent(new StationUpdateInventoryEvent(station, result.getInventory()));
+              .callEvent(new StationUpdateEvent(station, player));
           player.sendMessage(Component.empty().color(
                   NamedTextColor.WHITE).append(Component.text("Deposited:"))
               .append(stack.displayName()));
         }
       } else {
-        StationInventoryGui gui = new StationInventoryGui(Smaug.getPlugin(), inventory, station);
+        StationInventoryGui gui = new StationInventoryGui(Smaug.getPlugin(), station);
         player.openInventory(gui.getInventory());
       }
     } else {
@@ -107,34 +105,38 @@ public class AnvilStationHandler implements StationHandler {
 
     final SmaugRecipe recipe = ctx.getRecipe();
     final Player player = ctx.getPlayer();
-    final StationInventory stationInventory = service.getInventory(station.getId());
-    Map<Integer, ItemStack> stackMap = stationInventory.getMap();
-    if (Status.FAILURE == recipe.test(stationInventory.getContents())
+    StationMeta meta = station.getMeta();
+    StationInventory inventory = meta.getInventory();
+    if (Status.FAILURE == recipe.test(inventory.getContents())
         .getStatus()) {
       return;
     }
     final Location location = station.getBlockLocation();
     if (recipe.getActions() > 0) {
-      final RecipeProgress recipeProgress = service.getRecipeProgress(station.getId());
-      float progress = recipeProgress.getProgress();
-      if (progress < recipe.getActions()) {
+
+      if (meta.getProgress() < recipe.getActions()) {
         successfulAction(location);
-        recipeProgress.increment(1);
+        meta.setProgress(meta.getProgress() + 1);
+        station.setMeta(meta);
         Bukkit.getPluginManager()
-            .callEvent(new RecipeProgressUpdateEvent(recipeProgress,player));
+            .callEvent(new StationUpdateEvent(station, player));
       } else {
-        Map<Integer, ItemStack> removed = recipe.getIngredients().remove(stackMap);
+        StationInventory stationInventory = meta.getInventory();
+        Map<Integer, ItemStack> removed = recipe.getIngredients()
+            .remove(stationInventory.getItems());
         IKeyedItem item = recipe.getOutput();
         ItemStack reference = item.getReference();
         ItemStack stack = new ItemStack(reference);
         stack.setAmount(recipe.getAmount());
         ItemAddResult result = stationInventory.setItems(removed)
-            .addItems(List.of(stack), remaining -> {
-            });
+            .add(List.of(stack));
         if (result.getStatus() == Status.SUCCESS) {
+          meta.setRecipeKey(null);
+          meta.setProgress(0);
+          meta.setInventory(result.getInventory());
+          station.setMeta(meta);
           Bukkit.getPluginManager()
-              .callEvent(new StationUpdateInventoryEvent(station, result.getInventory()));
-          service.deleteRecipeProgress(station.getId());
+              .callEvent(new StationUpdateEvent(station, player));
         }
       }
     }
@@ -149,119 +151,28 @@ public class AnvilStationHandler implements StationHandler {
         null);
   }
 
-
-  static final class SubMenu {
-
-    private final IStationService stationService;
-
-    SubMenu(IStationService stationService) {
-      this.stationService = stationService;
-    }
-//    public BaseGui create(Station station) {
-//      Gui gui = Gui.gui(GuiType.DISPENSER).title(Component.text("Menu")).disableAllInteractions()
-//          .create();
-//      RecipeProgress recipeProgress = Smaug.getStationService().getRecipeProgress(station.getId());
-//      if(recipeProgress == null) {
-//
-//      }
-//      GuiItem item = new GuiItem(Material.BOOK, e -> {
-//        Player player = (Player) e.getWhoClicked();
-//        UUID id = station.getId();
-//        if (!stationService.hasInventory(id)) {
-//          return;
-//        }
-//        final StationInventory inventory = stationService.getInventory(id);
-//        final List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(
-//            recipe -> recipe.test(player, inventory.getContents()).getStatus() == Status.SUCCESS
-//                && recipe.getStationKey().equals(STATION_KEY));
-//        if (recipes.isEmpty()) {
-//          player.sendMessage("There aren't any available recipes");
-//          return;
-//        }
-//        BaseGui recipeGui = createRecipeGui(recipes, gui,
-//            (event, r) -> {
-//              final String recipeKey = r.getKey();
-//              RecipeProgress recipeProgress = stationService.getRecipeProgress(id);
-//              if (recipeProgress == null) {
-//                stationService.createRecipeProgress(id, recipeKey);
-//              } else {
-//                if (!recipeKey.equals(recipeProgress.getRecipeKey())) {
-//                  stationService.updateRecipeProgress(id, progress -> {
-//                    progress.setRecipeKey(recipeKey);
-//                    progress.setProgress(0);
-//                  });
-//                }
-//              }
-//              player.closeInventory(Reason.PLUGIN);
-//            });
-//        recipeGui.open(player);
-//      });
-//      gui.addItem(item);
-//      return gui;
-//    }
-//
-//    private static BaseGui createRecipeGui(List<SmaugRecipe> recipes, BaseGui previous,
-//        BiConsumer<InventoryClickEvent, SmaugRecipe> biConsumer) {
-//      final PaginatedGui gui = RecipeGui.create(recipes, biConsumer);
-//      final int rows = gui.getRows();
-//      gui.setItem(rows, 8, new GuiItem(Material.ENDER_PEARL, e -> {
-//        HumanEntity entity = e.getWhoClicked();
-//        previous.open(entity);
-//      }));
-//      return gui;
-//    }
-
-    static final class AnvilMenu {
-
-
-    }
-
-  }
-
-//  //recipe item is the item that holds the gui of the recipe selector
-//  static final class RecipeItem {
-//    private static Key DEFAULT_RECIPE_ITEM_MODEL = Material.MAP.getKey();
-//
-//    private static Component
-//    private static List<Component> RECIPE_ITEM_LORE;
-//    static {
-//      RECIPE_ITEM_LORE =
-//    }
-//    private static GuiItem createRecipeItem(SmaugRecipe recipe) {
-//      final ItemStack reference = recipe.getOutput().getReference();
-//      ItemMeta meta = reference.getItemMeta();
-//      ItemStack stack = new ItemStack(Material.RABBIT_FOOT);
-//      stack.setData(DataComponentTypes.ITEM_NAME,Component.text("Recipe"));
-//      stack.setData(DataComponentTypes.ITEM_MODEL,Material.ANVIL.getKey());
-//      stack.setData(DataComponentTypes.LORE,Material.);
-//      ItemLore.lore()
-//    }
-//
-//    private static List<SmaugRecipe> availableRecipes(Player player, List<ItemStack> contents) {
-//      return Smaug.fetchAllRecipes(
-//          recipe -> recipe.getStationKey().equals(STATION_KEY)
-//              && recipe.test(player, contents).getStatus() == Status.SUCCESS);
-//    }
-//  }
-
   private record RecipeSelector(IStationService service) {
 
     public SmaugRecipe select(Station station, List<SmaugRecipe> recipes, Player player) {
-      RecipeProgress recipeProgress = service.getRecipeProgress(station.getId());
-      if (recipeProgress != null) {
-        String recipeKey = recipeProgress.getRecipeKey();
+      final StationMeta meta = station.getMeta();
+      final String recipeKey = meta.getRecipeKey();
+      if (recipeKey != null) {
         return Smaug.fetchRecipe(recipeKey);
       }
       int size = recipes.size();
       if (size > 1) {
         PaginatedGui gui = RecipeGui.create(recipes, Component.text("Recipes"), (e, r) -> {
-          service.createRecipeProgress(station.getId(), r.getKey());
+          meta.setRecipeKey(r.getKey());
+          station.setMeta(meta);
+          service.updateStation(station);
         });
         gui.open(player);
       }
       if (size == 1) {
         SmaugRecipe recipe = recipes.getFirst();
-        service.createRecipeProgress(station.getId(), recipe.getKey());
+        meta.setRecipeKey(recipe.getKey());
+        station.setMeta(meta);
+        service.updateStation(station);
         return recipe;
       }
       return null;

@@ -9,7 +9,6 @@ import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.item.IKeyedItemFactory;
-import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.database.storage.SqlConfig;
@@ -32,7 +31,7 @@ public final class PluginImplementationModule extends AbstractModule {
   private Class<? extends Provider<IStorage>> storageProviderClazz = StorageProvider.class;
   private Class<? extends Provider<SqlConfig>> sqlConfigProviderClazz = SqlConfigProvider.class;
   private Class<? extends Provider<IViewModelController<Station, AnvilItemDisplayView>>> stationViewModelControllerClazz = ItemDisplayControllerProvider.class;
-  private Class<? extends Provider<IViewModelController<RecipeProgress, BossBar>>> barViewControllerClazz = BossBarViewModelControllerProvider.class;
+  private Class<? extends Provider<IViewModelController<Station, BossBar>>> barViewControllerClazz = BossBarViewModelControllerProvider.class;
 
   @Override
   protected void configure() {
@@ -48,7 +47,7 @@ public final class PluginImplementationModule extends AbstractModule {
     bind(new TypeLiteral<IViewModelController<Station, AnvilItemDisplayView>>() {
     }).toProvider(stationViewModelControllerClazz)
         .in(Singleton.class);
-    bind(new TypeLiteral<IViewModelController<RecipeProgress,BossBar>>(){}).toProvider(barViewControllerClazz).in(Singleton.class);
+    bind(new TypeLiteral<IViewModelController<Station,BossBar>>(){}).toProvider(barViewControllerClazz).in(Singleton.class);
   }
 
   public void setKeyedItemFactoryClazz(
@@ -102,7 +101,7 @@ public final class PluginImplementationModule extends AbstractModule {
   }
 
   public void setBarViewControllerClazz(
-      Class<? extends Provider<IViewModelController<RecipeProgress, BossBar>>> barViewControllerClazz) {
+      Class<? extends Provider<IViewModelController<Station, BossBar>>> barViewControllerClazz) {
     this.barViewControllerClazz = barViewControllerClazz;
   }
 }

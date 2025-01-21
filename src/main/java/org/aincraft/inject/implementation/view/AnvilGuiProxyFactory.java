@@ -17,15 +17,15 @@ import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.aincraft.Smaug;
-import org.aincraft.api.event.RecipeProgressUpdateEvent;
+import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.display.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.gui.RecipeGui;
-import org.aincraft.database.model.RecipeProgress;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationInventory;
+import org.aincraft.database.model.Station.StationInventory;
+import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -50,30 +50,29 @@ public class AnvilGuiProxyFactory {
   }
 
   public AnvilGuiProxy create(Station station, Player player) {
-    final StationInventory inventory = stationService.getInventory(station.getId());
     Gui main = Gui.gui(GUI_TYPE).title(MAIN_GUI_TITLE).disableAllInteractions().create();
     RecipeSelectorItem item = new RecipeSelectorItemFactory(stationService).create(
-        station, inventory, player, (e, recipe) -> {
-          final UUID id = station.getId();
-          CompletableFuture.supplyAsync(() -> stationService.getRecipeProgress(id))
-              .thenAcceptAsync(progress -> {
-                final String recipeKey = recipe.getKey();
-                if (progress == null) {
-                  stationService.createRecipeProgress(id, recipeKey);
-                  return;
-                }
-                if (!progress.getRecipeKey().equals(recipeKey)) {
-                  progress.setProgress(5);
-                  progress.setRecipeKey(recipeKey);
-                  new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                      Bukkit.getPluginManager()
-                          .callEvent(new RecipeProgressUpdateEvent(progress,player));
-                    }
-                  }.runTask(plugin);
-                }
-              });
+        station, player, (e, recipe) -> {
+          final StationMeta meta = station.getMeta();
+          final String recipeKey = recipe.getKey();
+          if (meta.getRecipeKey() == null) {
+            meta.setRecipeKey(recipe.getKey());
+            station.setMeta(meta);
+            stationService.updateStation(station);
+            return;
+          }
+          if (!meta.getRecipeKey().equals(recipeKey)) {
+            meta.setProgress(0);
+            meta.setRecipeKey(recipeKey);
+            station.setMeta(meta);
+            new BukkitRunnable() {
+              @Override
+              public void run() {
+                Bukkit.getPluginManager()
+                    .callEvent(new StationUpdateEvent(station, player));
+              }
+            }.runTask(plugin);
+          }
         });
     main.setItem(6, item.item());
     return new AnvilGuiProxy(main, item);
@@ -105,14 +104,13 @@ public class AnvilGuiProxyFactory {
     }
 
     @SuppressWarnings("UnstableApiUsage")
-    RecipeSelectorItem create(Station station, StationInventory inventory, Player player,
+    RecipeSelectorItem create(Station station, Player player,
         BiConsumer<InventoryClickEvent, SmaugRecipe> recipeSelectorConsumer) {
-      final RecipeProgress progress = stationService.getRecipeProgress(station.getId());
       final ItemStack stack = new ItemStack(Material.RABBIT_FOOT);
       stack.setData(DataComponentTypes.ITEM_MODEL,
-          retrieveRecipeProgressItemModel(progress));
+          retrieveRecipeProgressItemModel(station.getMeta()));
       stack.setData(DataComponentTypes.ITEM_NAME, Component.text("test"));
-      final List<SmaugRecipe> recipes = retrieveAllAvailableRecipes(inventory, player);
+      final List<SmaugRecipe> recipes = retrieveAllAvailableRecipes(station.getMeta(), player);
       PaginatedGui recipeSelectorGui = RecipeGui.create(recipes,
           Component.text("Recipes:"), recipeSelectorConsumer);
       PaginatedGui allRecipeGui = RecipeGui.create(Smaug.fetchAllRecipes(ANVIL_STATION_KEY),
@@ -133,11 +131,12 @@ public class AnvilGuiProxyFactory {
       }), recipeSelectorGui, allRecipeGui);
     }
 
-    static List<SmaugRecipe> retrieveAllAvailableRecipes(StationInventory inventory,
+    static List<SmaugRecipe> retrieveAllAvailableRecipes(StationMeta meta,
         Player player) {
+      StationInventory inventory = meta.getInventory();
       return Smaug.fetchAllRecipes(recipe -> {
-        boolean hasPermission =
-            recipe.getPermission() != null && player.hasPermission(recipe.getPermission());
+//        boolean hasPermission =
+//            recipe.getPermission() != null && player.hasPermission(recipe.getPermission());
         boolean isValidStation = recipe.getStationKey().equals(ANVIL_STATION_KEY)
             && recipe.test(inventory.getContents()).getStatus() == Status.SUCCESS;
 
@@ -145,16 +144,14 @@ public class AnvilGuiProxyFactory {
       });
     }
 
-    static Key retrieveRecipeProgressItemModel(RecipeProgress progress) {
-      if (progress != null) {
-        SmaugRecipe recipe = Smaug.fetchRecipe(progress.getRecipeKey());
-        if (recipe != null) {
-          ItemStack reference = recipe.getOutput().getReference();
-          @SuppressWarnings("UnstableApiUsage")
-          Key key = reference.getDataOrDefault(DataComponentTypes.ITEM_MODEL,
-              reference.getType().getKey());
-          return key;
-        }
+    static Key retrieveRecipeProgressItemModel(StationMeta meta) {
+      SmaugRecipe recipe = Smaug.fetchRecipe(meta.getRecipeKey());
+      if (recipe != null) {
+        ItemStack reference = recipe.getOutput().getReference();
+        @SuppressWarnings("UnstableApiUsage")
+        Key key = reference.getDataOrDefault(DataComponentTypes.ITEM_MODEL,
+            reference.getType().getKey());
+        return key;
       }
       return DEFAULT_PROGRESS_ITEM_MODEL;
     }
