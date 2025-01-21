@@ -134,10 +134,10 @@ public class StationListener implements Listener {
       return;
     }
     final Station station = event.getStation();
-    final World world = station.getWorld();
+    final World world = station.world();
     StationMeta meta = station.getMeta();
     StationInventory stationInventory = meta.getInventory();
-    final Location location = station.getCenterLocation();
+    final Location location = station.centerLocation();
     new BukkitRunnable() {
       @Override
       public void run() {
@@ -172,7 +172,7 @@ public class StationListener implements Listener {
     if (station == null) {
       return;
     }
-    StationHandler handler = handlers.get(station.getStationKey());
+    StationHandler handler = handlers.get(station.stationKey());
     if (handler == null) {
       return;
     }

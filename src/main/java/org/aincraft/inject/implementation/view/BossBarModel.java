@@ -54,7 +54,7 @@ public class BossBarModel implements IViewModel<Station, BossBar> {
 
   @Override
   public void bind(@NotNull Station model, @NotNull BossBar view) {
-    bindings.put(model.getId(), new ViewBinding(view));
+    bindings.put(model.id(), new ViewBinding(view));
   }
 
 
@@ -66,11 +66,11 @@ public class BossBarModel implements IViewModel<Station, BossBar> {
     final Player player = (Player) data[3];
 
     final Component displayName = bossBarName(itemName,actions - progress);
-    if (!isBound(model.getId())) {
+    if (!isBound(model.id())) {
       BossBar bossBar = createBossBar(displayName, progress / actions);
-      bindings.put(model.getId(), new ViewBinding(bossBar));
+      bindings.put(model.id(), new ViewBinding(bossBar));
     }
-    final ViewBinding binding = bindings.get(model.getId());
+    final ViewBinding binding = bindings.get(model.id());
     final BossBar bossBar = binding.getBossBar().progress(progress / actions)
         .name(displayName);
 
@@ -90,7 +90,7 @@ public class BossBarModel implements IViewModel<Station, BossBar> {
       }
     }.runTaskLater(plugin, fadeAwayTime).getTaskId();
     binding.setTaskId(taskId);
-    bindings.put(model.getId(), binding);
+    bindings.put(model.id(), binding);
   }
 
   @Override

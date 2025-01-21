@@ -90,12 +90,12 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, A
     StationMeta meta = model.getMeta();
     StationInventory inventory = meta.getInventory();
     List<ItemStack> stacks = inventory.getContents();
-    final IViewModel<Station, AnvilItemDisplayView> viewModel = viewModels.get(model.getStationKey());
-    if(!viewModel.isBound(model.getId())) {
+    final IViewModel<Station, AnvilItemDisplayView> viewModel = viewModels.get(model.stationKey());
+    if(!viewModel.isBound(model.id())) {
       viewModel.bind(model,new AnvilItemDisplayView());
     }
     if(stacks.isEmpty()) {
-      viewModel.remove(model.getId());
+      viewModel.remove(model.id());
       return;
     }
     Map<ItemStack, Number> weightedItems = createWeightedItems(stacks);
@@ -132,11 +132,11 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, A
       return;
     }
     Station station = event.getStation();
-    IViewModel<Station, AnvilItemDisplayView> viewModel = this.get(station.getStationKey());
+    IViewModel<Station, AnvilItemDisplayView> viewModel = this.get(station.stationKey());
     if (viewModel == null) {
       return;
     }
-    viewModel.remove(station.getId());
+    viewModel.remove(station.id());
   }
 
   @NotNull

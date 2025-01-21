@@ -21,45 +21,22 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
-public final class Station {
-
-  private final String idString;
-  private final String stationKeyString;
-  private final String worldName;
-  private final int x;
-  private final int y;
-  private final int z;
-  private final UUID id;
-  private final World world;
-  private final Key stationKey;
-  private final Location blockLocation;
-
-  private final AtomicReference<StationMeta> metaReference;
-
-  public Station(String idString, String stationKeyString, String worldName, int x, int y,
-      int z, UUID id, World world, Key stationKey, Location blockLocation,
-      @NotNull StationMeta meta) {
-    this.idString = idString;
-    this.stationKeyString = stationKeyString;
-    this.worldName = worldName;
-    this.x = x;
-    this.y = y;
-    this.z = z;
-    this.id = id;
-    this.world = world;
-    this.stationKey = stationKey;
-    this.blockLocation = blockLocation;
-    this.metaReference = new AtomicReference<>(meta);
-  }
+public record Station(String idString, String stationKeyString, String worldName,
+                      int x, int y, int z, UUID id, World world, Key stationKey,
+                      Location blockLocation,
+                      AtomicReference<org.aincraft.database.model.Station.StationMeta> metaReference) {
 
   public static Station create(@NotNull String idString, @NotNull String stationKeyString,
-      @NotNull String worldName, int x, int y, int z, StationMeta meta) {
+      @NotNull String worldName, int x, int y, int z,
+      org.aincraft.database.model.Station.StationMeta meta) {
     Preconditions.checkArgument(
         !(idString == null || stationKeyString == null || worldName == null));
     final World world = Bukkit.getWorld(worldName);
@@ -70,7 +47,8 @@ public final class Station {
     try {
       UUID id = UUID.fromString(idString);
       return new Station(idString, stationKeyString, worldName, x, y, z,
-          id, world, stationkey, new Location(world, x, y, z), meta);
+          id, world, stationkey, new Location(world, x, y, z),
+          new AtomicReference<Station.StationMeta>(meta));
     } catch (IllegalArgumentException e) {
       return null;
     }
@@ -93,7 +71,7 @@ public final class Station {
 
   @NotNull
   public BoundingBox getBoundingBox(double offsetX, double offsetZ) {
-    Location location = this.getBlockLocation().clone().add(0.5, 1, 0.5);
+    Location location = blockLocation.clone().add(0.5, 1, 0.5);
     double x = location.getX();
     double y = location.getY();
     double z = location.getZ();
@@ -101,57 +79,54 @@ public final class Station {
         x - offsetX, y, z - offsetZ);
   }
 
-  public String getIdString() {
-    return idString;
-  }
-
-  public String getStationKeyString() {
-    return stationKeyString;
-  }
-
-  public String getWorldName() {
-    return worldName;
-  }
-
-  public int getX() {
-    return x;
-  }
-
-  public int getY() {
-    return y;
-  }
-
-  public int getZ() {
-    return z;
-  }
-
-  public UUID getId() {
-    return id;
-  }
-
-  public World getWorld() {
-    return world;
-  }
-
-  public Key getStationKey() {
-    return stationKey;
-  }
-
-  public Location getBlockLocation() {
-    return blockLocation;
-  }
-
-  public Location getCenterLocation() {
+  public Location centerLocation() {
     return blockLocation.clone().add(0.5, 0, 0.5);
   }
 
-  public static final class StationInventory {
+  public Inventory getInventory() {
+    StationGuiAdapter guiAdapter = new StationGuiAdapter(this);
+    return guiAdapter.getInventory();
+  }
 
-    private final String inventoryString;
+  public static final class StationGuiAdapter implements InventoryHolder {
 
-    public StationInventory(String inventoryString) {
-      this.inventoryString = inventoryString;
+    private final Station station;
+
+    private StationGuiAdapter(Station station) {
+      this.station = station;
     }
+
+    @Override
+    public @NotNull Inventory getInventory() {
+      StationMeta meta = station.getMeta();
+      StationInventory stationInventory = meta.getInventory();
+      Map<Integer, ItemStack> map = stationInventory.getItems();
+      int i = inventorySize(map.size());
+      Inventory inventory = Bukkit.createInventory(this, i);
+      for (Entry<Integer, ItemStack> entry : map.entrySet()) {
+        inventory.setItem(entry.getKey(), entry.getValue());
+      }
+      return inventory;
+    }
+
+    public Station getStation() {
+      return station;
+    }
+
+    static int inventorySize(int size) {
+      if (size <= 9) {
+        return 9;
+      }
+
+      if (size > 54) {
+        return 54;
+      }
+
+      return (int) Math.ceil(size / 9.0) * 9;
+    }
+  }
+
+  public record StationInventory(String inventoryString) {
 
     public static StationInventory create() {
       return new StationInventory(serialize(new HashMap<>()));
@@ -184,10 +159,6 @@ public final class Station {
         return inventory;
       }
 
-    }
-
-    public String getInventoryString() {
-      return inventoryString;
     }
 
     public Map<Integer, ItemStack> getItems() {

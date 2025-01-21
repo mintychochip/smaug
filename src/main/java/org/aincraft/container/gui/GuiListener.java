@@ -5,6 +5,7 @@ import java.util.Map;
 import org.aincraft.Smaug;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.Station.StationGuiAdapter;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
 import org.bukkit.Bukkit;
@@ -24,10 +25,7 @@ public class GuiListener implements Listener {
     Inventory inventory = event.getInventory();
     InventoryHolder holder = inventory.getHolder();
     HumanEntity player = event.getPlayer();
-    if (!(holder instanceof StationInventoryGui gui)) {
-      return;
-    }
-    if (!(Smaug.getPlugin().equals(gui.getPlugin()))) {
+    if (!(holder instanceof StationGuiAdapter gui)) {
       return;
     }
     final Station station = gui.getStation();

@@ -64,7 +64,7 @@ public class ProgressBarControllerImpl implements
       return;
     }
     IViewModel<Station, BossBar> viewModel = viewModels.get(
-        model.getStationKey());
+        model.stationKey());
     final ItemStack reference = recipe.getOutput().getReference();
     final ItemMeta itemMeta = reference.getItemMeta();
     @SuppressWarnings("UnstableApiUsage") final Component itemName =
@@ -92,7 +92,6 @@ public class ProgressBarControllerImpl implements
       return;
     }
     final Station model = event.getModel();
-    Bukkit.broadcastMessage(model.toString());
     final Player player = event.getViewer();
     this.update(model, player);
   }

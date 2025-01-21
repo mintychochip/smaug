@@ -137,7 +137,7 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
   public void bind(@NotNull Station station, @NotNull AnvilItemDisplayView view) {
     Preconditions.checkArgument(station != null);
     Preconditions.checkArgument(view != null);
-    bindings.put(station.getId(), new ViewBinding(view.getDisplays()));
+    bindings.put(station.id(), new ViewBinding(view.getDisplays()));
   }
 
   @Override
@@ -145,10 +145,10 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
     Preconditions.checkArgument(data.length == 1);
     Object datum = data[0];
     Preconditions.checkArgument(datum != null && datum instanceof Collection<?>);
-    if (!bindings.containsKey(model.getId())) {
+    if (!bindings.containsKey(model.id())) {
       return;
     }
-    ViewBinding binding = bindings.get(model.getId());
+    ViewBinding binding = bindings.get(model.id());
     @SuppressWarnings("unchecked")
     Collection<ItemStack> stacks = (Collection<ItemStack>) datum;
     Map<ItemStack, Float> scaledStacks = createScaledStacks(stacks);
@@ -156,14 +156,14 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
     List<Display> displays = new ArrayList<>();
     scaledStacks.forEach((key, value) -> DisplayStrategySelector.select(key, ITEM_MODEL_IS_ITEM)
         .createWrappers(key,
-            randomLocation(model.getBoundingBox(4 * 0.0625f, 4 * 0.0625f), model.getWorld()),
+            randomLocation(model.getBoundingBox(4 * 0.0625f, 4 * 0.0625f), model.world()),
             value)
         .forEach(wrapper -> displays.add(wrapper.delegate())));
-    World world = model.getWorld();
+    World world = model.world();
     binding.getDisplays().forEach(Entity::remove);
     binding.setDisplays(displays);
     displays.forEach(world::addEntity);
-    bindings.put(model.getId(), binding);
+    bindings.put(model.id(), binding);
   }
 
   @Override

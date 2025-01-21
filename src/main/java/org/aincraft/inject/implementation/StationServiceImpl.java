@@ -46,16 +46,16 @@ final class StationServiceImpl implements IStationService {
   public List<Station> getAllStations() {
     List<Station> stations = storage.getAllStations();
     for (Station station : stations) {
-      station2Cache.put(station.getId(), station);
-      stationCache.put(station.getBlockLocation(), station);
+      station2Cache.put(station.id(), station);
+      stationCache.put(station.blockLocation(), station);
     }
     return stations;
   }
 
   @Override
   public void updateStation(Station station) {
-    stationCache.put(station.getBlockLocation(), station);
-    station2Cache.put(station.getId(), station);
+    stationCache.put(station.blockLocation(), station);
+    station2Cache.put(station.id(), station);
     storage.updateStation(station);
   }
 

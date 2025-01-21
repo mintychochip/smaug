@@ -16,7 +16,6 @@ import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.gui.RecipeGui;
-import org.aincraft.container.gui.StationInventoryGui;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
 import org.aincraft.database.model.Station;
@@ -70,8 +69,8 @@ public class AnvilStationHandler implements StationHandler {
               .append(stack.displayName()));
         }
       } else {
-        StationInventoryGui gui = new StationInventoryGui(Smaug.getPlugin(), station);
-        player.openInventory(gui.getInventory());
+
+        player.openInventory(station.getInventory());
       }
     } else {
       if (!player.isSneaking()) {
@@ -81,7 +80,7 @@ public class AnvilStationHandler implements StationHandler {
 
         ctx.cancel();
         List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(
-            recipe -> recipe.getStationKey().equals(station.getStationKey())
+            recipe -> recipe.getStationKey().equals(station.stationKey())
                 && recipe.test(inventory.getContents()).getStatus() == Status.SUCCESS);
         if (recipes.isEmpty()) {
           player.sendMessage("There are not any recipes available");
@@ -111,7 +110,7 @@ public class AnvilStationHandler implements StationHandler {
         .getStatus()) {
       return;
     }
-    final Location location = station.getBlockLocation();
+    final Location location = station.blockLocation();
     if (recipe.getActions() > 0) {
 
       if (meta.getProgress() < recipe.getActions()) {

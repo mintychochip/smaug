@@ -117,7 +117,7 @@ public class SqlStorageImpl implements IStorage {
     StationMeta meta = model.getMeta();
     StationInventory inventory = meta.getInventory();
     executor.executeUpdate(UPDATE_STATION, meta.getRecipeKey(), meta.getProgress(),
-        inventory.getInventoryString(), model.getIdString());
+        inventory.inventoryString(), model.idString());
   }
 
   @Override
@@ -126,7 +126,7 @@ public class SqlStorageImpl implements IStorage {
     StationInventory stationInventory = StationInventory.create();
     StationMeta meta = new StationMeta(null, 0f, stationInventory);
     executor.executeUpdate(CREATE_STATION, id, stationKey, worldName, x, y, z,
-        stationInventory.getInventoryString(), null, 0f);
+        stationInventory.inventoryString(), null, 0f);
     return Station.create(id, stationKey, worldName, x, y, z, meta
     );
   }
