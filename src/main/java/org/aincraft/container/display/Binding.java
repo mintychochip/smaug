@@ -7,6 +7,10 @@ public interface Binding {
 
   <T> T getProperty(String identifier, Class<T> clazz);
 
+  void setProperty(String identifier, Object value);
+
+  boolean isPropertyExposed(String identifier);
+
   @Retention(RetentionPolicy.RUNTIME)
   @interface ExposedProperty {
 
