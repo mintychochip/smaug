@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import org.aincraft.container.display.AnvilItemDisplayView;
-import org.aincraft.container.display.Binding;
+import org.aincraft.container.display.ViewModelBinding;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.database.model.Station;
 import org.aincraft.inject.implementation.controller.AbstractBinding;
@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 
 final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> {
 
-  private final Map<UUID, ViewBinding> bindings = new HashMap<>();
+  private final Map<UUID, ViewViewModelBinding> bindings = new HashMap<>();
 
   AnvilViewModel() {
   }
@@ -118,11 +118,12 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
     return Util.filterSet(Arrays.stream(Material.values()).toList(), parent);
   }
 
-  static final class ViewBinding extends AbstractBinding {
+  static final class ViewViewModelBinding extends AbstractBinding {
 
+    @ExposedProperty("displays")
     private Collection<Display> displays;
 
-    ViewBinding(Collection<Display> displays) {
+    ViewViewModelBinding(Collection<Display> displays) {
       this.displays = displays;
     }
 
@@ -139,7 +140,7 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
   public void bind(@NotNull Station station, @NotNull AnvilItemDisplayView view) {
     Preconditions.checkArgument(station != null);
     Preconditions.checkArgument(view != null);
-    bindings.put(station.id(), new ViewBinding(view.getDisplays()));
+    bindings.put(station.id(), new ViewViewModelBinding(view.getDisplays()));
   }
 
   @Override
@@ -150,7 +151,7 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
     if (!bindings.containsKey(model.id())) {
       return;
     }
-    ViewBinding binding = bindings.get(model.id());
+    ViewViewModelBinding binding = bindings.get(model.id());
     @SuppressWarnings("unchecked")
     Collection<ItemStack> stacks = (Collection<ItemStack>) datum;
     Map<ItemStack, Float> scaledStacks = createScaledStacks(stacks);
@@ -174,7 +175,7 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
     if (!bindings.containsKey(modelKey)) {
       return;
     }
-    ViewBinding binding = bindings.get(modelKey);
+    ViewViewModelBinding binding = bindings.get(modelKey);
     binding.getDisplays().forEach(Entity::remove);
     bindings.remove(modelKey);
   }
@@ -210,7 +211,7 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
   }
 
   @Override
-  public Binding getBinding(Station model) {
+  public ViewModelBinding getBinding(Station model) {
     return bindings.get(model.id());
   }
 }

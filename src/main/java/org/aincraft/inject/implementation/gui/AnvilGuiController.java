@@ -23,12 +23,10 @@ import org.jetbrains.annotations.NotNull;
 public class AnvilGuiController extends
     AbstractViewModelController<StationPlayerModelProxy, AnvilGuiProxy> {
 
-  private final IStationService stationService;
-  private final Plugin plugin;
+  private final AnvilGuiProxyFactory factory;
 
   public AnvilGuiController(IStationService stationService, Plugin plugin) {
-    this.stationService = stationService;
-    this.plugin = plugin;
+    this.factory = new AnvilGuiProxyFactory(stationService,plugin);
   }
 
   @EventHandler
@@ -41,12 +39,8 @@ public class AnvilGuiController extends
     StationPlayerModelProxy proxy = new StationPlayerModelProxy(player, model);
     IViewModel<StationPlayerModelProxy, AnvilGuiProxy> viewModel = this.get(model.stationKey());
     if (!viewModel.isBound(proxy.hashCode())) {
-      viewModel.bind(proxy, new AnvilGuiProxyFactory(stationService, plugin).create(model, player));
-      return;
+      viewModel.bind(proxy,factory.create(model,player));
     }
-    Bukkit.broadcastMessage("here");
     viewModel.update(new StationPlayerModelProxy(player, model));
   }
-
-
 }

@@ -1,18 +1,30 @@
 package org.aincraft.container.display;
 
+import org.aincraft.container.Model;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public interface IViewModel<M, V> {
+import java.util.function.Consumer;
 
-  void bind(@NotNull M model, @NotNull V view);
+public interface IViewModel<M, V, K> {
 
-  void update(@NotNull M model, @NotNull Object... data);
+    void bind(@NotNull M model, @NotNull V view);
 
-  void remove(@NotNull Object modelKey);
+    void update(@NotNull M model, @NotNull Object... data);
 
-  void removeAll();
+    void remove(@NotNull Object modelKey, @Nullable Consumer<ViewModelBinding> bindingConsumer);
 
-  boolean isBound(@NotNull Object modelKey);
+    default void remove(@NotNull Object modelKey) {
+      remove(modelKey, null);
+    }
 
-  Binding getBinding(M model);
+    default void removeAll() {
+      removeAll(null);
+    }
+
+    void removeAll(@Nullable Consumer<ViewModelBinding> bindingConsumer);
+
+    boolean isBound(@NotNull Object modelKey);
+
+    ViewModelBinding getBinding(M model);
 }

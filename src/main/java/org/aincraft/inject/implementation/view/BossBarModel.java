@@ -10,7 +10,7 @@ import net.kyori.adventure.bossbar.BossBar.Overlay;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import org.aincraft.container.display.Binding;
+import org.aincraft.container.display.ViewModelBinding;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.database.model.Station;
 import org.aincraft.inject.implementation.controller.AbstractBinding;
@@ -25,14 +25,14 @@ public class BossBarModel implements IViewModel<Station, BossBar> {
 
   private final long fadeAwayTime = 20L;
   //recipe progress ids
-  private final Map<UUID, BossBarBinding> bindings = new HashMap<>();
+  private final Map<UUID, BossBarViewModelBinding> bindings = new HashMap<>();
   private final Plugin plugin;
 
   public BossBarModel(Plugin plugin) {
     this.plugin = plugin;
   }
 
-  static final class BossBarBinding extends AbstractBinding {
+  static final class BossBarViewModelBinding extends AbstractBinding {
 
     @ExposedProperty("bossbar")
     private final BossBar bossBar;
@@ -40,7 +40,7 @@ public class BossBarModel implements IViewModel<Station, BossBar> {
     @ExposedProperty("task-id")
     private int taskId = -1;
 
-    BossBarBinding(BossBar bossBar) {
+    BossBarViewModelBinding(BossBar bossBar) {
       this.bossBar = bossBar;
     }
 
@@ -59,7 +59,7 @@ public class BossBarModel implements IViewModel<Station, BossBar> {
 
   @Override
   public void bind(@NotNull Station model, @NotNull BossBar view) {
-    bindings.put(model.id(), new BossBarBinding(view));
+    bindings.put(model.id(), new BossBarViewModelBinding(view));
   }
 
 
@@ -73,9 +73,9 @@ public class BossBarModel implements IViewModel<Station, BossBar> {
     final Component displayName = bossBarName(itemName, actions - progress);
     if (!isBound(model.id())) {
       BossBar bossBar = createBossBar(displayName, progress / actions);
-      bindings.put(model.id(), new BossBarBinding(bossBar));
+      bindings.put(model.id(), new BossBarViewModelBinding(bossBar));
     }
-    final BossBarBinding binding = bindings.get(model.id());
+    final BossBarViewModelBinding binding = bindings.get(model.id());
     final BossBar bossBar = binding.getBossBar().progress(progress / actions)
         .name(displayName);
 
@@ -135,7 +135,7 @@ public class BossBarModel implements IViewModel<Station, BossBar> {
   }
 
   @Override
-  public Binding getBinding(Station model) {
+  public ViewModelBinding getBinding(Station model) {
     return bindings.get(model.id());
   }
 }
