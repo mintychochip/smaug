@@ -7,6 +7,6 @@ public record StationPlayerModelProxy(Player player, Station station) {
 
   @Override
   public int hashCode() {
-    return player.hashCode() + station.hashCode();
+    return player.hashCode() + station.id().hashCode();
   }
 }

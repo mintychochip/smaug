@@ -2,7 +2,6 @@ package org.aincraft.container.gui;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.aincraft.Smaug;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationGuiAdapter;

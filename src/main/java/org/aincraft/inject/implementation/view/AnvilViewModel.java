@@ -12,8 +12,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import org.aincraft.container.display.AnvilItemDisplayView;
+import org.aincraft.container.display.Binding;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.database.model.Station;
+import org.aincraft.inject.implementation.controller.AbstractBinding;
 import org.aincraft.util.Mt;
 import org.aincraft.util.Util;
 import org.bukkit.Location;
@@ -116,7 +118,7 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
     return Util.filterSet(Arrays.stream(Material.values()).toList(), parent);
   }
 
-  static final class ViewBinding {
+  static final class ViewBinding extends AbstractBinding {
 
     private Collection<Display> displays;
 
@@ -205,5 +207,10 @@ final class AnvilViewModel implements IViewModel<Station, AnvilItemDisplayView> 
       scaledStacks.put(stack, scale);
     }
     return scaledStacks;
+  }
+
+  @Override
+  public Binding getBinding(Station model) {
+    return bindings.get(model.id());
   }
 }

@@ -9,6 +9,8 @@ import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.PaginatedGui;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ItemLore;
+import io.papermc.paper.datacomponent.item.ItemLore.Builder;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -16,6 +18,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.Smaug;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.Result.Status;
@@ -23,6 +27,9 @@ import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.display.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.gui.RecipeGui;
+import org.aincraft.container.gui.RecipeGuiFactory;
+import org.aincraft.container.gui.RecipeGuiItemFactory;
+import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
@@ -33,6 +40,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -51,7 +59,7 @@ public class AnvilGuiProxyFactory {
 
   public AnvilGuiProxy create(Station station, Player player) {
     Gui main = Gui.gui(GUI_TYPE).title(MAIN_GUI_TITLE).disableAllInteractions().create();
-    RecipeSelectorItem item = new RecipeSelectorItemFactory(stationService).create(
+    RecipeSelectorItem item = RecipeSelectorItemFactory.create(
         station, player, (e, recipe) -> {
           final StationMeta meta = station.getMeta();
           final String recipeKey = recipe.getKey();
@@ -80,13 +88,10 @@ public class AnvilGuiProxyFactory {
 
   static final class RecipeSelectorItemFactory {
 
-    private final IStationService stationService;
-
     private static final Function<BaseGui, GuiAction<InventoryClickEvent>> OPEN_INVENTORY_ACTION;
 
     private static final Key CODEX_ITEM_MODEL;
     private static final Key RECIPE_SELECTOR_ITEM_MODEL;
-
     private static final Key DEFAULT_PROGRESS_ITEM_MODEL;
 
     static {
@@ -99,26 +104,18 @@ public class AnvilGuiProxyFactory {
       DEFAULT_PROGRESS_ITEM_MODEL = Material.MAP.getKey();
     }
 
-    private RecipeSelectorItemFactory(IStationService stationService) {
-      this.stationService = stationService;
-    }
-
     @SuppressWarnings("UnstableApiUsage")
-    RecipeSelectorItem create(Station station, Player player,
+    private static RecipeSelectorItem create(Station station, Player player,
         BiConsumer<InventoryClickEvent, SmaugRecipe> recipeSelectorConsumer) {
       final ItemStack stack = new ItemStack(Material.RABBIT_FOOT);
-      stack.setData(DataComponentTypes.ITEM_MODEL,
-          retrieveRecipeProgressItemModel(station.getMeta()));
+      stack.setData(DataComponentTypes.ITEM_MODEL, Material.MAP.getKey());
       stack.setData(DataComponentTypes.ITEM_NAME, Component.text("test"));
-      final List<SmaugRecipe> recipes = retrieveAllAvailableRecipes(station.getMeta(), player);
-      PaginatedGui recipeSelectorGui = RecipeGui.create(recipes,
-          Component.text("Recipes:"), recipeSelectorConsumer);
-      PaginatedGui allRecipeGui = RecipeGui.create(Smaug.fetchAllRecipes(ANVIL_STATION_KEY),
-          Component.text("Codex:"), null);
+      PaginatedGui codexGui = createCodexGui(Key.key("smaug:anvil"));
+      PaginatedGui recipeSelectorGui = createRecipeSelectorGui(station, recipeSelectorConsumer);
       recipeSelectorGui.setItem(RecipeGui.ROWS, 2,
           new GuiItem(createStack(CODEX_ITEM_MODEL),
-              OPEN_INVENTORY_ACTION.apply(allRecipeGui)));
-      allRecipeGui.setItem(RecipeGui.ROWS, 2,
+              OPEN_INVENTORY_ACTION.apply(codexGui)));
+      codexGui.setItem(RecipeGui.ROWS, 2,
           new GuiItem(createStack(RECIPE_SELECTOR_ITEM_MODEL),
               OPEN_INVENTORY_ACTION.apply(recipeSelectorGui)));
       return new RecipeSelectorItem(new GuiItem(stack, e -> {
@@ -126,9 +123,65 @@ public class AnvilGuiProxyFactory {
         if (e.isLeftClick()) {
           recipeSelectorGui.open(entity);
         } else {
-          allRecipeGui.open(entity);
+          codexGui.open(entity);
         }
-      }), recipeSelectorGui, allRecipeGui);
+      }), recipeSelectorGui, codexGui);
+    }
+
+    static Key retrieveItemModel(SmaugRecipe recipe) {
+      ItemStack reference = recipe.getOutput().getReference();
+      return reference.getDataOrDefault(DataComponentTypes.ITEM_MODEL,
+          reference.getType().getKey());
+    }
+
+    private static PaginatedGui createRecipeSelectorGui(Station station,
+        BiConsumer<InventoryClickEvent, SmaugRecipe> recipeBiConsumer) {
+      final StationMeta meta = station.getMeta();
+      final StationInventory stationInventory = meta.getInventory();
+      final RecipeGuiItemFactory itemFactory = RecipeGuiItemFactory.create()
+          .setItemModelFunction(RecipeSelectorItemFactory::retrieveItemModel)
+          .setDisplayNameFunction(RecipeSelectorItemFactory::createDisplayName)
+          .setLoreFunction(recipe -> {
+            final IngredientList ingredientList = recipe.getIngredients();
+            final IngredientList missingList = ingredientList.findMissing(
+                stationInventory.getContents());
+            Builder builder = ItemLore.lore().addLine(Component.text("ingredients"))
+                .addLines(ingredientList.components());
+            if (!missingList.isEmpty()) {
+              builder.addLine(Component.text("Missing Ingredients"))
+                  .addLines(missingList.components());
+            }
+            return builder.build();
+          }).build();
+      List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(
+          recipe -> recipe.getStationKey().equals(station.stationKey())
+              && recipe.test(stationInventory.getContents()).getStatus() == Status.SUCCESS);
+      return new RecipeGuiFactory(itemFactory).create(recipes, Component.text("Recipes"),
+          recipeBiConsumer);
+    }
+
+    private static PaginatedGui createCodexGui(Key key) {
+      final RecipeGuiItemFactory itemFactory = RecipeGuiItemFactory.create()
+          .setItemModelFunction(RecipeSelectorItemFactory::retrieveItemModel)
+          .setDisplayNameFunction(RecipeSelectorItemFactory::createDisplayName)
+          .setLoreFunction(recipe -> {
+            IngredientList ingredientList = recipe.getIngredients();
+            return ItemLore.lore().addLine(Component.text("ingredients"))
+                .addLines(ingredientList.components()).build();
+          }).build();
+      return new RecipeGuiFactory(itemFactory).create(Smaug.fetchAllRecipes(key),
+          Component.text("Codex"), null);
+    }
+
+    static Component createDisplayName(SmaugRecipe recipe) {
+      final ItemStack reference = recipe.getOutput().getReference();
+      final ItemMeta meta = reference.getItemMeta();
+      @SuppressWarnings("UnstableApiUsage")
+      Component displayName = meta.hasDisplayName() ? meta.displayName()
+          : reference.getDataOrDefault(DataComponentTypes.ITEM_NAME,
+              Component.text("def"));
+      return MiniMessage.miniMessage()
+          .deserialize("Recipe: <a>", Placeholder.component("a", displayName));
     }
 
     static List<SmaugRecipe> retrieveAllAvailableRecipes(StationMeta meta,
@@ -142,18 +195,6 @@ public class AnvilGuiProxyFactory {
 
         return isValidStation;
       });
-    }
-
-    static Key retrieveRecipeProgressItemModel(StationMeta meta) {
-      SmaugRecipe recipe = Smaug.fetchRecipe(meta.getRecipeKey());
-      if (recipe != null) {
-        ItemStack reference = recipe.getOutput().getReference();
-        @SuppressWarnings("UnstableApiUsage")
-        Key key = reference.getDataOrDefault(DataComponentTypes.ITEM_MODEL,
-            reference.getType().getKey());
-        return key;
-      }
-      return DEFAULT_PROGRESS_ITEM_MODEL;
     }
 
     @SuppressWarnings("UnstableApiUsage")

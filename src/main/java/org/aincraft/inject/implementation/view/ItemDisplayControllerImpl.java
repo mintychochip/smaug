@@ -21,6 +21,7 @@ import org.aincraft.container.display.IViewModelController;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.inject.implementation.controller.AbstractViewModelController;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
@@ -30,7 +31,7 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
-final class ItemDisplayControllerImpl implements IViewModelController<Station, AnvilItemDisplayView> {
+final class ItemDisplayControllerImpl extends AbstractViewModelController<Station,AnvilItemDisplayView> {
 
   private final Map<Key, IViewModel<Station, AnvilItemDisplayView>> viewModels;
   private final IStationService stationService;
@@ -69,23 +70,6 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, A
     this.plugin = plugin;
   }
 
-  @Override
-  public void register(@NotNull Key stationKey,
-      @NotNull IViewModel<Station, AnvilItemDisplayView> viewModel) {
-    viewModels.put(stationKey, viewModel);
-  }
-
-  @Override
-  public boolean isRegistered(@NotNull Key stationKey) {
-    Preconditions.checkArgument(stationKey != null);
-    return viewModels.containsKey(stationKey);
-  }
-
-  @Override
-  public IViewModel<Station, AnvilItemDisplayView> get(@NotNull Key stationKey) {
-    return viewModels.get(stationKey);
-  }
-
   private void update(Station model) {
     StationMeta meta = model.getMeta();
     StationInventory inventory = meta.getInventory();
@@ -104,17 +88,6 @@ final class ItemDisplayControllerImpl implements IViewModelController<Station, A
     }
     Set<ItemStack> items = selectWeightedItems(weightedItems);
     viewModel.update(model, items);
-  }
-
-  @Override
-  public Collection<IViewModel<Station, AnvilItemDisplayView>> getAll() {
-    return viewModels.values();
-  }
-
-  @NotNull
-  @Override
-  public Iterator<IViewModel<Station, AnvilItemDisplayView>> iterator() {
-    return viewModels.values().iterator();
   }
 
   @EventHandler(priority = EventPriority.MONITOR)

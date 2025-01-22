@@ -6,6 +6,8 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import net.kyori.adventure.bossbar.BossBar;
 import org.aincraft.container.IRegistry.IItemRegistry;
+import org.aincraft.container.anvil.StationPlayerModelProxy;
+import org.aincraft.container.display.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.item.IKeyedItemFactory;
@@ -15,6 +17,7 @@ import org.aincraft.database.storage.SqlConfig;
 import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
+import org.aincraft.inject.implementation.gui.AnvilGuiControllerProvider;
 import org.aincraft.inject.implementation.view.BossBarViewModelControllerProvider;
 import org.aincraft.inject.implementation.view.ItemDisplayControllerProvider;
 import org.aincraft.listener.IStationService;
@@ -32,6 +35,7 @@ public final class PluginImplementationModule extends AbstractModule {
   private Class<? extends Provider<SqlConfig>> sqlConfigProviderClazz = SqlConfigProvider.class;
   private Class<? extends Provider<IViewModelController<Station, AnvilItemDisplayView>>> stationViewModelControllerClazz = ItemDisplayControllerProvider.class;
   private Class<? extends Provider<IViewModelController<Station, BossBar>>> barViewControllerClazz = BossBarViewModelControllerProvider.class;
+  private Class<? extends Provider<IViewModelController<StationPlayerModelProxy, AnvilGuiProxy>>> guiControllerClazz = AnvilGuiControllerProvider.class;
 
   @Override
   protected void configure() {
@@ -47,7 +51,10 @@ public final class PluginImplementationModule extends AbstractModule {
     bind(new TypeLiteral<IViewModelController<Station, AnvilItemDisplayView>>() {
     }).toProvider(stationViewModelControllerClazz)
         .in(Singleton.class);
-    bind(new TypeLiteral<IViewModelController<Station,BossBar>>(){}).toProvider(barViewControllerClazz).in(Singleton.class);
+    bind(new TypeLiteral<IViewModelController<Station, BossBar>>() {
+    }).toProvider(barViewControllerClazz).in(Singleton.class);
+    bind(new TypeLiteral<IViewModelController<StationPlayerModelProxy, AnvilGuiProxy>>() {
+    }).toProvider(guiControllerClazz).in(Singleton.class);
   }
 
   public void setKeyedItemFactoryClazz(
@@ -103,5 +110,10 @@ public final class PluginImplementationModule extends AbstractModule {
   public void setBarViewControllerClazz(
       Class<? extends Provider<IViewModelController<Station, BossBar>>> barViewControllerClazz) {
     this.barViewControllerClazz = barViewControllerClazz;
+  }
+
+  public void setGuiControllerClazz(
+      Class<? extends Provider<IViewModelController<StationPlayerModelProxy, AnvilGuiProxy>>> guiControllerClazz) {
+    this.guiControllerClazz = guiControllerClazz;
   }
 }

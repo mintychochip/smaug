@@ -14,50 +14,51 @@ import org.jetbrains.annotations.NotNull;
 
 public final class IngredientList implements Iterable<Ingredient> {
 
-  private List<Ingredient> ingredients;
+  private List<Ingredient> delegate;
 
   public List<Component> components() {
-    return ingredients.stream().map(i -> MiniMessage.miniMessage()
+    return delegate.stream().map(i -> MiniMessage.miniMessage()
             .deserialize("<italic:false><white> * <a>", Placeholder.component("a", i.component())))
         .toList();
   }
 
   public Map<Integer, ItemStack> remove(Map<Integer, ItemStack> stackMap) {
     Map<Integer, ItemStack> removed = new HashMap<>(stackMap);
-    for (Ingredient i : ingredients) {
+    for (Ingredient i : delegate) {
       removed = i.remove(removed);
     }
     return removed;
   }
 
   public IngredientList(List<Ingredient> ingredients) {
-    this.ingredients = ingredients;
+    this.delegate = ingredients;
   }
 
-  public IngredientList addIngredient(Ingredient ingredient) {
-    ingredients.add(ingredient);
-    return this;
+  public void addIngredient(Ingredient ingredient) {
+    delegate.add(ingredient);
   }
 
-  public IngredientList setIngredients(List<Ingredient> ingredients) {
-    this.ingredients = ingredients;
-    return this;
+  public void setIngredients(List<Ingredient> ingredients) {
+    this.delegate = ingredients;
   }
 
+  public boolean isEmpty() {
+    return delegate.isEmpty();
+  }
   @NotNull
   @Override
   public Iterator<Ingredient> iterator() {
-    return ingredients.iterator();
+    return delegate.iterator();
   }
 
   public Stream<Ingredient> stream() {
-    return ingredients.stream();
+    return delegate.stream();
   }
 
   public IngredientList findMissing(
       List<ItemStack> stacks) {
     List<Ingredient> missing = new ArrayList<>();
-    for (Ingredient ingredient : this.ingredients) {
+    for (Ingredient ingredient : this.delegate) {
       if (!ingredient.test(stacks)) {
         double amount =
             ingredient.getRequired().doubleValue() - ingredient.getCurrentAmount(stacks)
@@ -70,6 +71,6 @@ public final class IngredientList implements Iterable<Ingredient> {
 
   @Override
   public String toString() {
-    return ingredients.toString();
+    return delegate.toString();
   }
 }

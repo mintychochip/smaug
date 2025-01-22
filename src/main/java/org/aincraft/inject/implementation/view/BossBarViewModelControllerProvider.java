@@ -13,14 +13,12 @@ import org.bukkit.plugin.Plugin;
 public class BossBarViewModelControllerProvider implements
     Provider<IViewModelController<Station, BossBar>> {
 
-  private final IStationService stationService;
   private final IRecipeFetcher recipeFetcher;
   private final Plugin plugin;
 
   @Inject
-  public BossBarViewModelControllerProvider(IStationService stationService,
+  public BossBarViewModelControllerProvider(
       IRecipeFetcher recipeFetcher, Plugin plugin) {
-    this.stationService = stationService;
     this.recipeFetcher = recipeFetcher;
     this.plugin = plugin;
   }
