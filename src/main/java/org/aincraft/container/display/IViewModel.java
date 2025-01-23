@@ -14,7 +14,7 @@ public interface IViewModel<M, V> {
 
   void update(@NotNull M model, @NotNull Object... data);
 
-  void remove(@NotNull M model, @Nullable Consumer<ViewModelBinding> bindingConsumer);
+  void remove(@NotNull M model, @Nullable Consumer<IViewModelBinding> bindingConsumer);
 
   default void remove(@NotNull M model) {
     remove(model, null);
@@ -24,13 +24,13 @@ public interface IViewModel<M, V> {
     removeAll(null);
   }
 
-  void removeAll(@Nullable Consumer<ViewModelBinding> bindingConsumer);
+  void removeAll(@Nullable Consumer<IViewModelBinding> bindingConsumer);
 
   boolean isBound(@NotNull M model);
 
-  ViewModelBinding getBinding(M model);
+  IViewModelBinding getBinding(M model);
 
-  interface ViewModelBinding {
+  interface IViewModelBinding {
 
     @NotNull
     <T> T getProperty(@NotNull String identifier, @NotNull Class<T> clazz)

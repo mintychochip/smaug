@@ -37,18 +37,8 @@ public class BossBarModel extends AbstractViewModel<Station, BossBar, UUID> {
     @ExposedProperty("bossbar")
     private final BossBar bossBar;
 
-    private int taskId = -1;
-
     BossBarViewModelBinding(BossBar bossBar) {
       this.bossBar = bossBar;
-    }
-
-    public int getTaskId() {
-      return taskId;
-    }
-
-    public void setTaskId(int taskId) {
-      this.taskId = taskId;
     }
 
     public BossBar getBossBar() {
@@ -61,7 +51,7 @@ public class BossBarModel extends AbstractViewModel<Station, BossBar, UUID> {
     final float progress = (float) data[0];
     final float actions = (float) data[1];
     final Component itemName = (Component) data[2];
-    final Player player = (Player) data[3];
+  //  final Player player = (Player) data[3];
     if (!this.isBound(model)) {
       final Component displayName = bossBarName(itemName, actions - progress);
       this.bind(model,createBossBar(displayName, progress / actions));
@@ -71,21 +61,21 @@ public class BossBarModel extends AbstractViewModel<Station, BossBar, UUID> {
     final BossBar bossBar = binding.getBossBar().progress(progress / actions)
         .name(displayName);
 
-    if (!playerIsViewingBossBar(player, bossBar)) {
-      player.showBossBar(bossBar);
-    }
-
-    if (binding.getTaskId() != -1) {
-      Bukkit.getScheduler().cancelTask(binding.getTaskId());
-    }
-
-    int taskId = new BukkitRunnable() {
-      @Override
-      public void run() {
-        player.hideBossBar(bossBar);
-        binding.setTaskId(-1);
-      }
-    }.runTaskLater(plugin, fadeAwayTime).getTaskId();
+//    if (!playerIsViewingBossBar(player, bossBar)) {
+//      player.showBossBar(bossBar);
+//    }
+//
+//    if (binding.getTaskId() != -1) {
+//      Bukkit.getScheduler().cancelTask(binding.getTaskId());
+//    }
+//
+//    int taskId = new BukkitRunnable() {
+//      @Override
+//      public void run() {
+//        player.hideBossBar(bossBar);
+//        binding.setTaskId(-1);
+//      }
+//    }.runTaskLater(plugin, fadeAwayTime).getTaskId();
     binding.setTaskId(taskId);
     this.updateBinding(model,binding);
   }

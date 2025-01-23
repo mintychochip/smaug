@@ -5,12 +5,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.base.Preconditions;
-import org.aincraft.container.display.IViewModel.ViewModelBinding;
+import org.aincraft.container.display.IViewModel.IViewModelBinding;
 import org.aincraft.container.display.PropertyNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractBinding implements ViewModelBinding {
+public abstract class AbstractBinding implements IViewModelBinding {
 
     @Override
     public <T> @NotNull T getProperty(@NotNull String identifier, @NotNull Class<T> clazz) throws PropertyNotFoundException {

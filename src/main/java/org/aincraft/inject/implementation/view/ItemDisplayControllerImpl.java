@@ -1,12 +1,10 @@
 package org.aincraft.inject.implementation.view;
 
-import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,23 +16,18 @@ import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModel;
-import org.aincraft.container.display.IViewModel.ViewModelBinding;
-import org.aincraft.container.display.IViewModelController;
+import org.aincraft.container.display.IViewModel.IViewModelBinding;
 import org.aincraft.container.display.PropertyNotFoundException;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.inject.implementation.controller.AbstractViewModelController;
-import org.aincraft.inject.implementation.view.AnvilViewModel.ViewViewModelBinding;
-import org.aincraft.listener.IStationService;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
@@ -45,7 +38,7 @@ final class ItemDisplayControllerImpl extends
   private static int DEFAULT_WEIGHT = 1;
   private static final Map<Key, Number> ITEM_MODEL_WEIGHTS;
 
-  private static Consumer<ViewModelBinding> REMOVE_ENTITY_CONSUMER = binding -> {
+  private static Consumer<IViewModelBinding> REMOVE_ENTITY_CONSUMER = binding -> {
     try {
       @SuppressWarnings("unchecked")
       List<Display> displays = (List<Display>) binding.getProperty(
