@@ -59,8 +59,9 @@ public class BossBarModel extends AbstractViewModel<Station, BossBar, UUID> {
     if (!this.isBound(model)) {
       this.bind(model, createBossBar(bossBarName, progress / actions));
     }
-    final BossBarViewModelBinding binding = (BossBarViewModelBinding) this.getBinding(model);
-    binding.getBossBar().progress(progress / actions)
+    final BossBar bossBar = this.getBinding(model).getProperty(BossBar.class);
+    assert bossBar != null;
+    bossBar.progress(progress / actions)
         .name(bossBarName);
   }
 

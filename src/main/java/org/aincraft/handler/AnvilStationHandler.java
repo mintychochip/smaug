@@ -177,6 +177,7 @@ public class AnvilStationHandler implements StationHandler {
           meta.setProgress(0);
           meta.setInventory(result.getInventory());
           station.setMeta(meta);
+          player.playSound(player,Sound.ENTITY_PLAYER_LEVELUP,1f,1f);
           Bukkit.getPluginManager()
               .callEvent(new StationUpdateEvent(station, player));
         }
