@@ -3,7 +3,6 @@ package org.aincraft.inject.implementation.view;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
 import java.util.List;
-import java.util.function.Function;
 import org.aincraft.Smaug;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
@@ -47,7 +46,7 @@ public final class AnvilGuiViewModel extends
   }
 
   @Override
-  public void update(@NotNull StationPlayerModelProxy model, @NotNull Object... data) {
+  public void update(@NotNull StationPlayerModelProxy model) {
     final AnvilGuiViewBinding binding = (AnvilGuiViewBinding) this.getBinding(model);
 
     final RecipeSelectorItem recipeSelectorItem = binding.recipeSelectorItem();

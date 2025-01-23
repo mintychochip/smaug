@@ -1,10 +1,9 @@
 package org.aincraft.inject.implementation.controller;
 
+import com.google.common.base.Preconditions;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.google.common.base.Preconditions;
 import org.aincraft.container.display.IViewModel.IViewModelBinding;
 import org.aincraft.container.display.PropertyNotFoundException;
 import org.jetbrains.annotations.NotNull;

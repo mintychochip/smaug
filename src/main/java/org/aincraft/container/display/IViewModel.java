@@ -3,16 +3,15 @@ package org.aincraft.container.display;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.function.Consumer;
 
 public interface IViewModel<M, V> {
 
   void bind(@NotNull M model, @NotNull V view);
 
-  void update(@NotNull M model, @NotNull Object... data);
+  void update(@NotNull M model);
 
   void remove(@NotNull M model, @Nullable Consumer<IViewModelBinding> bindingConsumer);
 

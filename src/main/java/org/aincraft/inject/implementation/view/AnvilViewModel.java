@@ -1,6 +1,6 @@
 package org.aincraft.inject.implementation.view;
 
-import com.google.common.base.Preconditions;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,15 +8,21 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import net.kyori.adventure.key.Key;
 import org.aincraft.container.display.AnvilItemDisplayView;
+import org.aincraft.container.display.PropertyNotFoundException;
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.Station.StationInventory;
+import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.inject.implementation.controller.AbstractBinding;
 import org.aincraft.util.Mt;
 import org.aincraft.util.Util;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -30,16 +36,18 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-final class AnvilViewModel extends AbstractViewModel<Station,AnvilItemDisplayView, UUID> {
+final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayView, UUID> {
 
   AnvilViewModel() {
-    super(view -> new ViewViewModelBinding(view.getDisplays()),Station::id);
+    super(view -> new ViewViewModelBinding(view.getDisplays()), Station::id);
   }
 
+  private static int MAX_DISPLAY = 3;
+  private static int DEFAULT_WEIGHT = 1;
   private static float ITEM_SCALE;
   private static float BLOCK_SCALE;
   private static float TOOL_SCALE;
-
+  private static final Map<Key, Number> ITEM_MODEL_WEIGHTS;
   private static final Set<Material> ITEM_WHITELIST;
   private static final Predicate<ItemStack> ITEM_MODEL_IS_ITEM;
   private static final Predicate<ItemStack> ITEM_MODEL_IS_TOOL;
@@ -103,7 +111,30 @@ final class AnvilViewModel extends AbstractViewModel<Station,AnvilItemDisplayVie
       }
       return false;
     };
+    ITEM_MODEL_WEIGHTS = new HashMap<>();
+    ITEM_MODEL_WEIGHTS.putAll(
+        applyWeight(20, Material.GOLD_INGOT, Material.GOLD_BLOCK, Material.GOLD_NUGGET,
+            Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE, Material.NETHER_GOLD_ORE));
   }
+
+  private static Map<Key, Number> applyWeight(Number weight, Material... materials) {
+    Map<Key, Number> modelWeights = new HashMap<>();
+    for (Material material : materials) {
+      modelWeights.put(material.getKey(), weight);
+    }
+    return modelWeights;
+  }
+
+  private static final Consumer<IViewModelBinding> REMOVE_ENTITY_CONSUMER = binding -> {
+    try {
+      @SuppressWarnings("unchecked")
+      List<Display> displays = (List<Display>) binding.getProperty(
+          "displays", List.class);
+      displays.forEach(Entity::remove);
+    } catch (PropertyNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  };
 
   private static Collection<Material> containsWord(String... words) {
     Predicate<Material> parent = material -> false;
@@ -135,16 +166,23 @@ final class AnvilViewModel extends AbstractViewModel<Station,AnvilItemDisplayVie
   }
 
   @Override
-  public void update(@NotNull Station model, @NotNull Object... data) {
-    Preconditions.checkArgument(data.length == 1);
-    Object datum = data[0];
-    Preconditions.checkArgument(datum != null && datum instanceof Collection<?>);
+  public void update(@NotNull Station model) {
     if (!this.isBound(model)) {
-      return;
+      this.bind(model,new AnvilItemDisplayView());
     }
     ViewViewModelBinding binding = (ViewViewModelBinding) this.getBinding(model);
-    @SuppressWarnings("unchecked")
-    Collection<ItemStack> stacks = (Collection<ItemStack>) datum;
+    StationMeta meta = model.getMeta();
+    StationInventory inventory = meta.getInventory();
+    List<ItemStack> contents = inventory.getContents();
+    if(contents.isEmpty()) {
+      this.remove(model,REMOVE_ENTITY_CONSUMER);
+      return;
+    }
+    Map<ItemStack, Number> weightedItems = createWeightedItems(inventory.getContents());
+    if(weightedItems.isEmpty()) {
+      return;
+    }
+    Set<ItemStack> stacks = selectWeightedItems(weightedItems);
     Map<ItemStack, Float> scaledStacks = createScaledStacks(stacks);
     //TODO: split bounding box before release
     List<Display> displays = new ArrayList<>();
@@ -157,8 +195,9 @@ final class AnvilViewModel extends AbstractViewModel<Station,AnvilItemDisplayVie
     binding.getDisplays().forEach(Entity::remove);
     binding.setDisplays(displays);
     displays.forEach(world::addEntity);
-    this.updateBinding(model,binding);
+    this.updateBinding(model, binding);
   }
+
 
   private static Location randomLocation(BoundingBox box, World world) {
     Vector max = box.getMax(), min = box.getMin();
@@ -177,5 +216,41 @@ final class AnvilViewModel extends AbstractViewModel<Station,AnvilItemDisplayVie
       scaledStacks.put(stack, scale);
     }
     return scaledStacks;
+  }
+
+  private static Set<ItemStack> selectWeightedItems(final Map<ItemStack, Number> weightedItems) {
+    if (weightedItems.isEmpty()) {
+      return new HashSet<>();
+    }
+    int size = weightedItems.size();
+    if (size == MAX_DISPLAY) {
+      return weightedItems.keySet();
+    }
+    return weightedItems
+        .entrySet()
+        .stream()
+        .sorted(
+            (one, two) -> Double.compare(two.getValue().doubleValue(),
+                one.getValue().doubleValue()))
+        .limit(3)
+        .map(Entry::getKey)
+        .collect(Collectors.toSet());
+  }
+
+  @NotNull
+  private static Map<ItemStack, Number> createWeightedItems(Collection<ItemStack> stacks) {
+    Map<ItemStack, Number> weightedItems = new HashMap<>();
+    for (ItemStack stack : stacks) {
+      if (stack == null || stack.getType().isAir()) {
+        continue;
+      }
+
+      @SuppressWarnings("UnstableApiUsage") final Key key =
+          stack.hasData(DataComponentTypes.ITEM_MODEL) ? stack.getData(
+              DataComponentTypes.ITEM_MODEL) : stack.getType().getKey();
+      final Number weight = ITEM_MODEL_WEIGHTS.getOrDefault(key, DEFAULT_WEIGHT);
+      weightedItems.put(stack, weight);
+    }
+    return weightedItems;
   }
 }

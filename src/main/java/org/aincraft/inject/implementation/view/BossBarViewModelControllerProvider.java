@@ -6,7 +6,6 @@ import net.kyori.adventure.bossbar.BossBar;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.database.model.Station;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.listener.IStationService;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.Plugin;
 
@@ -25,8 +24,7 @@ public class BossBarViewModelControllerProvider implements
 
   @Override
   public IViewModelController<Station, BossBar> get() {
-    ProgressBarControllerImpl controller = new ProgressBarControllerImpl(
-        recipeFetcher);
+    ProgressBarControllerImpl controller = new ProgressBarControllerImpl();
     controller.register(new NamespacedKey(plugin, "anvil"), new BossBarModel(plugin));
     return controller;
   }

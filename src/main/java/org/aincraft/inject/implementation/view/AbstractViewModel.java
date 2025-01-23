@@ -3,7 +3,6 @@ package org.aincraft.inject.implementation.view;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-
 import java.util.function.Function;
 import org.aincraft.container.display.IViewModel;
 import org.jetbrains.annotations.NotNull;
@@ -50,8 +49,8 @@ abstract class AbstractViewModel<M, V, K> implements IViewModel<M, V> {
 
   @Override
   public IViewModelBinding getBinding(M model) {
-    final K key = modelKeyFunction.apply(model);
-    return bindings.get(key);
+    final K modelKey = modelKeyFunction.apply(model);
+    return bindings.get(modelKey);
   }
 
   @Override

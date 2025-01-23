@@ -10,8 +10,6 @@ import org.aincraft.commands.IngredientCommand;
 import org.aincraft.commands.SmithCommand;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.StationHandler;
-import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.container.display.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModelController;

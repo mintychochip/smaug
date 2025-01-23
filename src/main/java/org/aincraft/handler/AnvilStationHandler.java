@@ -3,9 +3,11 @@ package org.aincraft.handler;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import dev.triumphteam.gui.guis.PaginatedGui;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -15,6 +17,9 @@ import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
+import org.aincraft.container.display.IViewModel;
+import org.aincraft.container.display.IViewModel.IViewModelBinding;
+import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.gui.RecipeGui;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
@@ -31,6 +36,7 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 public class AnvilStationHandler implements StationHandler {
@@ -40,12 +46,24 @@ public class AnvilStationHandler implements StationHandler {
 
   private static final Key STATION_KEY = Key.key("smaug:anvil");
 
+  private final Map<BossBarPlayerComposite, Integer> bossBarTaskMap = new HashMap<>();
+
+  record BossBarPlayerComposite(Player player, Station station) {
+
+    @Override
+    public int hashCode() {
+      return player.getUniqueId().hashCode() + station.id().hashCode();
+    }
+  }
+
+  private final IViewModelController<Station, BossBar> controller;
 
   @Inject
   public AnvilStationHandler(IStationService service,
-      @Named("id") NamespacedKey idKey) {
+      @Named("id") NamespacedKey idKey, IViewModelController<Station, BossBar> controller) {
     this.service = service;
     this.idKey = idKey;
+    this.controller = controller;
   }
 
   @Override
@@ -117,6 +135,31 @@ public class AnvilStationHandler implements StationHandler {
         successfulAction(location);
         meta.setProgress(meta.getProgress() + 1);
         station.setMeta(meta);
+        IViewModel<Station, BossBar> viewModel = controller.get(
+            Key.key("smaug:anvil"));
+        IViewModelBinding binding = viewModel.getBinding(station);
+        if (binding != null) {
+          BossBar bossBar = binding.getProperty(BossBar.class);
+          if (bossBar != null) {
+            if (!playerIsViewingBossBar(player, bossBar)) {
+              player.showBossBar(bossBar);
+            }
+            BossBarPlayerComposite composite = new BossBarPlayerComposite(player,
+                station);
+            if (bossBarTaskMap.containsKey(composite)) {
+              Integer previousTaskId = bossBarTaskMap.remove(composite);
+              Bukkit.getScheduler().cancelTask(previousTaskId);
+            }
+            int taskId = new BukkitRunnable() {
+              @Override
+              public void run() {
+                player.hideBossBar(bossBar);
+              }
+            }.runTaskLater(Smaug.getPlugin(), 20L).getTaskId();
+            bossBarTaskMap.put(composite, taskId);
+          }
+        }
+
         Bukkit.getPluginManager()
             .callEvent(new StationUpdateEvent(station, player));
       } else {
@@ -148,6 +191,15 @@ public class AnvilStationHandler implements StationHandler {
     world.playSound(stationLocation, Sound.BLOCK_ANVIL_USE, 1f, 1f);
     world.spawnParticle(Particle.LAVA, stationLocation.clone().add(0.5, 1, 0.5), 1, 0, 0, 0, 0,
         null);
+  }
+
+  private static boolean playerIsViewingBossBar(Player player, BossBar bossBar) {
+    for (BossBar activeBossBar : player.activeBossBars()) {
+      if (activeBossBar.equals(bossBar)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private record RecipeSelector(IStationService service) {

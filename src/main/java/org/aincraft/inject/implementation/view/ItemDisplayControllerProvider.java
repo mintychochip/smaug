@@ -2,11 +2,7 @@ package org.aincraft.inject.implementation.view;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import java.util.HashMap;
-import java.util.Map;
-import net.kyori.adventure.key.Key;
 import org.aincraft.container.display.AnvilItemDisplayView;
-import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.database.model.Station;
 import org.aincraft.listener.IStationService;
