@@ -1,28 +1,29 @@
 package org.aincraft.inject.implementation.view;
 
-import com.google.inject.Exposed;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Function;
 import org.aincraft.Smaug;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.display.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilGuiProxy.RecipeSelectorItem;
-import org.aincraft.container.display.ViewModelBinding;
-import org.aincraft.container.display.IViewModel;
 import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.inject.implementation.controller.AbstractBinding;
-import org.aincraft.inject.implementation.controller.AbstractViewModel;
 import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory.RecipeSelectorItemFactory;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 
-public final class AnvilGuiViewModel extends AbstractViewModel<StationPlayerModelProxy,AnvilGuiProxy,Integer> {
+public final class AnvilGuiViewModel extends
+    AbstractViewModel<StationPlayerModelProxy, AnvilGuiProxy, Integer> {
+
+  AnvilGuiViewModel() {
+    super(view -> new AnvilGuiViewBinding(view.getMainGui(), view.getRecipeSelectorItem()),
+        StationPlayerModelProxy::hashCode);
+  }
 
   static final class AnvilGuiViewBinding extends AbstractBinding {
 
@@ -43,11 +44,6 @@ public final class AnvilGuiViewModel extends AbstractViewModel<StationPlayerMode
     public RecipeSelectorItem recipeSelectorItem() {
       return recipeSelectorItem;
     }
-  }
-
-  @Override
-  public ViewModelBinding viewToBinding(AnvilGuiProxy view) {
-    return new AnvilGuiViewBinding(view.getMainGui(), view.getRecipeSelectorItem());
   }
 
   @Override
@@ -75,10 +71,5 @@ public final class AnvilGuiViewModel extends AbstractViewModel<StationPlayerMode
     final Inventory inventory = gui.getInventory();
     final List<HumanEntity> viewers = inventory.getViewers();
     return viewers.contains(humanEntity);
-  }
-
-  @Override
-  public Integer getModelKey(StationPlayerModelProxy model) {
-    return model.hashCode();
   }
 }

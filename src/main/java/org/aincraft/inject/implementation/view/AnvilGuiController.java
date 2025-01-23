@@ -1,24 +1,16 @@
-package org.aincraft.inject.implementation.gui;
+package org.aincraft.inject.implementation.view;
 
-import dev.triumphteam.gui.guis.BaseGui;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.display.AnvilGuiProxy;
 import org.aincraft.container.display.IViewModel;
-import org.aincraft.container.display.IViewModelController;
 import org.aincraft.database.model.Station;
 import org.aincraft.inject.implementation.controller.AbstractViewModelController;
-import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory;
 import org.aincraft.listener.IStationService;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.NotNull;
 
 public class AnvilGuiController extends
     AbstractViewModelController<StationPlayerModelProxy, AnvilGuiProxy> {
@@ -26,10 +18,10 @@ public class AnvilGuiController extends
   private final AnvilGuiProxyFactory factory;
 
   public AnvilGuiController(IStationService stationService, Plugin plugin) {
-    this.factory = new AnvilGuiProxyFactory(stationService,plugin);
+    this.factory = new AnvilGuiProxyFactory(stationService, plugin);
   }
 
-  @EventHandler
+  @EventHandler(priority = EventPriority.MONITOR)
   private void handleUpdate(final StationUpdateEvent event) {
     if (event.isCancelled()) {
       return;
@@ -38,8 +30,8 @@ public class AnvilGuiController extends
     Player player = event.getViewer();
     StationPlayerModelProxy proxy = new StationPlayerModelProxy(player, model);
     IViewModel<StationPlayerModelProxy, AnvilGuiProxy> viewModel = this.get(model.stationKey());
-    if (!viewModel.isBound(proxy.hashCode())) {
-      viewModel.bind(proxy,factory.create(model,player));
+    if (!viewModel.isBound(proxy)) {
+      viewModel.bind(proxy, factory.create(model, player));
     }
     viewModel.update(new StationPlayerModelProxy(player, model));
   }

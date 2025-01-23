@@ -26,9 +26,7 @@ public final class ItemDisplayControllerProvider implements Provider<IViewModelC
 
   @Override
   public IViewModelController<Station, AnvilItemDisplayView> get() {
-    Map<Key, IViewModel<Station, AnvilItemDisplayView>> viewModels = new HashMap<>();
-    ItemDisplayControllerImpl controller = new ItemDisplayControllerImpl(viewModels,
-        stationService, plugin);
+    ItemDisplayControllerImpl controller = new ItemDisplayControllerImpl();
     controller.register(new NamespacedKey(plugin, "anvil"), new AnvilViewModel());
     return controller;
   }

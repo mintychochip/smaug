@@ -7,8 +7,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.bossbar.BossBar.Color;
+import net.kyori.adventure.bossbar.BossBar.Overlay;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.display.IViewModel;
@@ -54,13 +58,22 @@ public class ProgressBarControllerImpl extends AbstractViewModelController<Stati
     }
     IViewModel<Station, BossBar> viewModel = this.get(
         model.stationKey());
+    if (viewModel == null) {
+      return;
+    }
+    final Component itemName = itemName(recipe);
+
+    viewModel.update(model, meta.getProgress(), recipe.getActions(), itemName, player);
+  }
+
+  private static Component itemName(SmaugRecipe recipe) {
     final ItemStack reference = recipe.getOutput().getReference();
     final ItemMeta itemMeta = reference.getItemMeta();
     @SuppressWarnings("UnstableApiUsage") final Component itemName =
         itemMeta.hasDisplayName() ? itemMeta.displayName()
             : reference.getDataOrDefault(DataComponentTypes.ITEM_NAME,
                 DEFAULT_BOSS_BAR_ITEM_NAME);
-    assert itemName != null;
-    viewModel.update(model, meta.getProgress(), recipe.getActions(), itemName, player);
+    return itemName;
   }
+
 }

@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.base.Preconditions;
-import org.aincraft.container.display.ViewModelBinding;
+import org.aincraft.container.display.IViewModel.ViewModelBinding;
 import org.aincraft.container.display.PropertyNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

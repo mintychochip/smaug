@@ -41,15 +41,15 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   private final IRecipeFetcher recipeFetcher;
   private final IViewModelController<Station, AnvilItemDisplayView> controller;
   private final IViewModelController<Station, BossBar> bossBarController;
-  private final IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController;
+  // private final IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController;
   private final IStationService stationService;
   private final IItemRegistry itemRegistry;
+
   @Inject
   SmaugPluginImpl(Plugin bootstrap, IStorage storage,
       Injector injector, IKeyFactory keyFactory,
       IRecipeFetcher recipeFetcher, IViewModelController<Station, AnvilItemDisplayView> controller,
-      IViewModelController<Station, BossBar> bossBarController,
-      IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController, IStationService stationService,
+      IViewModelController<Station, BossBar> bossBarController, IStationService stationService,
       IItemRegistry itemRegistry) {
     this.bootstrap = bootstrap;
     this.storage = storage;
@@ -58,7 +58,6 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     this.recipeFetcher = recipeFetcher;
     this.controller = controller;
     this.bossBarController = bossBarController;
-    this.guiController = guiController;
     this.stationService = stationService;
     this.itemRegistry = itemRegistry;
   }
@@ -68,7 +67,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     Injector childInjector = injector.createChildInjector(new StationModule(handlers));
     registerListeners(new Listener[]{childInjector.getInstance(StationListener.class),
         injector.getInstance(PlayerListener.class), new GuiListener(),
-        controller, bossBarController, guiController}, bootstrap);
+        controller, bossBarController}, bootstrap);
     if (bootstrap instanceof JavaPlugin jp) {
       jp.getCommand("smith").setExecutor(injector.getInstance(SmithCommand.class));
       jp.getCommand("test").setExecutor(injector.getInstance(IngredientCommand.class));

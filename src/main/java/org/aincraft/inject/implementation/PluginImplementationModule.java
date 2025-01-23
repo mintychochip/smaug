@@ -17,7 +17,7 @@ import org.aincraft.database.storage.SqlConfig;
 import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.inject.implementation.gui.AnvilGuiControllerProvider;
+import org.aincraft.inject.implementation.view.AnvilGuiControllerProvider;
 import org.aincraft.inject.implementation.view.BossBarViewModelControllerProvider;
 import org.aincraft.inject.implementation.view.ItemDisplayControllerProvider;
 import org.aincraft.listener.IStationService;

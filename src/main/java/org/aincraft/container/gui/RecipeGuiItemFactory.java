@@ -11,6 +11,7 @@ import org.aincraft.container.SmaugRecipe;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RecipeGuiItemFactory {
@@ -22,29 +23,30 @@ public class RecipeGuiItemFactory {
   }
 
   @Nullable
-  private Function<SmaugRecipe, Key> itemModelFunction;
+  private Function<SmaugRecipe, @NotNull Key> itemModelFunction;
   @Nullable
-  private Function<SmaugRecipe, Component> displayNameFunction;
+  private Function<SmaugRecipe, @NotNull Component> displayNameFunction;
   @Nullable
-  private Function<SmaugRecipe, ItemLore> loreFunction;
+  private Function<SmaugRecipe, @NotNull ItemLore> loreFunction;
 
   RecipeGuiItemFactory(
-      @Nullable Function<SmaugRecipe, Key> itemModelFunction,
-      @Nullable Function<SmaugRecipe, ItemLore> loreFunction,
-      @Nullable Function<SmaugRecipe, Component> displayNameFunction) {
+      @Nullable Function<SmaugRecipe, @NotNull Key> itemModelFunction,
+      @Nullable Function<SmaugRecipe, @NotNull ItemLore> loreFunction,
+      @Nullable Function<SmaugRecipe, @NotNull Component> displayNameFunction) {
     this.itemModelFunction = itemModelFunction;
     this.loreFunction = loreFunction;
     this.displayNameFunction = displayNameFunction;
   }
 
-  public static RecipeGuiItemFactory create(@Nullable Function<SmaugRecipe, Key> itemModelFunction,
-      @Nullable Function<SmaugRecipe, ItemLore> loreFunction,
-      @Nullable Function<SmaugRecipe, Component> displayNameFunction) {
-    return new RecipeGuiItemFactory(itemModelFunction,loreFunction,displayNameFunction);
+  public static RecipeGuiItemFactory create(
+      @Nullable Function<SmaugRecipe, @NotNull Key> itemModelFunction,
+      @Nullable Function<SmaugRecipe, @NotNull ItemLore> loreFunction,
+      @Nullable Function<SmaugRecipe, @NotNull Component> displayNameFunction) {
+    return new RecipeGuiItemFactory(itemModelFunction, loreFunction, displayNameFunction);
   }
 
   public static RecipeGuiItemFactory.Builder create() {
-    return new Builder();
+    return new Builder(null, null, null);
   }
 
   @Nullable
@@ -61,17 +63,17 @@ public class RecipeGuiItemFactory {
   }
 
   public void setItemModelFunction(
-      @Nullable Function<SmaugRecipe, Key> itemModelFunction) {
+      @Nullable Function<SmaugRecipe, @NotNull Key> itemModelFunction) {
     this.itemModelFunction = itemModelFunction;
   }
 
   public void setDisplayNameFunction(
-      @Nullable Function<SmaugRecipe, Component> displayNameFunction) {
+      @Nullable Function<SmaugRecipe, @NotNull Component> displayNameFunction) {
     this.displayNameFunction = displayNameFunction;
   }
 
   public void setLoreFunction(
-      @Nullable Function<SmaugRecipe, ItemLore> loreFunction) {
+      @Nullable Function<SmaugRecipe, @NotNull ItemLore> loreFunction) {
     this.loreFunction = loreFunction;
   }
 
@@ -96,11 +98,6 @@ public class RecipeGuiItemFactory {
       this.displayNameFunction = displayNameFunction;
       this.itemModelFunction = itemModelFunction;
     }
-
-    private Builder() {
-      this(null, null, null);
-    }
-
 
     public Builder setLoreFunction(
         Function<SmaugRecipe, ItemLore> loreFunction) {
