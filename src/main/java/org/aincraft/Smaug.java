@@ -6,6 +6,7 @@ import net.kyori.adventure.key.Key;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.listener.IStationService;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.Nullable;
 
 public final class Smaug {
 
@@ -17,7 +18,8 @@ public final class Smaug {
     }
   }
 
-  public static SmaugRecipe fetchRecipe(String recipeKey) {
+  @Nullable
+  public static SmaugRecipe fetchRecipe(@Nullable String recipeKey) {
     return smaug.getRecipeFetcher().fetch(recipeKey);
   }
 

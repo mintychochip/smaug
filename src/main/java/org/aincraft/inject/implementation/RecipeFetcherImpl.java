@@ -44,6 +44,9 @@ final class RecipeFetcherImpl implements IRecipeFetcher {
 
   @Override
   public @Nullable SmaugRecipe fetch(String recipeKey) {
+    if(recipeKey == null) {
+      return null;
+    }
     return recipeCache.get(recipeKey, key -> {
       if (!recipeKeys.contains(recipeKey)) {
         return null;

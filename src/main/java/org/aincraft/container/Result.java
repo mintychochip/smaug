@@ -8,4 +8,5 @@ public interface Result {
   }
 
   Status getStatus();
+
 }

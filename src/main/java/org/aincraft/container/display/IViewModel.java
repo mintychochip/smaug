@@ -2,6 +2,8 @@ package org.aincraft.container.display;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
@@ -9,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 public interface IViewModel<M, V> {
 
-  void bind(@NotNull M model, @NotNull V view);
+  IViewModelBinding bind(@NotNull M model, @NotNull V view);
 
   void update(@NotNull M model);
 
@@ -29,6 +31,8 @@ public interface IViewModel<M, V> {
 
   IViewModelBinding getBinding(M model);
 
+  Map<@NotNull String, @NotNull Class<?>> getBoundedIdentifiers();
+
   interface IViewModelBinding {
 
     @NotNull
@@ -40,6 +44,19 @@ public interface IViewModel<M, V> {
 
     void setProperty(@NotNull String identifier, @NotNull Object value)
         throws PropertyNotFoundException;
+
+    static Map<@NotNull ExposedProperty, @NotNull Field> getExposedFields(
+        Class<? extends IViewModelBinding> bindingClazz) {
+      Field[] fields = bindingClazz.getDeclaredFields();
+      Map<ExposedProperty, Field> exposedProperties = new HashMap<>();
+      for (Field field : fields) {
+        if (field.isAnnotationPresent(ExposedProperty.class)) {
+          ExposedProperty exposedProperty = field.getAnnotation(ExposedProperty.class);
+          exposedProperties.put(exposedProperty, field);
+        }
+      }
+      return exposedProperties;
+    }
 
     boolean isPropertyExposed(String identifier);
 

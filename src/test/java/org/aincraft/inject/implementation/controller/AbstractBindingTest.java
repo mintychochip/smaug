@@ -3,6 +3,7 @@ package org.aincraft.inject.implementation.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import org.aincraft.inject.implementation.view.AbstractBinding;
 import org.junit.jupiter.api.Test;
 
 class AbstractBindingTest {

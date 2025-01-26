@@ -21,6 +21,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -48,10 +49,15 @@ public record Station(String idString, String stationKeyString, String worldName
       UUID id = UUID.fromString(idString);
       return new Station(idString, stationKeyString, worldName, x, y, z,
           id, world, stationkey, new Location(world, x, y, z),
-          new AtomicReference<Station.StationMeta>(meta));
+          new AtomicReference<>(meta));
     } catch (IllegalArgumentException e) {
       return null;
     }
+  }
+
+  @NotNull
+  public Block getBlock() {
+    return world.getBlockAt(blockLocation);
   }
 
   public void setMeta(StationMeta meta) {
@@ -292,6 +298,7 @@ public record Station(String idString, String stationKeyString, String worldName
       return progressReference.get();
     }
 
+    @Nullable
     public String getRecipeKey() {
       return recipeKeyReference.get();
     }

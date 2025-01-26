@@ -15,12 +15,12 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
+import org.aincraft.container.IFactory;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.PropertyNotFoundException;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
-import org.aincraft.inject.implementation.controller.AbstractBinding;
 import org.aincraft.util.Mt;
 import org.aincraft.util.Util;
 import org.bukkit.Location;
@@ -39,9 +39,16 @@ import org.jetbrains.annotations.NotNull;
 final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayView, UUID> {
 
   AnvilViewModel() {
-    super(view -> new ViewViewModelBinding(view.getDisplays()), Station::id);
+    super(view -> new AnvilDisplayBinding(view.getDisplays()), Station::id);
   }
 
+  static final class AnvilItemDisplayFactory implements IFactory<AnvilItemDisplayView,Station> {
+
+    @Override
+    public @NotNull AnvilItemDisplayView create(Station data) {
+      return new AnvilItemDisplayView();
+    }
+  }
   private static int MAX_DISPLAY = 3;
   private static int DEFAULT_WEIGHT = 1;
   private static float ITEM_SCALE;
@@ -147,12 +154,12 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
     return Util.filterSet(Arrays.stream(Material.values()).toList(), parent);
   }
 
-  static final class ViewViewModelBinding extends AbstractBinding {
+  static final class AnvilDisplayBinding extends AbstractBinding {
 
     @ExposedProperty("displays")
     private Collection<Display> displays;
 
-    ViewViewModelBinding(Collection<Display> displays) {
+    AnvilDisplayBinding(Collection<Display> displays) {
       this.displays = displays;
     }
 
@@ -168,18 +175,18 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
   @Override
   public void update(@NotNull Station model) {
     if (!this.isBound(model)) {
-      this.bind(model,new AnvilItemDisplayView());
+      this.bind(model, new AnvilItemDisplayView());
     }
-    ViewViewModelBinding binding = (ViewViewModelBinding) this.getBinding(model);
+    AnvilDisplayBinding binding = (AnvilDisplayBinding) this.getBinding(model);
     StationMeta meta = model.getMeta();
     StationInventory inventory = meta.getInventory();
     List<ItemStack> contents = inventory.getContents();
-    if(contents.isEmpty()) {
-      this.remove(model,REMOVE_ENTITY_CONSUMER);
+    if (contents.isEmpty()) {
+      this.remove(model, REMOVE_ENTITY_CONSUMER);
       return;
     }
     Map<ItemStack, Number> weightedItems = createWeightedItems(inventory.getContents());
-    if(weightedItems.isEmpty()) {
+    if (weightedItems.isEmpty()) {
       return;
     }
     Set<ItemStack> stacks = selectWeightedItems(weightedItems);
@@ -196,6 +203,24 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
     binding.setDisplays(displays);
     displays.forEach(world::addEntity);
     this.updateBinding(model, binding);
+  }
+
+  @Override
+  @NotNull
+  Class<? extends IViewModelBinding> getBindingClass() {
+    return AnvilDisplayBinding.class;
+  }
+
+  @Override
+  @NotNull
+  IFactory<AnvilItemDisplayView, Station> getViewFactory() {
+    return new AnvilItemDisplayFactory();
+  }
+
+  @Override
+  @NotNull
+  IViewModelBinding viewToBinding(AnvilItemDisplayView view) {
+    return new AnvilDisplayBinding(view.getDisplays());
   }
 
 

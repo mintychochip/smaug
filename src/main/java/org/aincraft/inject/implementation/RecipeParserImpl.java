@@ -20,16 +20,13 @@ final class RecipeParserImpl implements IRecipeParser {
   private final IngredientParser ingredientParser;
   private final IItemRegistry itemRegistry;
   private final IKeyFactory keyFactory;
-  private final Component listMarker;
 
   @Inject
   RecipeParserImpl(
-      IngredientParser ingredientParser, IItemRegistry itemRegistry, IKeyFactory keyFactory,
-      Component listMarker) {
+      IngredientParser ingredientParser, IItemRegistry itemRegistry, IKeyFactory keyFactory) {
     this.ingredientParser = ingredientParser;
     this.itemRegistry = itemRegistry;
     this.keyFactory = keyFactory;
-    this.listMarker = listMarker;
   }
 
   @Override

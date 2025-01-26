@@ -1,7 +1,7 @@
 package org.aincraft.handler;
 
-import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.PaginatedGui;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +17,8 @@ import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
+import org.aincraft.container.anvil.StationPlayerModelProxy;
+import org.aincraft.inject.implementation.view.AnvilGuiProxy;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModel.IViewModelBinding;
 import org.aincraft.container.display.IViewModelController;
@@ -43,9 +45,7 @@ public class AnvilStationHandler implements StationHandler {
 
   private final IStationService service;
   private final NamespacedKey idKey;
-
-  private static final Key STATION_KEY = Key.key("smaug:anvil");
-
+  private final IViewModel<StationPlayerModelProxy, AnvilGuiProxy> guiViewModel;
   private final Map<BossBarPlayerComposite, Integer> bossBarTaskMap = new HashMap<>();
 
   record BossBarPlayerComposite(Player player, Station station) {
@@ -58,11 +58,13 @@ public class AnvilStationHandler implements StationHandler {
 
   private final IViewModelController<Station, BossBar> controller;
 
-  @Inject
   public AnvilStationHandler(IStationService service,
-      @Named("id") NamespacedKey idKey, IViewModelController<Station, BossBar> controller) {
+      @Named("id") NamespacedKey idKey,
+      IViewModel<StationPlayerModelProxy,AnvilGuiProxy> viewModel,
+      IViewModelController<Station, BossBar> controller) {
     this.service = service;
     this.idKey = idKey;
+    this.guiViewModel = viewModel;
     this.controller = controller;
   }
 
@@ -87,8 +89,15 @@ public class AnvilStationHandler implements StationHandler {
               .append(stack.displayName()));
         }
       } else {
-
-        player.openInventory(station.getInventory());
+        IViewModelBinding binding = guiViewModel.getBinding(
+            new StationPlayerModelProxy(player, station));
+        if(binding == null) {
+          return;
+        }
+        Gui gui = binding.getProperty(Gui.class);
+        if(gui != null) {
+          gui.open(player);
+        }
       }
     } else {
       if (!player.isSneaking()) {
@@ -177,7 +186,7 @@ public class AnvilStationHandler implements StationHandler {
           meta.setProgress(0);
           meta.setInventory(result.getInventory());
           station.setMeta(meta);
-          player.playSound(player,Sound.ENTITY_PLAYER_LEVELUP,1f,1f);
+          player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
           Bukkit.getPluginManager()
               .callEvent(new StationUpdateEvent(station, player));
         }

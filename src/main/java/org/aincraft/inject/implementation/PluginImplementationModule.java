@@ -7,7 +7,7 @@ import com.google.inject.TypeLiteral;
 import net.kyori.adventure.bossbar.BossBar;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.container.display.AnvilGuiProxy;
+import org.aincraft.inject.implementation.view.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.item.IKeyedItemFactory;

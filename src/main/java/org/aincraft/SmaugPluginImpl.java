@@ -10,6 +10,8 @@ import org.aincraft.commands.IngredientCommand;
 import org.aincraft.commands.SmithCommand;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.StationHandler;
+import org.aincraft.container.anvil.StationPlayerModelProxy;
+import org.aincraft.inject.implementation.view.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModelController;
@@ -39,7 +41,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   private final IRecipeFetcher recipeFetcher;
   private final IViewModelController<Station, AnvilItemDisplayView> controller;
   private final IViewModelController<Station, BossBar> bossBarController;
-  // private final IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController;
+  private final IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController;
   private final IStationService stationService;
   private final IItemRegistry itemRegistry;
 
@@ -47,7 +49,9 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   SmaugPluginImpl(Plugin bootstrap, IStorage storage,
       Injector injector, IKeyFactory keyFactory,
       IRecipeFetcher recipeFetcher, IViewModelController<Station, AnvilItemDisplayView> controller,
-      IViewModelController<Station, BossBar> bossBarController, IStationService stationService,
+      IViewModelController<Station, BossBar> bossBarController,
+      IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController,
+      IStationService stationService,
       IItemRegistry itemRegistry) {
     this.bootstrap = bootstrap;
     this.storage = storage;
@@ -56,6 +60,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     this.recipeFetcher = recipeFetcher;
     this.controller = controller;
     this.bossBarController = bossBarController;
+    this.guiController = guiController;
     this.stationService = stationService;
     this.itemRegistry = itemRegistry;
   }
@@ -65,13 +70,14 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     Injector childInjector = injector.createChildInjector(new StationModule(handlers));
     registerListeners(new Listener[]{childInjector.getInstance(StationListener.class),
         injector.getInstance(PlayerListener.class), new GuiListener(),
-        controller, bossBarController}, bootstrap);
+        controller, bossBarController, guiController}, bootstrap);
     if (bootstrap instanceof JavaPlugin jp) {
       jp.getCommand("smith").setExecutor(injector.getInstance(SmithCommand.class));
       jp.getCommand("test").setExecutor(injector.getInstance(IngredientCommand.class));
     }
     handlers.put(new NamespacedKey(bootstrap, "anvil"),
-        injector.getInstance(AnvilStationHandler.class));
+        new AnvilStationHandler(stationService, new NamespacedKey(bootstrap, "id"),
+            this.guiController.get(Key.key("smaug:anvil")), this.bossBarController));
 
   }
 

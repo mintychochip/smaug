@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 public interface IRecipeFetcher {
 
   @Nullable
-  SmaugRecipe fetch(String recipeKey);
+  SmaugRecipe fetch(@Nullable String recipeKey);
 
   @NotNull List<SmaugRecipe> all(@NotNull Predicate<SmaugRecipe> recipePredicate);
 

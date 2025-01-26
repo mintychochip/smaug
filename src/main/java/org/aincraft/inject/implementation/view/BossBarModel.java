@@ -9,10 +9,10 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.Smaug;
+import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationMeta;
-import org.aincraft.inject.implementation.controller.AbstractBinding;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
@@ -63,6 +63,32 @@ public class BossBarModel extends AbstractViewModel<Station, BossBar, UUID> {
     assert bossBar != null;
     bossBar.progress(progress / actions)
         .name(bossBarName);
+  }
+
+  @Override
+  public @NotNull Class<? extends IViewModelBinding> getBindingClass() {
+    return BossBarViewModelBinding.class;
+  }
+
+  @Override
+  @NotNull
+  IFactory<BossBar, Station> getViewFactory() {
+    return data -> {
+      StationMeta meta = data.getMeta();
+      String recipeKey = meta.getRecipeKey();
+      SmaugRecipe recipe = Smaug.fetchRecipe(recipeKey);
+      final float actions = recipe.getActions();
+      final float progress = meta.getProgress();
+      final Component itemName = itemName(recipe);
+      final Component bossBarName = bossBarName(itemName, actions - progress);
+      return createBossBar(bossBarName, progress / actions);
+    };
+  }
+
+  @Override
+  @NotNull
+  IViewModelBinding viewToBinding(BossBar view) {
+    return new BossBarViewModelBinding(view);
   }
 
   private static BossBar createBossBar(Component name, float progress) {
