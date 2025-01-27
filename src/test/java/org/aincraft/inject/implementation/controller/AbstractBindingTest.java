@@ -3,7 +3,7 @@ package org.aincraft.inject.implementation.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.aincraft.inject.implementation.view.AbstractBinding;
+import org.aincraft.container.display.PropertyNotFoundException;
 import org.junit.jupiter.api.Test;
 
 class AbstractBindingTest {
@@ -26,5 +26,15 @@ class AbstractBindingTest {
     System.out.println(property);
     assertNotNull(property);
     assertEquals(property,TEST_STRING);
+  }
+
+  @Test
+  void testGetPropertyByIdentifier() {
+      try {
+          String property = BINDING.getProperty("test-string",String.class);
+          assertEquals(property,TEST_STRING);
+      } catch (PropertyNotFoundException e) {
+          throw new RuntimeException(e);
+      }
   }
 }

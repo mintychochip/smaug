@@ -25,7 +25,7 @@ public class BossBarViewModelControllerProvider implements
   @Override
   public IViewModelController<Station, BossBar> get() {
     ProgressBarControllerImpl controller = new ProgressBarControllerImpl();
-    controller.register(new NamespacedKey(plugin, "anvil"), new BossBarModel(plugin));
+    controller.register(new NamespacedKey(plugin, "anvil"), new BossBarViewModel());
     return controller;
   }
 }

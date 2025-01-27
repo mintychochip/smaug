@@ -15,6 +15,7 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.inventory.ItemStack;
 
 @Singleton
 final class ItemDisplayControllerImpl extends
