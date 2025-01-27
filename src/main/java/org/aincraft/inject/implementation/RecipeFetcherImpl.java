@@ -2,6 +2,7 @@ package org.aincraft.inject.implementation;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -12,9 +13,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import org.aincraft.config.PluginConfiguration;
 import org.aincraft.container.SmaugRecipe;
+import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
 import org.aincraft.listener.IStationService;
+import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,27 +46,34 @@ final class RecipeFetcherImpl implements IRecipeFetcher {
   }
 
   @Override
-  public @Nullable SmaugRecipe fetch(String recipeKey) {
-    if(recipeKey == null) {
-      return null;
+  public @NotNull SmaugRecipe fetch(@NotNull String recipeKey) throws ForwardReferenceException {
+    Preconditions.checkNotNull(recipeKey);
+    SmaugRecipe recipe = recipeCache.getIfPresent(recipeKey);
+    if(recipe != null) {
+      return recipe;
     }
-    return recipeCache.get(recipeKey, key -> {
-      if (!recipeKeys.contains(recipeKey)) {
-        return null;
-      }
-      ConfigurationSection recipeSection = pluginConfiguration.getConfigurationSection(recipeKey);
-      assert recipeSection != null;
-      return parser.parse(recipeSection);
-    });
+    if(!recipeKeys.contains(recipeKey)) {
+      throw new ForwardReferenceException(recipeKey);
+    }
+
+    ConfigurationSection recipeSection = pluginConfiguration.getConfigurationSection(recipeKey);
+    assert recipeSection != null;
+    recipe = parser.parse(recipeSection);
+    recipeCache.put(recipeKey, recipe);
+    return recipe;
   }
 
   @Override
   public @NotNull List<SmaugRecipe> all(@NotNull Predicate<SmaugRecipe> recipePredicate) {
     List<SmaugRecipe> recipes = new ArrayList<>(recipeKeys.size());
     for (String key : recipeKeys) {
-      SmaugRecipe recipe = this.fetch(key);
-      if (recipe != null && recipePredicate.test(recipe)) {
-        recipes.add(recipe);
+      try {
+        SmaugRecipe recipe = this.fetch(key);
+        if(recipePredicate.test(recipe)) {
+          recipes.add(recipe);
+        }
+      } catch (ForwardReferenceException e) {
+        throw new RuntimeException(e);
       }
     }
     return recipes;

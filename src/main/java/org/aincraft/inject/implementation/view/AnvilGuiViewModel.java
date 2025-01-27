@@ -3,7 +3,7 @@ package org.aincraft.inject.implementation.view;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
 import java.util.List;
-import java.util.function.Consumer;
+
 import org.aincraft.Smaug;
 import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
@@ -11,13 +11,14 @@ import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.inject.implementation.view.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory.RecipeSelectorItemFactory;
+import org.aincraft.inject.implementation.view.viewmodel.AbstractViewModel;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 
 public final class AnvilGuiViewModel extends
-    AbstractViewModel<StationPlayerModelProxy, AnvilGuiProxy, Integer> {
+        AbstractViewModel<StationPlayerModelProxy, AnvilGuiProxy, Integer> {
 
   private final AnvilGuiProxyFactory factory;
 
@@ -77,7 +78,7 @@ public final class AnvilGuiViewModel extends
 
   @Override
   @NotNull
-  Class<? extends IViewModelBinding> getBindingClass() {
+  protected Class<? extends IViewModelBinding> getBindingClass() {
     return AnvilGuiBinding.class;
   }
 

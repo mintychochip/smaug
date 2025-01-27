@@ -18,7 +18,7 @@ import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
 import org.aincraft.inject.implementation.view.AnvilGuiControllerProvider;
-import org.aincraft.inject.implementation.view.BossBarViewModelControllerProvider;
+import org.aincraft.inject.implementation.view.viewmodel.ProgressBarControllerProvider;
 import org.aincraft.inject.implementation.view.ItemDisplayControllerProvider;
 import org.aincraft.listener.IStationService;
 
@@ -34,7 +34,7 @@ public final class PluginImplementationModule extends AbstractModule {
   private Class<? extends Provider<IStorage>> storageProviderClazz = StorageProvider.class;
   private Class<? extends Provider<SqlConfig>> sqlConfigProviderClazz = SqlConfigProvider.class;
   private Class<? extends Provider<IViewModelController<Station, AnvilItemDisplayView>>> stationViewModelControllerClazz = ItemDisplayControllerProvider.class;
-  private Class<? extends Provider<IViewModelController<Station, BossBar>>> barViewControllerClazz = BossBarViewModelControllerProvider.class;
+  private Class<? extends Provider<IViewModelController<Station, BossBar>>> barViewControllerClazz = ProgressBarControllerProvider.class;
   private Class<? extends Provider<IViewModelController<StationPlayerModelProxy, AnvilGuiProxy>>> guiControllerClazz = AnvilGuiControllerProvider.class;
 
   @Override

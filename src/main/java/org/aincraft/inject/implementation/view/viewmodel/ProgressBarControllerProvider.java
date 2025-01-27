@@ -1,4 +1,4 @@
-package org.aincraft.inject.implementation.view;
+package org.aincraft.inject.implementation.view.viewmodel;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -9,14 +9,14 @@ import org.aincraft.inject.IRecipeFetcher;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.Plugin;
 
-public class BossBarViewModelControllerProvider implements
+public final class ProgressBarControllerProvider implements
     Provider<IViewModelController<Station, BossBar>> {
 
   private final IRecipeFetcher recipeFetcher;
   private final Plugin plugin;
 
   @Inject
-  public BossBarViewModelControllerProvider(
+  public ProgressBarControllerProvider(
       IRecipeFetcher recipeFetcher, Plugin plugin) {
     this.recipeFetcher = recipeFetcher;
     this.plugin = plugin;
@@ -25,7 +25,7 @@ public class BossBarViewModelControllerProvider implements
   @Override
   public IViewModelController<Station, BossBar> get() {
     ProgressBarControllerImpl controller = new ProgressBarControllerImpl();
-    controller.register(new NamespacedKey(plugin, "anvil"), new BossBarViewModel());
+    controller.register(new NamespacedKey(plugin, "anvil"), new ProgressBarViewModel(recipeFetcher));
     return controller;
   }
 }

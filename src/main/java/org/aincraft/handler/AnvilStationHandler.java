@@ -18,6 +18,7 @@ import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
+import org.aincraft.inject.IRecipeFetcher;
 import org.aincraft.inject.implementation.view.AnvilGuiProxy;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModel.IViewModelBinding;
@@ -212,13 +213,13 @@ public class AnvilStationHandler implements StationHandler {
     return false;
   }
 
-  private record RecipeSelector(IStationService service) {
+  private record RecipeSelector(IStationService service, IRecipeFetcher fetcher) {
 
     public SmaugRecipe select(Station station, List<SmaugRecipe> recipes, Player player) {
       final StationMeta meta = station.getMeta();
       final String recipeKey = meta.getRecipeKey();
       if (recipeKey != null) {
-        return Smaug.fetchRecipe(recipeKey);
+        return fetcher.fetch(recipeKey);
       }
       int size = recipes.size();
       if (size > 1) {

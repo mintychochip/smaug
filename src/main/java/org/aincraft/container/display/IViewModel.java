@@ -29,7 +29,7 @@ public interface IViewModel<M, V> {
 
   boolean isBound(@NotNull M model);
 
-  IViewModelBinding getBinding(M model);
+  IViewModelBinding getBinding(@NotNull M model);
 
   Map<@NotNull String, @NotNull Class<?>> getBoundedIdentifiers();
 

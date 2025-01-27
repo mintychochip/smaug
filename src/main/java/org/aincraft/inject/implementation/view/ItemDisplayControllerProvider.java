@@ -5,6 +5,7 @@ import com.google.inject.Provider;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.database.model.Station;
+import org.aincraft.inject.implementation.view.viewmodel.AnvilViewModel;
 import org.aincraft.listener.IStationService;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.Plugin;

@@ -1,5 +1,6 @@
-package org.aincraft.inject.implementation.view;
+package org.aincraft.inject.implementation.view.viewmodel;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,8 +22,8 @@ import org.aincraft.container.display.PropertyNotFoundException;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.inject.implementation.view.AbstractBinding;
 import org.aincraft.util.Mt;
-import org.aincraft.util.Util;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -30,25 +31,25 @@ import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.BoundingBox;
+import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
 
 final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayView, UUID> {
 
-  AnvilViewModel() {
-    super(view -> new AnvilDisplayBinding(view.getDisplays()), Station::id);
-  }
-
-  static final class AnvilItemDisplayFactory implements IFactory<AnvilItemDisplayView,Station> {
+  static final class AnvilItemDisplayFactory implements IFactory<AnvilItemDisplayView, Station> {
 
     @Override
     public @NotNull AnvilItemDisplayView create(Station data) {
       return new AnvilItemDisplayView();
     }
   }
+
   private static int MAX_DISPLAY = 3;
   private static int DEFAULT_WEIGHT = 1;
   private static float ITEM_SCALE;
@@ -151,7 +152,13 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
       parent = parent.or(m);
     }
 
-    return Util.filterSet(Arrays.stream(Material.values()).toList(), parent);
+    List<Material> subset = new ArrayList<>();
+    for (Material value : Material.values()) {
+      if(parent.test(value)) {
+        subset.add(value);
+      }
+    }
+    return subset;
   }
 
   static final class AnvilDisplayBinding extends AbstractBinding {
@@ -223,6 +230,11 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
     return new AnvilDisplayBinding(view.getDisplays());
   }
 
+  @Override
+  @NotNull UUID modelToKey(@NotNull Station model) {
+    return model.id();
+  }
+
 
   private static Location randomLocation(BoundingBox box, World world) {
     Vector max = box.getMax(), min = box.getMin();
@@ -277,5 +289,255 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
       weightedItems.put(stack, weight);
     }
     return weightedItems;
+  }
+
+  record DisplayWrapper(ItemDisplay delegate) {
+
+    static DisplayWrapper create(ItemStack stack, Location location) {
+      Preconditions.checkArgument(location != null);
+      World world = location.getWorld();
+      if (world == null) {
+        return null;
+      }
+      ItemDisplay display = world.createEntity(location, ItemDisplay.class);
+      if (stack != null) {
+        display.setItemStack(new ItemStack(stack));
+      }
+      return new DisplayWrapper(display);
+    }
+
+    @NotNull
+    static DisplayWrapper create(DisplayWrapper d) {
+      Preconditions.checkArgument(d != null);
+      Location location = d.getLocation();
+      DisplayWrapper display = create(d.item(), location);
+      assert display != null;
+      display.transformation(d.transformation());
+      return display;
+    }
+
+    public void scale(Vector3f v) {
+      Transformation transformation = delegate.getTransformation();
+      delegate.setTransformation(
+          new Transformation(transformation.getTranslation(), transformation.getLeftRotation(),
+              v, transformation.getRightRotation()));
+    }
+
+    public void scale(float f) {
+      scale(new Vector3f(f, f, f));
+    }
+
+    public Vector3f scale() {
+      return delegate.getTransformation().getScale();
+    }
+
+
+    public Location getLocation() {
+      return delegate.getLocation();
+    }
+
+
+    public void teleport(Location location) {
+      delegate.teleport(location);
+    }
+
+
+    public void setRotation(float yaw, float pitch) {
+      delegate.setRotation(yaw, pitch);
+    }
+
+
+    public Vector3f translation() {
+      return delegate.getTransformation().getTranslation();
+    }
+
+
+    public void translation(Vector3f v) {
+      Transformation transformation = delegate.getTransformation();
+      delegate.setTransformation(
+          new Transformation(v, transformation.getLeftRotation(),
+              transformation.getScale(), transformation.getRightRotation()));
+    }
+
+
+    public Transformation transformation() {
+      return delegate.getTransformation();
+    }
+
+
+    public void transformation(Transformation transformation) {
+      delegate.setTransformation(transformation);
+    }
+
+
+    public ItemStack item() {
+      return delegate.getItemStack();
+    }
+
+
+    public void item(ItemStack stack) {
+      delegate.setItemStack(stack);
+    }
+  }
+
+  static final class DisplayStrategySelector {
+
+    private static final DisplayStrategy SINGLE_BLOCK;
+    private static final DisplayStrategy DOUBLE_BLOCK;
+    private static final DisplayStrategy TRIPLE_BLOCK;
+    private static final DisplayStrategy FOUR_BLOCK;
+    private static final DisplayStrategy ITEM;
+    private static final int MAX_ITEM_DISPLAY_STACK = 8;
+    private static final float ITEM_HORIZONTAL_CONSTANT = 2.0f;
+    private static final float MATH_SQRT_2 = 1.4142135623730951f;
+    private static final float PIXEL_HEIGHT = 0.0625f;
+
+    static {
+      ITEM = new ItemPileStrategy();
+      SINGLE_BLOCK = new SingleBlock();
+      DOUBLE_BLOCK = new DoubleBlock((SingleBlock) SINGLE_BLOCK);
+      TRIPLE_BLOCK = new TripleBlock((DoubleBlock) DOUBLE_BLOCK);
+      FOUR_BLOCK = new FourBlock((DoubleBlock) DOUBLE_BLOCK);
+    }
+
+    static DisplayStrategy select(ItemStack stack, Predicate<ItemStack> itemPredicate) {
+      int amount = stack.getAmount();
+      if (!itemPredicate.test(stack)) {
+        if (amount <= 16) {
+          return SINGLE_BLOCK;
+        }
+        if (amount <= 32) {
+          return DOUBLE_BLOCK;
+        }
+        if (amount <= 48) {
+          return TRIPLE_BLOCK;
+        }
+        return FOUR_BLOCK;
+      }
+      return ITEM;
+    }
+
+    interface DisplayStrategy {
+
+      List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale);
+    }
+
+    private static final class ItemPileStrategy implements DisplayStrategy {
+
+      private ItemPileStrategy() {
+      }
+
+      @Override
+      public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
+        int amount = stack.getAmount();
+        int maxStackSize = stack.getMaxStackSize();
+        int levels = amount * MAX_ITEM_DISPLAY_STACK / maxStackSize;
+        Location origin = location.clone().add(0, PIXEL_HEIGHT * scale * 0.5, 0);
+
+        List<DisplayWrapper> displays = new ArrayList<>();
+        for (int i = 0; i < levels; i++) {
+          DisplayWrapper wrapper = DisplayWrapper.create(stack,
+              origin.clone().add(offsetHorizontal(scale), 0, offsetHorizontal(scale)));
+          assert wrapper != null;
+          wrapper.setRotation(Mt.random(180, -180), 180);
+          wrapper.scale(scale);
+          displays.add(wrapper);
+          origin = origin.clone().add(0, PIXEL_HEIGHT * scale, 0);
+        }
+        return displays;
+      }
+
+      private static float offsetHorizontal(float scale) {
+        double rand = Math.random() * 2 - 1;
+        return (float) (PIXEL_HEIGHT * rand * ITEM_HORIZONTAL_CONSTANT * scale);
+      }
+    }
+
+    private record FourBlock(DoubleBlock strategy) implements DisplayStrategy {
+
+      @Override
+      public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
+        List<DisplayWrapper> displays = strategy.createWrappers(stack, location, scale);
+        DisplayWrapper d1 = displays.getFirst();
+        DisplayWrapper d2 = displays.get(1);
+        Location l1 = d1.getLocation();
+        Location l2 = d2.getLocation();
+        Vector v2 = new Vector(l2.getX() - l1.getX(), l1.getY(),
+            l2.getZ() - l1.getZ());
+        double angle = Math.random() > 0.5 ? 60 : -60;
+        Vector v3 = rotateAroundY(v2, angle);
+        DisplayWrapper d3 = DisplayWrapper.create(d1);
+        d3.teleport(l1.clone().add(v3));
+        d3.setRotation(Mt.random(180, -180), 0);
+
+        Vector v4 = new Vector(v2.getX() * 0.25 + v3.getX() * 0.5, d3.scale().y(),
+            v2.getZ() * 0.25 + v3.getZ() * 0.5);
+        DisplayWrapper d4 = DisplayWrapper.create(d1);
+        d4.teleport(l1.clone().add(v4));
+        return List.of(d1, d2, d3, d4);
+      }
+
+      private static Vector rotateAroundY(Vector v2, double angle) {
+        double angleRad = Math.toRadians(angle);
+
+        double dx = v2.getX();
+        double dz = v2.getZ();
+
+        double newDx = dx * Math.cos(angleRad) - dz * Math.sin(angleRad);
+        double newDz = dx * Math.sin(angleRad) + dz * Math.cos(angleRad);
+        return new Vector(newDx, 0, newDz);
+      }
+    }
+
+    private record TripleBlock(DoubleBlock strategy) implements DisplayStrategy {
+
+      @Override
+      public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
+        List<DisplayWrapper> displays = strategy.createWrappers(stack, location, scale);
+        DisplayWrapper first = displays.getFirst();
+        Location firstLocation = first.getLocation();
+        DisplayWrapper second = displays.get(1);
+        Location secondLocation = second.getLocation();
+        DisplayWrapper third = DisplayWrapper.create(second);
+        third.teleport(firstLocation.clone()
+            .add(new Vector((secondLocation.getX() - firstLocation.getX()) / 2, scale,
+                secondLocation.getZ() - firstLocation.getZ())));
+        third.setRotation(Mt.random(180, -180), 0);
+        return List.of(first, second, third);
+      }
+    }
+
+    private record DoubleBlock(SingleBlock strategy) implements DisplayStrategy {
+
+      @Override
+      public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
+        List<DisplayWrapper> displays = strategy.createWrappers(stack, location, scale);
+        DisplayWrapper first = displays.getFirst();
+        DisplayWrapper second = DisplayWrapper.create(first);
+        float randomRadian = (float) (Mt.random(180, -180) * Math.PI / 180);
+        float distance = second.scale().x() * MATH_SQRT_2;
+        double x = (distance * Math.cos(randomRadian));
+        double z = (distance * Math.sin(randomRadian));
+        second.teleport(first.getLocation().clone().add(x, 0, z));
+        second.setRotation(Mt.random(180, -180), 0);
+        return List.of(first, second);
+      }
+    }
+
+    private static final class SingleBlock implements DisplayStrategy {
+
+      private SingleBlock() {
+      }
+
+      @Override
+      public List<DisplayWrapper> createWrappers(ItemStack stack, Location location, float scale) {
+        DisplayWrapper l1 = DisplayWrapper.create(stack,
+            location.clone().add(0, 0.5 * scale, 0));
+        assert l1 != null;
+        l1.setRotation(Mt.random(180, -180), 0);
+        l1.scale(scale);
+        return List.of(l1);
+      }
+    }
   }
 }
