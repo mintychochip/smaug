@@ -1,9 +1,18 @@
 package org.aincraft.container.item;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
+import dev.triumphteam.gui.components.GuiAction;
+import dev.triumphteam.gui.components.util.Legacy;
+import dev.triumphteam.gui.guis.GuiItem;
+import io.papermc.paper.datacomponent.DataComponentType.Valued;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.List;
 import java.util.function.Consumer;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.minecraft.core.component.DataComponentType;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
@@ -11,9 +20,12 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("UnstableApiUsage")
 public final class ItemStackBuilder {
 
   private ItemStack reference;
@@ -22,15 +34,43 @@ public final class ItemStackBuilder {
     this.reference = reference;
   }
 
+  @NotNull
   public static ItemStackBuilder create(Material material) {
-    if (material.isAir()) {
-      return null;
-    }
+    Preconditions.checkArgument(!material.isAir());
     return new ItemStackBuilder(new ItemStack(material));
   }
 
   public static ItemStackBuilder create(ItemStack itemStack) {
     return new ItemStackBuilder(itemStack);
+  }
+
+  public <T> ItemStackBuilder setData(Valued<T> type, T value) {
+    reference.setData(type, value);
+    return this;
+  }
+
+  public ItemStackBuilder itemModel(Key itemModel) {
+    return setData(DataComponentTypes.ITEM_MODEL, itemModel);
+  }
+
+  public ItemStackBuilder itemModel(Material material) {
+    return itemModel(material.getKey());
+  }
+
+  public ItemStackBuilder displayName(Component displayName) {
+    return setData(DataComponentTypes.ITEM_NAME, displayName);
+  }
+
+  public ItemStackBuilder displayName(String displayName) {
+    return displayName(MiniMessage.miniMessage().deserialize(displayName));
+  }
+
+  public GuiItem asGuiItem() {
+    return new GuiItem(reference);
+  }
+
+  public GuiItem asGuiItem(GuiAction<InventoryClickEvent> guiAction) {
+    return new GuiItem(reference, guiAction);
   }
 
   public ItemStackBuilder setType(Material type) {
@@ -96,7 +136,7 @@ public final class ItemStackBuilder {
 
     public ItemMetaBuilder addAttributes(Multimap<Attribute, AttributeModifier> attributes) {
       attributes.entries().iterator().forEachRemaining(entry -> {
-        itemMeta.addAttributeModifier(entry.getKey(),entry.getValue());
+        itemMeta.addAttributeModifier(entry.getKey(), entry.getValue());
       });
       return this;
     }

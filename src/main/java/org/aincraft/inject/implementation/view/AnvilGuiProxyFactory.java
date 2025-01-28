@@ -7,6 +7,8 @@ import dev.triumphteam.gui.components.GuiAction;
 import dev.triumphteam.gui.components.GuiType;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
+import dev.triumphteam.gui.guis.GuiItem;
+import dev.triumphteam.gui.guis.PaginatedGui;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import java.util.List;
@@ -22,16 +24,17 @@ import org.aincraft.container.IFactory;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.gui.ItemFactory.Builder;
-import org.aincraft.container.gui.AnvilGuiProxy.GuiItemWrapper;
-import org.aincraft.container.gui.AnvilGuiProxy.GuiWrapper;
-import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
+import org.aincraft.container.item.ItemStackBuilder;
+import org.aincraft.inject.implementation.view.AnvilGuiProxy.GuiItemWrapper;
+import org.aincraft.inject.implementation.view.AnvilGuiProxy.GuiWrapper;
+import org.aincraft.inject.implementation.view.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.gui.ItemFactory;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.inject.implementation.view.AnvilGuiProxy.StorageItem;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -64,7 +67,7 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
     Player player = data.player();
     Gui main = Gui.gui(GUI_TYPE).title(MAIN_GUI_TITLE).disableAllInteractions().create();
     RecipeSelectorItem item = RecipeSelectorItemFactory.create(
-        station, player, (e, recipe) -> {
+        station, player, main, (e, recipe) -> {
           final StationMeta meta = station.getMeta();
           final String recipeKey = recipe.getKey();
 //          if (meta.getRecipeKey() == null) {
@@ -86,36 +89,50 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
             }.runTask(plugin);
           }
         });
-    main.setItem(6, item.item());
+    main.setItem(6, item.getGuiItem());
     return new AnvilGuiProxy(main, item);
+  }
+
+  static final class StorageItemFactory {
+
+    static StorageItem create(Station station) {
+      return new StorageItem(GuiItemWrapper.create(station, s -> ItemStackBuilder.create(Material.RABBIT_FOOT)
+          .displayName("<gold>Storage").build(),e -> {
+        HumanEntity entity = e.getWhoClicked();
+        entity.openInventory(station.getInventory());
+      }),station.getInventory());
+    }
   }
 
   static final class RecipeSelectorItemFactory {
 
-    private static final Function<BaseGui, GuiAction<InventoryClickEvent>> OPEN_INVENTORY_ACTION;
+    private static final int ROWS = 4;
+    private static final int PAGE_SIZE = 9 * (ROWS - 1);
+    private static final Component INGREDIENT_TEXT = MiniMessage.miniMessage()
+        .deserialize("<italic:false><white>Ingredients:");
 
-    private static final Component INGREDIENT_TEXT;
+    private static final Function<BaseGui, GuiAction<InventoryClickEvent>> GUI_OPEN_INVENTORY_ACTION = gui -> event -> {
+      HumanEntity entity = event.getWhoClicked();
+      gui.open(entity);
+    };
 
-    static {
-      OPEN_INVENTORY_ACTION = (gui) -> (GuiAction<InventoryClickEvent>) inventoryClickEvent -> {
-        HumanEntity entity = inventoryClickEvent.getWhoClicked();
-        gui.open(entity);
-      };
-      INGREDIENT_TEXT = MiniMessage.miniMessage().deserialize("<italic:false><white>Ingredients:");
-    }
-
-    private static Component createRecipeItemHeader(@NotNull SmaugRecipe recipe) {
+    private static Component recipeItemHeader(@NotNull SmaugRecipe recipe) {
       Preconditions.checkNotNull(recipe);
       Component displayName = RecipeSelectorItemFactory.retrieveDisplayName(recipe);
       return MiniMessage.miniMessage()
           .deserialize("Recipe: <a>", Placeholder.component("a", displayName));
     }
 
+    private static PaginatedGui createGui(Component title) {
+      return Gui.paginated().disableAllInteractions().title(title).rows(ROWS).pageSize(PAGE_SIZE)
+          .create();
+    }
+
     @SuppressWarnings("UnstableApiUsage")
-    private static GuiWrapper<SmaugRecipe> createCodexGui(Station station) {
+    private static GuiWrapper<SmaugRecipe, PaginatedGui> codexGuiWrapper(Station station) {
       List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(station.stationKey());
       ItemFactory<SmaugRecipe> itemFactory = new Builder<SmaugRecipe>().setDisplayNameFunction(
-              RecipeSelectorItemFactory::createRecipeItemHeader)
+              RecipeSelectorItemFactory::recipeItemHeader)
           .setItemModelFunction(RecipeSelectorItemFactory::retrieveItemModel)
           .setLoreFunction(recipe -> {
             final IngredientList ingredientList = recipe.getIngredients();
@@ -130,10 +147,12 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
             }
             return builder.build();
           }).build();
-      return GuiWrapper.create(recipes, itemFactory, null);
+      return GuiWrapper.create(
+          createGui(Component.text("Codex")),
+          recipes, itemFactory).build();
     }
 
-    private static GuiWrapper<SmaugRecipe> createRecipeSelectorGui(Station station,
+    private static GuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGuiWrapper(Station station,
         BiConsumer<InventoryClickEvent, SmaugRecipe> recipeBiConsumer) {
       StationMeta meta = station.getMeta();
       StationInventory inventory = meta.getInventory();
@@ -142,7 +161,7 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
               && r.test(inventory.getContents()).getStatus() == Status.SUCCESS);
       ItemFactory<SmaugRecipe> itemFactory = new ItemFactory.Builder<SmaugRecipe>()
           .setItemModelFunction(RecipeSelectorItemFactory::retrieveItemModel)
-          .setDisplayNameFunction(RecipeSelectorItemFactory::createRecipeItemHeader)
+          .setDisplayNameFunction(RecipeSelectorItemFactory::recipeItemHeader)
           .setLoreFunction(recipe -> {
             final IngredientList ingredientList = recipe.getIngredients();
             @SuppressWarnings("UnstableApiUsage")
@@ -150,33 +169,84 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
                 .addLines(ingredientList.components()).build();
             return lore;
           }).build();
-      return GuiWrapper.create(recipes, itemFactory, recipeBiConsumer);
+      return GuiWrapper.create(
+          createGui(Component.text("Recipes")), recipes,
+          itemFactory).setClickEventConsumer(recipeBiConsumer).build();
     }
 
-    private static RecipeSelectorItem create(Station station, Player player,
+    private static GuiItem guiReferenceItem(ItemStack stack, BaseGui gui) {
+      return new GuiItem(stack, e -> {
+        HumanEntity entity = e.getWhoClicked();
+        gui.open(entity);
+      });
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    private static GuiItem createFillerItem(BaseGui gui) {
+      ItemStack stack = ItemStackBuilder.create(Material.RABBIT_FOOT)
+          .setData(DataComponentTypes.ITEM_MODEL, Material.GRAY_STAINED_GLASS_PANE.getKey())
+          .setData(DataComponentTypes.ITEM_NAME, Component.empty()).build();
+      return guiReferenceItem(stack, gui);
+    }
+
+    private static void addStaticItems(PaginatedGui gui, BaseGui mainGui) {
+      final GuiItem filler = createFillerItem(mainGui);
+      final int rows = gui.getRows();
+      ItemStack stack = ItemStackBuilder.create(Material.RABBIT_FOOT)
+          .itemModel(Material.PAPER).build();
+      gui.setItem(rows, 1, ItemStackBuilder.create(stack)
+          .displayName("Previous")
+          .asGuiItem(e -> gui.previous()));
+      gui.setItem(rows, 9, ItemStackBuilder.create(stack)
+          .displayName("Next")
+          .asGuiItem(e -> gui.next()));
+      gui.getFiller().fillBetweenPoints(rows, 3, rows, 8, filler);
+    }
+
+    private static RecipeSelectorItem create(Station station, Player player, BaseGui mainGui,
         BiConsumer<InventoryClickEvent, SmaugRecipe> recipeSelectorConsumer) {
       StationMeta meta = station.getMeta();
-      GuiWrapper<SmaugRecipe> codexGui = createCodexGui(station);
-      GuiWrapper<SmaugRecipe> recipeSelectorGui = createRecipeSelectorGui(
+      GuiWrapper<SmaugRecipe, PaginatedGui> codexGuiWrapper = codexGuiWrapper(station);
+      GuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGuiWrapper = recipeSelectorGuiWrapper(
           station,
           recipeSelectorConsumer);
+      codexGuiWrapper.setUpdateConsumer(wrapper -> {
+        PaginatedGui gui = wrapper.getGui();
+        gui.clearPageItems();
+        int rows = gui.getRows();
+        addStaticItems(gui, mainGui);
+        gui.setItem(rows, 2,
+            ItemStackBuilder.create(Material.RABBIT_FOOT).itemModel(Material.BOOK)
+                .displayName("Recipes")
+                .asGuiItem(GUI_OPEN_INVENTORY_ACTION.apply(recipeSelectorGuiWrapper.getGui())));
+      });
+      recipeSelectorGuiWrapper.setUpdateConsumer(wrapper -> {
+        PaginatedGui gui = wrapper.getGui();
+        int rows = gui.getRows();
+        gui.clearPageItems();
+        addStaticItems(gui, mainGui);
+        gui.setItem(rows, 2,
+            ItemStackBuilder.create(Material.RABBIT_FOOT).itemModel(Material.WRITABLE_BOOK)
+                .displayName("Codex")
+                .asGuiItem(GUI_OPEN_INVENTORY_ACTION.apply(codexGuiWrapper.getGui())));
+      });
       final SmaugRecipe recipe = Smaug.fetchRecipe(meta.getRecipeKey());
       return new RecipeSelectorItem(GuiItemWrapper.create(recipe,
           new ItemFactory.Builder<SmaugRecipe>().setDisplayNameFunction(r -> {
                 if (r == null) {
-                  return Component.text("No recipe selected");
+                  return Component.text("No Recipe Selected");
                 }
                 return MiniMessage.miniMessage().deserialize("Selected: <a>",
                     Placeholder.component("a", retrieveDisplayName(r)));
               })
               .setItemModelFunction(RecipeSelectorItemFactory::retrieveItemModel).build(), e -> {
             if (e.isLeftClick()) {
-              recipeSelectorGui.open(player);
+              recipeSelectorGuiWrapper.open(player);
             } else {
-              codexGui.open(player);
+              codexGuiWrapper.open(player);
             }
           }),
-          recipeSelectorGui, codexGui);
+          recipeSelectorGuiWrapper, codexGuiWrapper);
     }
 
     @NotNull
