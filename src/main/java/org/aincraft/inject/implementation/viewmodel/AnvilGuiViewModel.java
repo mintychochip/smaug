@@ -1,4 +1,4 @@
-package org.aincraft.inject.implementation.view;
+package org.aincraft.inject.implementation.viewmodel;
 
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
@@ -8,23 +8,22 @@ import org.aincraft.Smaug;
 import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.inject.implementation.view.AnvilGuiProxy.RecipeSelectorItem;
+import org.aincraft.container.gui.AnvilGuiProxy;
+import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory;
 import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory.RecipeSelectorItemFactory;
-import org.aincraft.inject.implementation.view.viewmodel.AbstractViewModel;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 
 public final class AnvilGuiViewModel extends
-        AbstractViewModel<StationPlayerModelProxy, AnvilGuiProxy, Integer> {
+    AbstractViewModel<StationPlayerModelProxy, AnvilGuiProxy, Integer> {
 
   private final AnvilGuiProxyFactory factory;
 
   AnvilGuiViewModel(AnvilGuiProxyFactory factory) {
-    super(view -> new AnvilGuiBinding(view.getMainGui(), view.getRecipeSelectorItem()),
-        StationPlayerModelProxy::hashCode);
     this.factory = factory;
   }
 
@@ -59,26 +58,18 @@ public final class AnvilGuiViewModel extends
     StationMeta meta = model.station().getMeta();
     String recipeKey = meta.getRecipeKey();
     recipeSelectorItem.updateIcon(Smaug.fetchRecipe(recipeKey));
-//    if(recipeKey != null) {
-//      SmaugRecipe recipe = Smaug.fetchRecipe(recipeKey);
-//      if (recipe == null) {
-//        return;
-//      }
-//    } else {
-//      recipeSelectorItem.updateIcon(Material.MAP.getKey());
-//    }
     List<SmaugRecipe> recipes = RecipeSelectorItemFactory.retrieveAllAvailableRecipes(meta);
     recipeSelectorItem.recipeSelectorGui().update(recipes);
     recipeSelectorItem.codexGui().update(Smaug.fetchAllRecipes(model.station().stationKey()));
     for (BaseGui gui : List.of(mainGui, recipeSelectorItem.recipeSelectorGui().getGui(),
         recipeSelectorItem.codexGui().getGui())) {
-      playerIsViewingUpdate(player,gui);
+      playerIsViewingUpdate(player, gui);
     }
   }
 
   @Override
   @NotNull
-  protected Class<? extends IViewModelBinding> getBindingClass() {
+  Class<? extends IViewModelBinding> getBindingClass() {
     return AnvilGuiBinding.class;
   }
 
@@ -92,6 +83,11 @@ public final class AnvilGuiViewModel extends
   @NotNull
   IViewModelBinding viewToBinding(AnvilGuiProxy view) {
     return new AnvilGuiBinding(view.getMainGui(), view.getRecipeSelectorItem());
+  }
+
+  @Override
+  @NotNull Integer modelToKey(@NotNull StationPlayerModelProxy model) {
+    return model.hashCode();
   }
 
   private static void playerIsViewingUpdate(HumanEntity entity, BaseGui gui) {

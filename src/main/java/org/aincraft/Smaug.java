@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.SmaugRecipe;
+import org.aincraft.exception.ForwardReferenceException;
+import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.listener.IStationService;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class Smaug {
@@ -18,8 +21,8 @@ public final class Smaug {
     }
   }
 
-  @Nullable
-  public static SmaugRecipe fetchRecipe(@Nullable String recipeKey) {
+  public static @NotNull SmaugRecipe fetchRecipe(@Nullable String recipeKey)
+      throws UndefinedRecipeException, ForwardReferenceException {
     return smaug.getRecipeFetcher().fetch(recipeKey);
   }
 

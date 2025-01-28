@@ -1,4 +1,4 @@
-package org.aincraft.inject.implementation.view;
+package org.aincraft.inject.implementation.viewmodel;
 
 import com.google.common.base.Preconditions;
 import java.lang.reflect.Field;
@@ -9,7 +9,7 @@ import org.aincraft.container.display.PropertyNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractBinding implements IViewModelBinding {
+abstract class AbstractBinding implements IViewModelBinding {
 
   @Override
   public <T> @NotNull T getProperty(@NotNull String identifier, @NotNull Class<T> clazz)

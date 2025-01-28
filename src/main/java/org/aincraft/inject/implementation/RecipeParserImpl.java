@@ -106,7 +106,6 @@ final class RecipeParserImpl implements IRecipeParser {
 
       List<Ingredient> ingredients = new ArrayList<>();
       if (ingredientSection.contains("items")) {
-        ;
         ConfigurationSection itemSection = ingredientSection.getConfigurationSection("items");
         assert itemSection != null;
         ingredients.addAll(parseItems(itemSection));

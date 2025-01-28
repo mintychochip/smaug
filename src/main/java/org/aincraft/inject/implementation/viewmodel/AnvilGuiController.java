@@ -1,12 +1,12 @@
-package org.aincraft.inject.implementation.view;
+package org.aincraft.inject.implementation.viewmodel;
 
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.display.IViewModel;
+import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.database.model.Station;
-import org.aincraft.inject.implementation.controller.AbstractViewModelController;
+import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory;
 import org.aincraft.listener.IStationService;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -32,7 +32,6 @@ public class AnvilGuiController extends
     Station model = event.getModel();
     Player player = event.getViewer();
     StationPlayerModelProxy proxy = new StationPlayerModelProxy(player, model);
-    Bukkit.broadcastMessage(proxy.toString());
     IViewModel<StationPlayerModelProxy, AnvilGuiProxy> viewModel = this.get(model.stationKey());
     if (!viewModel.isBound(proxy)) {
       viewModel.bind(proxy,

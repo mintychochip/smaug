@@ -1,5 +1,6 @@
 package org.aincraft.inject.implementation;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
 import java.util.Iterator;
 import java.util.Map;
@@ -15,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 class RegistryImpl<T extends Keyed> implements IRegistry<T> {
@@ -50,6 +52,12 @@ class RegistryImpl<T extends Keyed> implements IRegistry<T> {
     ItemRegistryImpl(IKeyFactory keyFactory, IKeyedItemFactory keyedItemFactory) {
       this.keyFactory = keyFactory;
       this.keyedItemFactory = keyedItemFactory;
+    }
+
+    @Override
+    public boolean check(@NotNull String key, boolean minecraft) {
+      Preconditions.checkNotNull(key);
+      return this.resolve(key,minecraft) != null;
     }
 
     @Override

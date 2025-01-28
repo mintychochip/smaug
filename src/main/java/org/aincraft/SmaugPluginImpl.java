@@ -11,7 +11,7 @@ import org.aincraft.commands.SmithCommand;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.inject.implementation.view.AnvilGuiProxy;
+import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModelController;

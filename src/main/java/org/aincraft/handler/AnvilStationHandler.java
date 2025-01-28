@@ -18,12 +18,13 @@ import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
+import org.aincraft.exception.ForwardReferenceException;
+import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.inject.implementation.view.AnvilGuiProxy;
+import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModel.IViewModelBinding;
 import org.aincraft.container.display.IViewModelController;
-import org.aincraft.container.gui.RecipeGui;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
 import org.aincraft.database.model.Station;
@@ -219,16 +220,20 @@ public class AnvilStationHandler implements StationHandler {
       final StationMeta meta = station.getMeta();
       final String recipeKey = meta.getRecipeKey();
       if (recipeKey != null) {
-        return fetcher.fetch(recipeKey);
+        try {
+          return fetcher.fetch(recipeKey);
+        } catch (ForwardReferenceException | UndefinedRecipeException e) {
+          throw new RuntimeException(e);
+        }
       }
       int size = recipes.size();
       if (size > 1) {
-        PaginatedGui gui = RecipeGui.create(recipes, Component.text("Recipes"), (e, r) -> {
-          meta.setRecipeKey(r.getKey());
-          station.setMeta(meta);
-          service.updateStation(station);
-        });
-        gui.open(player);
+//        PaginatedGui gui = RecipeGui.create(recipes, Component.text("Recipes"), (e, r) -> {
+//          meta.setRecipeKey(r.getKey());
+//          station.setMeta(meta);
+//          service.updateStation(station);
+//        });
+  //      gui.open(player);
       }
       if (size == 1) {
         SmaugRecipe recipe = recipes.getFirst();

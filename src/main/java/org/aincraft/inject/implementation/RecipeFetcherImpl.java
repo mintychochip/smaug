@@ -14,65 +14,58 @@ import java.util.function.Predicate;
 import org.aincraft.config.PluginConfiguration;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.exception.ForwardReferenceException;
-import org.aincraft.inject.IKeyFactory;
+import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.listener.IStationService;
-import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @Singleton
 final class RecipeFetcherImpl implements IRecipeFetcher {
 
-  private final IRecipeParser parser;
+  private final IRecipeParser recipeParser;
   private final PluginConfiguration pluginConfiguration;
-  private final IStationService stationService;
   private final Cache<String, SmaugRecipe> recipeCache = Caffeine.newBuilder().expireAfterWrite(1,
       TimeUnit.HOURS).build();
-  private final Set<String> recipeKeys;
-  private final IKeyFactory keyFactory;
 
   @Inject
   public RecipeFetcherImpl(
-      IRecipeParser parser,
-      @Named("recipe") PluginConfiguration pluginConfiguration, IStationService stationService,
-      IKeyFactory keyFactory) {
-    this.parser = parser;
+      IRecipeParser recipeParser,
+      @Named("recipe") PluginConfiguration pluginConfiguration) {
+    this.recipeParser = recipeParser;
     this.pluginConfiguration = pluginConfiguration;
-    this.recipeKeys = pluginConfiguration.getKeys(false);
-    this.stationService = stationService;
-    this.keyFactory = keyFactory;
   }
 
   @Override
-  public @NotNull SmaugRecipe fetch(@NotNull String recipeKey) throws ForwardReferenceException {
+  public @NotNull SmaugRecipe fetch(@NotNull String recipeKey)
+      throws ForwardReferenceException, UndefinedRecipeException {
     Preconditions.checkNotNull(recipeKey);
     SmaugRecipe recipe = recipeCache.getIfPresent(recipeKey);
-    if(recipe != null) {
+    if (recipe != null) {
       return recipe;
     }
-    if(!recipeKeys.contains(recipeKey)) {
-      throw new ForwardReferenceException(recipeKey);
+    if (!pluginConfiguration.getKeys(false).contains(recipeKey)) {
+      throw new UndefinedRecipeException(recipeKey);
     }
 
-    ConfigurationSection recipeSection = pluginConfiguration.getConfigurationSection(recipeKey);
+    final ConfigurationSection recipeSection = pluginConfiguration.getConfigurationSection(
+        recipeKey);
     assert recipeSection != null;
-    recipe = parser.parse(recipeSection);
+    recipe = recipeParser.parse(recipeSection);
     recipeCache.put(recipeKey, recipe);
     return recipe;
   }
 
   @Override
   public @NotNull List<SmaugRecipe> all(@NotNull Predicate<SmaugRecipe> recipePredicate) {
+    Set<String> recipeKeys = pluginConfiguration.getKeys(false);
     List<SmaugRecipe> recipes = new ArrayList<>(recipeKeys.size());
     for (String key : recipeKeys) {
       try {
-        SmaugRecipe recipe = this.fetch(key);
-        if(recipePredicate.test(recipe)) {
+        SmaugRecipe recipe = fetch(key);
+        if (recipePredicate.test(recipe)) {
           recipes.add(recipe);
         }
-      } catch (ForwardReferenceException e) {
+      } catch (ForwardReferenceException | UndefinedRecipeException e) {
         throw new RuntimeException(e);
       }
     }

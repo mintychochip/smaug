@@ -1,4 +1,4 @@
-package org.aincraft.inject.implementation.view;
+package org.aincraft.container.gui;
 
 import dev.triumphteam.gui.components.GuiAction;
 import dev.triumphteam.gui.guis.Gui;
@@ -38,7 +38,7 @@ public class AnvilGuiProxy {
     GuiItem item();
   }
 
-  static final class GuiWrapper<T> {
+  public static final class GuiWrapper<T> {
 
     private final PaginatedGui gui;
     private final IFactory<ItemStack, T> itemFactory;
@@ -100,7 +100,7 @@ public class AnvilGuiProxy {
 
   }
 
-  record GuiItemWrapper<T>(GuiItem item, IFactory<ItemStack, T> itemFactory) {
+  public record GuiItemWrapper<T>(GuiItem item, IFactory<ItemStack, T> itemFactory) {
 
     static <T> GuiItemWrapper<T> create(@Nullable T object, IFactory<ItemStack, T> itemFactory) {
       ItemStack stack = itemFactory.create(object);

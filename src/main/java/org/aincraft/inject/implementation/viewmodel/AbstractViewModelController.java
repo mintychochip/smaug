@@ -1,4 +1,4 @@
-package org.aincraft.inject.implementation.controller;
+package org.aincraft.inject.implementation.viewmodel;
 
 import java.util.Collection;
 import java.util.HashMap;

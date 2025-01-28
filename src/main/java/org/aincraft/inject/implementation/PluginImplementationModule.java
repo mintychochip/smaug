@@ -7,7 +7,7 @@ import com.google.inject.TypeLiteral;
 import net.kyori.adventure.bossbar.BossBar;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.inject.implementation.view.AnvilGuiProxy;
+import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.item.IKeyedItemFactory;
@@ -17,9 +17,9 @@ import org.aincraft.database.storage.SqlConfig;
 import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.inject.implementation.view.AnvilGuiControllerProvider;
-import org.aincraft.inject.implementation.view.viewmodel.ProgressBarControllerProvider;
-import org.aincraft.inject.implementation.view.ItemDisplayControllerProvider;
+import org.aincraft.inject.implementation.viewmodel.AnvilGuiControllerProvider;
+import org.aincraft.inject.implementation.viewmodel.ProgressBarControllerProvider;
+import org.aincraft.inject.implementation.viewmodel.ItemDisplayControllerProvider;
 import org.aincraft.listener.IStationService;
 
 public final class PluginImplementationModule extends AbstractModule {

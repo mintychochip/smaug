@@ -1,4 +1,4 @@
-package org.aincraft.inject.implementation.view.viewmodel;
+package org.aincraft.inject.implementation.viewmodel;
 
 import java.util.HashMap;
 import java.util.Map;

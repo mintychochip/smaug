@@ -1,4 +1,4 @@
-package org.aincraft.inject.implementation.view.viewmodel;
+package org.aincraft.inject.implementation.viewmodel;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
 
@@ -10,14 +10,14 @@ import net.kyori.adventure.bossbar.BossBar.Overlay;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import org.aincraft.Smaug;
 import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.display.PropertyNotFoundException;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.exception.ForwardReferenceException;
+import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.inject.implementation.view.AbstractBinding;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
@@ -88,17 +88,22 @@ final class ProgressBarViewModel extends AbstractViewModel<Station, BossBar, UUI
 
   private void updateBossBar(@NotNull BossBar reference, Station station) {
     final StationMeta meta = station.getMeta();
-    final SmaugRecipe recipe = recipeFetcher.fetch(meta.getRecipeKey());
-    if (recipe == null) {
-      return;
+    try {
+      final String recipeKey = meta.getRecipeKey();
+      if(recipeKey == null) {
+        return;
+      }
+      final SmaugRecipe recipe = recipeFetcher.fetch(recipeKey);
+      final float actions = recipe.getActions();
+      final float progress = meta.getProgress();
+      final Component formattedBossBarName = MiniMessage.miniMessage()
+          .deserialize("Forging: <a> (<b>)",
+              Placeholder.component("a", retrieveItemName(recipe)),
+              Placeholder.component("b", Component.text(actions - progress)));
+      reference.progress(progress / actions).name(formattedBossBarName);
+    } catch (ForwardReferenceException | UndefinedRecipeException e) {
+      throw new RuntimeException(e);
     }
-    final float actions = recipe.getActions();
-    final float progress = meta.getProgress();
-    final Component formattedBossBarName = MiniMessage.miniMessage()
-        .deserialize("Forging: <a> (<b>)",
-            Placeholder.component("a", retrieveItemName(recipe)),
-            Placeholder.component("b", Component.text(actions - progress)));
-    reference.progress(progress / actions).name(formattedBossBarName);
   }
 
   @NotNull

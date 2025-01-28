@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.aincraft.container.item.IKeyedItem;
 import org.bukkit.NamespacedKey;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface IRegistry<T> {
@@ -19,6 +20,7 @@ public interface IRegistry<T> {
 
   interface IItemRegistry extends IRegistry<IKeyedItem> {
 
+    boolean check(@NotNull String key, boolean minecraft);
     @Nullable
     IKeyedItem resolve(@Nullable String key, boolean minecraft);
 

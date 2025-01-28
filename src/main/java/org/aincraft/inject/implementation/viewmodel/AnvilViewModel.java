@@ -1,9 +1,8 @@
-package org.aincraft.inject.implementation.view.viewmodel;
+package org.aincraft.inject.implementation.viewmodel;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,7 +21,6 @@ import org.aincraft.container.display.PropertyNotFoundException;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
-import org.aincraft.inject.implementation.view.AbstractBinding;
 import org.aincraft.util.Mt;
 import org.bukkit.Location;
 import org.bukkit.Material;

@@ -1,10 +1,12 @@
-package org.aincraft.inject.implementation.view;
+package org.aincraft.inject.implementation.viewmodel;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.display.IViewModelController;
+import org.aincraft.container.gui.AnvilGuiProxy;
+import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory;
 import org.aincraft.listener.IStationService;
 import org.bukkit.plugin.Plugin;
 

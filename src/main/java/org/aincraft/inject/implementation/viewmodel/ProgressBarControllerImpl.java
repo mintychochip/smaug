@@ -1,4 +1,4 @@
-package org.aincraft.inject.implementation.view.viewmodel;
+package org.aincraft.inject.implementation.viewmodel;
 
 import com.google.inject.Singleton;
 import net.kyori.adventure.bossbar.BossBar;
@@ -6,8 +6,6 @@ import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationMeta;
-import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.inject.implementation.controller.AbstractViewModelController;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 

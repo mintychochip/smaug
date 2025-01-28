@@ -1,4 +1,4 @@
-package org.aincraft.inject.implementation.view;
+package org.aincraft.inject.implementation.viewmodel;
 
 import com.google.inject.Singleton;
 import java.util.List;
@@ -10,12 +10,10 @@ import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModel.IViewModelBinding;
 import org.aincraft.container.display.PropertyNotFoundException;
 import org.aincraft.database.model.Station;
-import org.aincraft.inject.implementation.controller.AbstractViewModelController;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.inventory.ItemStack;
 
 @Singleton
 final class ItemDisplayControllerImpl extends
