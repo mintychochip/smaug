@@ -1,12 +1,12 @@
 package org.aincraft.container.gui;
 
 import dev.triumphteam.gui.components.GuiAction;
+import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
-import dev.triumphteam.gui.guis.PaginatedGui;
 import java.util.List;
 import java.util.function.BiConsumer;
-import net.kyori.adventure.text.Component;
+import java.util.function.Consumer;
 import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.bukkit.entity.HumanEntity;
@@ -35,16 +35,17 @@ public class AnvilGuiProxy {
 
   interface AnvilProxyItem {
 
-    GuiItem item();
+    GuiItem getGuiItem();
   }
 
-  public static final class GuiWrapper<T> {
+  public static final class GuiWrapper<T, G extends BaseGui> {
 
-    private final PaginatedGui gui;
+    private final G gui;
     private final IFactory<ItemStack, T> itemFactory;
     private BiConsumer<InventoryClickEvent, T> biConsumer;
+    private Consumer<GuiWrapper<T, G>> updateConsumer;
 
-    private GuiWrapper(PaginatedGui gui, IFactory<ItemStack, T> itemFactory,
+    private GuiWrapper(G gui, IFactory<ItemStack, T> itemFactory,
         BiConsumer<InventoryClickEvent, T> biConsumer) {
       this.gui = gui;
       this.itemFactory = itemFactory;
@@ -67,27 +68,40 @@ public class AnvilGuiProxy {
       }
     }
 
-    static <T> GuiWrapper<T> create(List<T> data,
+    public static <T, G extends BaseGui> GuiWrapper.Builder<T, G> create(G gui, List<T> data,
+        IFactory<ItemStack, T> itemFactory) {
+      return new Builder<>(gui, data, itemFactory);
+    }
+
+    public static <T, G extends BaseGui> GuiWrapper<T, G> create(G gui, List<T> data,
         IFactory<ItemStack, T> itemFactory,
-        BiConsumer<InventoryClickEvent, T> recipeBiConsumer) {
-      PaginatedGui gui = Gui.paginated().disableAllInteractions().title(Component.text("")).rows(4)
-          .pageSize(9 * 3).create();
-      GuiWrapper<T> wrapper = new GuiWrapper<>(gui, itemFactory, recipeBiConsumer);
+        BiConsumer<InventoryClickEvent, T> recipeBiConsumer,
+        Consumer<GuiWrapper<T, G>> updateConsumer) {
+      GuiWrapper<T, G> wrapper = new GuiWrapper<>(gui, itemFactory, recipeBiConsumer);
+      if (updateConsumer != null) {
+        updateConsumer.accept(wrapper);
+      }
       wrapper.populateGui(data);
       return wrapper;
     }
 
     public void update(List<T> data) {
-      gui.clearPageItems();
-      this.populateGui(data);
+      if (updateConsumer != null) {
+        this.populateGui(data);
+      }
     }
 
     public void open(HumanEntity entity) {
       gui.open(entity);
     }
 
-    public PaginatedGui getGui() {
+    public G getGui() {
       return gui;
+    }
+
+    public void setUpdateConsumer(
+        Consumer<GuiWrapper<T, G>> updateConsumer) {
+      this.updateConsumer = updateConsumer;
     }
 
     public IFactory<ItemStack, T> getItemFactory() {
@@ -98,6 +112,37 @@ public class AnvilGuiProxy {
       return biConsumer;
     }
 
+    public static final class Builder<T, G extends BaseGui> {
+
+      private final G gui;
+      private final List<T> data;
+      private final IFactory<ItemStack, T> itemFactory;
+      private BiConsumer<InventoryClickEvent, T> clickEventConsumer;
+      private Consumer<GuiWrapper<T, G>> updateConsumer;
+
+      private Builder(G gui, List<T> data, IFactory<ItemStack, T> itemFactory) {
+        this.gui = gui;
+        this.data = data;
+        this.itemFactory = itemFactory;
+        this.updateConsumer = null;
+      }
+
+      public Builder<T, G> setClickEventConsumer(
+          BiConsumer<InventoryClickEvent, T> clickEventConsumer) {
+        this.clickEventConsumer = clickEventConsumer;
+        return this;
+      }
+
+      public Builder<T, G> setUpdateConsumer(
+          Consumer<GuiWrapper<T, G>> updateConsumer) {
+        this.updateConsumer = updateConsumer;
+        return this;
+      }
+
+      public GuiWrapper<T, G> build() {
+        return GuiWrapper.create(gui, data, itemFactory, clickEventConsumer, updateConsumer);
+      }
+    }
   }
 
   public record GuiItemWrapper<T>(GuiItem item, IFactory<ItemStack, T> itemFactory) {
@@ -107,7 +152,8 @@ public class AnvilGuiProxy {
       return new GuiItemWrapper<>(new GuiItem(stack), itemFactory);
     }
 
-    static <T> GuiItemWrapper<T> create(@Nullable T object, IFactory<ItemStack, T> itemFactory,
+    public static <T> GuiItemWrapper<T> create(@Nullable T object,
+        IFactory<ItemStack, T> itemFactory,
         GuiAction<InventoryClickEvent> action) {
       ItemStack stack = itemFactory.create(object);
       return new GuiItemWrapper<>(new GuiItem(stack, action), itemFactory);
@@ -128,7 +174,7 @@ public class AnvilGuiProxy {
     }
 
     @Override
-    public GuiItem item() {
+    public GuiItem getGuiItem() {
       return itemWrapper.item();
     }
   }

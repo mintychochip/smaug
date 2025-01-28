@@ -24,17 +24,17 @@ import org.aincraft.container.IFactory;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
+import org.aincraft.container.gui.AnvilGuiProxy;
+import org.aincraft.container.gui.AnvilGuiProxy.GuiItemWrapper;
+import org.aincraft.container.gui.AnvilGuiProxy.GuiWrapper;
+import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.gui.ItemFactory.Builder;
 import org.aincraft.container.item.ItemStackBuilder;
-import org.aincraft.inject.implementation.view.AnvilGuiProxy.GuiItemWrapper;
-import org.aincraft.inject.implementation.view.AnvilGuiProxy.GuiWrapper;
-import org.aincraft.inject.implementation.view.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.gui.ItemFactory;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
-import org.aincraft.inject.implementation.view.AnvilGuiProxy.StorageItem;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -95,13 +95,13 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
 
   static final class StorageItemFactory {
 
-    static StorageItem create(Station station) {
-      return new StorageItem(GuiItemWrapper.create(station, s -> ItemStackBuilder.create(Material.RABBIT_FOOT)
-          .displayName("<gold>Storage").build(),e -> {
-        HumanEntity entity = e.getWhoClicked();
-        entity.openInventory(station.getInventory());
-      }),station.getInventory());
-    }
+//    static StorageItem create(Station station) {
+//      return new StorageItem(GuiItemWrapper.create(station, s -> ItemStackBuilder.create(Material.RABBIT_FOOT)
+//          .displayName("<gold>Storage").build(),e -> {
+//        HumanEntity entity = e.getWhoClicked();
+//        entity.openInventory(station.getInventory());
+//      }),station.getInventory());
+//    }
   }
 
   static final class RecipeSelectorItemFactory {
