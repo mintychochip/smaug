@@ -25,6 +25,7 @@
 
 package org.aincraft;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
@@ -33,7 +34,6 @@ import org.aincraft.database.model.Station;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.listener.IStationService;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -62,14 +62,31 @@ public final class Smaug {
     return smaug.getRecipeFetcher().all(recipePredicate);
   }
 
-  public static List<SmaugRecipe> fetchAllRecipes(Station station, List<ItemStack> stacks) {
-    return fetchAllRecipes(
-        recipe -> recipe.getStationKey().equals(station.stationKey()) && recipe.test(stacks)
-            .isSuccess());
+  public static List<SmaugRecipe> fetchAllRecipes(Station station,
+      @Nullable List<ItemStack> externalStacks) {
+    Preconditions.checkNotNull(station);
+
+    Predicate<SmaugRecipe> keyMatches = r -> r.getStationKey().equals(station.stationKey());
+    List<ItemStack> contents = (externalStacks == null)
+        ? station.getMeta().getInventory().getContents()
+        : externalStacks;
+
+    return fetchAllRecipes(keyMatches.and(r -> r.test(contents).isSuccess()));
   }
 
-  public static List<SmaugRecipe> fetchAllRecipes(Key stationKey) {
-    return fetchAllRecipes(recipe -> recipe.getStationKey().equals(stationKey));
+  /**
+   * Returns all the recipes associated with a station's key.
+   *
+   * <p>
+   * If the station has the key of {@code "smaug:anvil"}, then all recipes with that key
+   * will be returned.
+   * </p>
+   *
+   * @param station whose key is being checked
+   * @return list of {@code SmaugRecipe}
+   */
+  public static List<SmaugRecipe> fetchAllRecipes(Station station) {
+    return smaug.getRecipeFetcher().all(r -> r.getStationKey().equals(station.stationKey()));
   }
 
   public static Key resolveKey(String keyString, boolean minecraft) {

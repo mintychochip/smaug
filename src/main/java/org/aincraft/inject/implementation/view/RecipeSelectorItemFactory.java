@@ -143,11 +143,11 @@ final class RecipeSelectorItemFactory implements
 
   private static RecipeSelectorItem create(Station station, Player player, BaseGui mainGui,
       BiConsumer<InventoryClickEvent, SmaugRecipe> recipeSelectorConsumer) {
+    int rows = 4;
     UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> codexGuiWrapper = new CodexGuiWrapperFactory(
-        AnvilGuiProxyFactory.ROWS, Component.text("Codex")).create(station);
-    UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGuiWrapper = createRecipeSelectorGuiWrapper(
-        station,
-        recipeSelectorConsumer);
+        rows, Component.text("Codex")).create(station);
+    UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGuiWrapper = new RecipeSelectorWrapperFactory(
+        4, Component.text("Recipes"), recipeSelectorConsumer).create(station);
 
     GuiItem linkedRecipeItem = ItemStackBuilder.create(Material.RABBIT_FOOT)
         .meta(meta -> meta.itemModel(Material.BOOK)
@@ -194,7 +194,8 @@ final class RecipeSelectorItemFactory implements
   }
 
   @Override
-  public @NotNull UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(@NotNull StationPlayerModelProxy data) {
+  public @NotNull UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(
+      @NotNull StationPlayerModelProxy data) {
     return null;
   }
 }

@@ -83,7 +83,6 @@ public class AnvilStationHandler implements StationHandler {
 
   @Override
   public void handle(final Context ctx) {
-
     final Player player = ctx.getPlayer();
     final ItemStack item = ctx.getItem();
     final Station station = ctx.getStation();
@@ -183,15 +182,6 @@ public class AnvilStationHandler implements StationHandler {
         null);
   }
 
-  private static boolean playerIsViewingBossBar(Player player, BossBar bossBar) {
-    for (BossBar activeBossBar : player.activeBossBars()) {
-      if (activeBossBar.equals(bossBar)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   private SmaugRecipe select(Station station, List<SmaugRecipe> recipes, Player player) {
     final StationMeta meta = station.getMeta();
     final String recipeKey = meta.getRecipeKey();
@@ -250,6 +240,15 @@ public class AnvilStationHandler implements StationHandler {
           bossBarTaskMap.put(proxy, taskId);
         }
       }
+    }
+
+    private static boolean playerIsViewingBossBar(Player player, BossBar bossBar) {
+      for (BossBar activeBossBar : player.activeBossBars()) {
+        if (activeBossBar.equals(bossBar)) {
+          return true;
+        }
+      }
+      return false;
     }
   }
 }

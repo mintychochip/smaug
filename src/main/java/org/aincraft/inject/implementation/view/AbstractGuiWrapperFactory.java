@@ -26,6 +26,8 @@
 package org.aincraft.inject.implementation.view;
 
 import dev.triumphteam.gui.guis.BaseGui;
+import dev.triumphteam.gui.guis.Gui;
+import dev.triumphteam.gui.guis.PaginatedGui;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
@@ -41,7 +43,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-abstract class AbstractGuiWrapperFactory<GuiWrapper<>, D> implements IFactory<T, D> {
+abstract class AbstractGuiWrapperFactory<T, D> implements IFactory<T, D> {
 
   protected static final Component INGREDIENT_TITLE;
 
@@ -68,6 +70,11 @@ abstract class AbstractGuiWrapperFactory<GuiWrapper<>, D> implements IFactory<T,
 
   protected int pageSize() {
     return 9 * (rows - 1);
+  }
+
+  protected PaginatedGui createGui() {
+    return Gui.paginated().title(this.title).rows(this.rows).pageSize(this.pageSize())
+        .disableAllInteractions().create();
   }
 
   static Component createRecipeHeader(SmaugRecipe recipe) {

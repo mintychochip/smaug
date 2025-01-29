@@ -58,9 +58,7 @@ final class CodexGuiWrapperFactory extends
   public @NotNull AnvilGuiProxy.UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(
       @NotNull Station data) {
     Preconditions.checkNotNull(data);
-    PaginatedGui gui = Gui.paginated().disableAllInteractions().title(this.title)
-        .rows(this.rows).pageSize(this.pageSize()).create();
-    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(data.stationKey());
+    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(data);
     ItemFactory<SmaugRecipe> itemFactory = new Builder<SmaugRecipe>().setDisplayNameFunction(
             AbstractGuiWrapperFactory::createRecipeHeader)
         .setItemModelFunction(AbstractGuiWrapperFactory::retrieveItemModel)
@@ -78,6 +76,6 @@ final class CodexGuiWrapperFactory extends
           }
           return builder.build();
         }).build();
-    return UpdatableGuiWrapper.create(gui, recipes, itemFactory).build();
+    return UpdatableGuiWrapper.create(createGui(), recipes, itemFactory).build();
   }
 }

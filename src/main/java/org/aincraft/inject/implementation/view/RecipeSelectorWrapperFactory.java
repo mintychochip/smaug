@@ -47,29 +47,22 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Creates an updatable recipe selector gui wrapper
  */
-public class RecipeSelectorWrapperFactory implements
-    IFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> {
+final class RecipeSelectorWrapperFactory extends
+    AbstractGuiWrapperFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> {
 
-  private final int rows;
-  /**
-   *
-   */
   private final BiConsumer<InventoryClickEvent, SmaugRecipe> recipeBiConsumer;
 
-  public RecipeSelectorWrapperFactory(int rows, BiConsumer<InventoryClickEvent, SmaugRecipe> recipeBiConsumer) {
-    this.rows = rows;
+  public RecipeSelectorWrapperFactory(int rows, Component title,
+      BiConsumer<InventoryClickEvent, SmaugRecipe> recipeBiConsumer) {
+    super(rows, title);
     this.recipeBiConsumer = recipeBiConsumer;
   }
 
   @Override
   public @NotNull UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(@NotNull Station data) {
     Preconditions.checkNotNull(data);
-    final StationMeta meta = data.getMeta();
-    final StationInventory inventory = meta.getInventory();
-    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(
-        r -> r.getStationKey().equals(station.stationKey())
-            && r.test(inventory.getContents()).getStatus() == Status.SUCCESS);
-    ItemFactory<SmaugRecipe> itemFactory = new ItemFactory.Builder<SmaugRecipe>()
+
+    final ItemFactory<SmaugRecipe> itemFactory = new ItemFactory.Builder<SmaugRecipe>()
         .setDisplayNameFunction(AbstractGuiWrapperFactory::createRecipeHeader)
         .setItemModelFunction(AbstractGuiWrapperFactory::retrieveItemModel)
         .setLoreFunction(recipe -> {
@@ -79,8 +72,9 @@ public class RecipeSelectorWrapperFactory implements
               .addLines(ingredientList.components()).build();
           return lore;
         }).build();
-    return UpdatableGuiWrapper.create(
-        , recipes,
+
+    final List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(data,null);
+    return UpdatableGuiWrapper.create(createGui(), recipes,
         itemFactory).setClickEventConsumer(recipeBiConsumer).build();
   }
 }
