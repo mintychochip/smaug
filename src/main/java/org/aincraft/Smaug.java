@@ -29,10 +29,12 @@ import java.util.List;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.SmaugRecipe;
+import org.aincraft.database.model.Station;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
 import org.aincraft.listener.IStationService;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,6 +60,12 @@ public final class Smaug {
 
   public static List<SmaugRecipe> fetchAllRecipes(Predicate<SmaugRecipe> recipePredicate) {
     return smaug.getRecipeFetcher().all(recipePredicate);
+  }
+
+  public static List<SmaugRecipe> fetchAllRecipes(Station station, List<ItemStack> stacks) {
+    return fetchAllRecipes(
+        recipe -> recipe.getStationKey().equals(station.stationKey()) && recipe.test(stacks)
+            .isSuccess());
   }
 
   public static List<SmaugRecipe> fetchAllRecipes(Key stationKey) {

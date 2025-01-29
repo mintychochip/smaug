@@ -205,7 +205,7 @@ public class StationListener implements Listener {
       return;
     }
     InteractionContextImpl interactionContext = new InteractionContextImpl(station, event);
-    handler.handleInteraction(interactionContext, recipe -> {
+    handler.handle(interactionContext, recipe -> {
       handler.handleAction(new ActionContextImpl(station, event.getPlayer(), event.getItem(),
           event.getAction(), recipe));
     });
@@ -243,7 +243,7 @@ public class StationListener implements Listener {
     }
   }
 
-  static abstract class ContextImpl implements Context {
+  static abstract class ContextImpl extends Context {
 
     private final Station station;
     private final Player player;

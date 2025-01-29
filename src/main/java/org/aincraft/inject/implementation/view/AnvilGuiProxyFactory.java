@@ -28,7 +28,6 @@ package org.aincraft.inject.implementation.view;
 import com.google.common.base.Preconditions;
 import dev.triumphteam.gui.components.GuiAction;
 import dev.triumphteam.gui.components.GuiType;
-import dev.triumphteam.gui.components.util.GuiFiller;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -64,6 +63,7 @@ import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -98,15 +98,12 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
           final StationMeta meta = station.getMeta();
           final String recipeKey = recipe.getKey();
           if (meta.getRecipeKey() == null) {
-            meta.setRecipeKey(recipe.getKey());
-            station.setMeta(meta);
+            station.setMeta(m -> m.setRecipeKey(recipeKey));
             Bukkit.getPluginManager().callEvent(new StationUpdateEvent(station, player));
             return;
           }
           if (meta.getRecipeKey() != null && !meta.getRecipeKey().equals(recipeKey)) {
-            meta.setProgress(0);
-            meta.setRecipeKey(recipeKey);
-            station.setMeta(meta);
+            station.setMeta(m -> m.setProgress(0).setRecipeKey(recipeKey));
             new BukkitRunnable() {
               @Override
               public void run() {
@@ -118,8 +115,10 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
         });
     MetaItem metaItem = MetaItemFactory.create(station);
     GuiItem filler = ItemStackBuilder.create(Material.RABBIT_FOOT)
-        .itemModel(Material.GRAY_STAINED_GLASS_PANE)
-        .displayName(Component.empty()).asGuiItem();
+        .meta(meta -> meta
+            .itemModel(Material.GRAY_STAINED_GLASS_PANE)
+            .displayName(Component.empty()))
+        .asGuiItem();
     BasicStationItem storageItem = new StorageItemFactory(stationService).create(station);
     main.setItem(3, storageItem.getGuiItem());
     main.setItem(4, recipeSelector.getGuiItem());
@@ -153,7 +152,8 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
     @Override
     public @NotNull AnvilGuiProxy.BasicStationItem create(@Nullable Station station) {
       GuiItem guiItem = ItemStackBuilder.create(Material.CHEST)
-          .displayName("<white>Storage").asGuiItem(e -> {
+          .meta(meta -> meta.displayName(Component.text("Storage")))
+          .asGuiItem(e -> {
             if (station != null) {
               HumanEntity entity = e.getWhoClicked();
               Station s = stationService.getStation(station.id());
@@ -245,11 +245,10 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
       });
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     private static GuiItem createFillerItem(BaseGui gui) {
-      ItemStack stack = ItemStackBuilder.create(Material.RABBIT_FOOT)
-          .setData(DataComponentTypes.ITEM_MODEL, Material.GRAY_STAINED_GLASS_PANE.getKey())
-          .setData(DataComponentTypes.ITEM_NAME, Component.empty()).build();
+      ItemStack stack = ItemStackBuilder.create(Material.RABBIT_FOOT).meta(meta -> meta
+          .itemModel(Material.GRAY_STAINED_GLASS_PANE)
+          .displayName(Component.empty())).build();
       return guiReferenceItem(stack, gui);
     }
 
@@ -257,13 +256,13 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
       final GuiItem filler = createFillerItem(mainGui);
       final int rows = gui.getRows();
       ItemStack stack = ItemStackBuilder.create(Material.RABBIT_FOOT)
-          .itemModel(Material.PAPER).build();
-      gui.setItem(rows, 1, ItemStackBuilder.create(stack)
-          .displayName("Previous")
-          .asGuiItem(e -> gui.previous()));
-      gui.setItem(rows, 9, ItemStackBuilder.create(stack)
-          .displayName("Next")
-          .asGuiItem(e -> gui.next()));
+          .meta(meta -> meta.itemModel(Material.PAPER)).build();
+      gui.setItem(rows, 1,
+          ItemStackBuilder.create(stack).meta(meta -> meta.displayName(Component.text("Previous")))
+              .asGuiItem(e -> gui.previous()));
+      gui.setItem(rows, 9,
+          ItemStackBuilder.create(stack).meta(meta -> meta.displayName(Component.text("Next")))
+              .asGuiItem(e -> gui.next()));
       gui.getFiller().fillBetweenPoints(rows, 3, rows, 8, filler);
     }
 
@@ -284,13 +283,13 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
           recipeSelectorConsumer);
 
       GuiItem linkedRecipeItem = ItemStackBuilder.create(Material.RABBIT_FOOT)
-          .itemModel(Material.BOOK)
-          .displayName("Recipes")
+          .meta(meta -> meta.itemModel(Material.BOOK)
+              .displayName(Component.text("Recipes")))
           .asGuiItem(GUI_OPEN_INVENTORY_ACTION.apply(recipeSelectorGuiWrapper.getGui()));
 
       GuiItem linkedCodexItem = ItemStackBuilder.create(Material.RABBIT_FOOT)
-          .itemModel(Material.WRITABLE_BOOK)
-          .displayName("Codex")
+          .meta(meta -> meta.itemModel(Material.WRITABLE_BOOK)
+              .displayName(Component.text("Codex")))
           .asGuiItem(GUI_OPEN_INVENTORY_ACTION.apply(codexGuiWrapper.getGui()));
 
       createStaticItemsAndLink(recipeSelectorGuiWrapper, mainGui, linkedCodexItem);
@@ -333,8 +332,13 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
         return Material.MAP.getKey();
       }
       ItemStack reference = recipe.getOutput().getReference();
-      return reference.getDataOrDefault(DataComponentTypes.ITEM_MODEL,
-          reference.getType().getKey());
+      ItemMeta meta = reference.getItemMeta();
+      if(!meta.hasItemModel()) {
+        return reference.getType().getKey();
+      }
+      NamespacedKey itemModel = meta.getItemModel();
+      assert itemModel != null;
+      return itemModel;
     }
 
     static Component retrieveDisplayName(SmaugRecipe recipe) {

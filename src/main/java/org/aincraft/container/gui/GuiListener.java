@@ -60,8 +60,7 @@ public class GuiListener implements Listener {
     if (inventoryMap.equals(stationInventoryMap)) {
       return;
     }
-    meta.setInventory(stationInventory.setItems(inventoryMap));
-    station.setMeta(meta);
+    station.setMeta(m -> m.setInventory(stationInventory.setItems(inventoryMap)));
     Bukkit.getPluginManager()
         .callEvent(new StationUpdateEvent(station, (Player) player));
   }

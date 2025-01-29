@@ -102,7 +102,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     }
     handlers.put(new NamespacedKey(bootstrap, "anvil"),
         new AnvilStationHandler(stationService, new NamespacedKey(bootstrap, "id"),
-            this.guiController.get(Key.key("smaug:anvil")), this.bossBarController));
+            this.guiController.get(Key.key("smaug:anvil")), this.bossBarController.get(Key.key("smaug:anvil"))));
 
   }
 

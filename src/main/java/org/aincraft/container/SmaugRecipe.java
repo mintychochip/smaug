@@ -62,10 +62,6 @@ public final class SmaugRecipe {
     public String getError() {
       return error;
     }
-
-    public boolean isSuccess() {
-      return status == Status.SUCCESS;
-    }
   }
 
   private final IKeyedItem output;

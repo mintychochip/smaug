@@ -39,9 +39,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
+import org.aincraft.database.model.Station.StationMeta.Builder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -85,8 +88,16 @@ public record Station(String idString, String stationKeyString, String worldName
     return world.getBlockAt(blockLocation);
   }
 
-  public void setMeta(StationMeta meta) {
+  public Station setMeta(StationMeta meta) {
     metaReference.set(meta);
+    return this;
+  }
+
+  public Station setMeta(Consumer<StationMeta.Builder> metaConsumer) {
+    final StationMeta meta = this.getMeta();
+    Builder builder = new Builder(meta.getRecipeKey(), meta.getProgress(), meta.getInventory());
+    metaConsumer.accept(builder);
+    return setMeta(builder.build());
   }
 
   public StationMeta getMeta() {
@@ -196,6 +207,9 @@ public record Station(String idString, String stationKeyString, String worldName
       return deserialize(inventoryString);
     }
 
+    public ItemAddResult add(ItemStack stack) {
+      return add(List.of(stack));
+    }
     public ItemAddResult add(List<ItemStack> stacks) {
       Map<Integer, ItemStack> stackMap = getItems();
       List<ItemStack> remaining = new ArrayList<>();
@@ -328,8 +342,47 @@ public record Station(String idString, String stationKeyString, String worldName
       return recipeKeyReference.get();
     }
 
+    @NotNull
     public StationInventory getInventory() {
       return inventoryReference.get();
+    }
+
+    public static final class Builder {
+
+      private String recipeKey;
+      private float progress;
+      private StationInventory stationInventory;
+
+      Builder(String recipeKey, float progress, StationInventory stationInventory) {
+        this.recipeKey = recipeKey;
+        this.progress = progress;
+        this.stationInventory = stationInventory;
+      }
+
+      public Builder setRecipeKey(String recipeKey) {
+        this.recipeKey = recipeKey;
+        return this;
+      }
+
+      public Builder setProgress(float progress) {
+        this.progress = progress;
+        return this;
+      }
+
+      public Builder setProgress(Function<Float, Float> progressFunction) {
+        this.progress = progressFunction.apply(progress);
+        return this;
+      }
+
+      public Builder setInventory(
+          StationInventory stationInventory) {
+        this.stationInventory = stationInventory;
+        return this;
+      }
+
+      public StationMeta build() {
+        return new StationMeta(recipeKey, progress, stationInventory);
+      }
     }
   }
 }

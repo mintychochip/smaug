@@ -118,15 +118,15 @@ final class ItemParserImpl implements IItemParser {
     if (key == null) {
       return null;
     }
-    builder.setMeta(meta -> {
+    builder.meta(meta -> {
       String displayNameString = section.getString("display-name", "");
       if (!displayNameString.isEmpty()) {
         Component displayName = section.getComponent("display-name",
             this::handleParseComponent);
-        meta.setDisplayName(displayName);
+        meta.displayName(displayName);
       }
       if (section.contains("unbreakable")) {
-        meta.setUnbreakable(section.getBoolean("unbreakable"));
+        meta.unbreakable(section.getBoolean("unbreakable"));
       }
       if (section.contains("item-model")) {
         String itemModelString = section.getString("item-model");

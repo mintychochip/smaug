@@ -27,30 +27,25 @@ package org.aincraft.handler;
 
 import com.google.inject.name.Named;
 import dev.triumphteam.gui.guis.Gui;
-import dev.triumphteam.gui.guis.PaginatedGui;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.aincraft.Smaug;
 import org.aincraft.api.event.StationUpdateEvent;
-import org.aincraft.container.Result;
-import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
+import org.aincraft.container.ingredient.IngredientList;
+import org.aincraft.container.item.ItemStackBuilder;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
-import org.aincraft.inject.IRecipeFetcher;
 import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModel.IViewModelBinding;
-import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
 import org.aincraft.database.model.Station;
@@ -74,151 +69,108 @@ public class AnvilStationHandler implements StationHandler {
   private final IStationService service;
   private final NamespacedKey idKey;
   private final IViewModel<StationPlayerModelProxy, AnvilGuiProxy> guiViewModel;
-  private final Map<BossBarPlayerComposite, Integer> bossBarTaskMap = new HashMap<>();
-
-  record BossBarPlayerComposite(Player player, Station station) {
-
-    @Override
-    public int hashCode() {
-      return player.getUniqueId().hashCode() + station.id().hashCode();
-    }
-  }
-
-  private final IViewModelController<Station, BossBar> controller;
+  private final BossBarManager bossBarManager;
 
   public AnvilStationHandler(IStationService service,
       @Named("id") NamespacedKey idKey,
-      IViewModel<StationPlayerModelProxy,AnvilGuiProxy> viewModel,
-      IViewModelController<Station, BossBar> controller) {
+      IViewModel<StationPlayerModelProxy, AnvilGuiProxy> viewModel,
+      IViewModel<Station, BossBar> bossBarViewModel) {
     this.service = service;
     this.idKey = idKey;
     this.guiViewModel = viewModel;
-    this.controller = controller;
+    this.bossBarManager = new BossBarManager(bossBarViewModel);
   }
 
   @Override
-  public void handleInteraction(IInteractionContext ctx, Consumer<SmaugRecipe> recipeConsumer) {
-    final Station station = ctx.getStation();
+  public void handle(final Context ctx) {
+
     final Player player = ctx.getPlayer();
-    final ItemStack stack = ctx.getItem();
-    final StationMeta meta = station.getMeta();
-    StationInventory inventory = meta.getInventory();
-    if (ctx.getAction().isRightClick()) {
+    final ItemStack item = ctx.getItem();
+    final Station station = ctx.getStation();
+    final StationPlayerModelProxy proxy = new StationPlayerModelProxy(player, station);
+    if (ctx.isRightClick()) {
       ctx.cancel();
-      if (stack != null) {
-        ItemAddResult result = inventory.add(List.of(stack));
-        if (result.getStatus() == Result.Status.SUCCESS) {
-          meta.setInventory(result.getInventory());
-          station.setMeta(meta);
+      if (item != null) {
+        ItemAddResult result = station.getMeta().getInventory().add(List.of(item));
+        if (result.isSuccess()) {
           Bukkit.getPluginManager()
-              .callEvent(new StationUpdateEvent(station, player));
+              .callEvent(new StationUpdateEvent(
+                  station.setMeta(m -> m.setInventory(result.getInventory())), player));
           player.sendMessage(Component.empty().color(
                   NamedTextColor.WHITE).append(Component.text("Deposited:"))
-              .append(stack.displayName()));
+              .append(item.displayName()));
         }
       } else {
-        IViewModelBinding binding = guiViewModel.getBinding(
-            new StationPlayerModelProxy(player, station));
-        if(binding == null) {
-          return;
-        }
-        Gui gui = binding.getProperty(Gui.class);
-        if(gui != null) {
-          gui.open(player);
+        openMenu(guiViewModel, proxy);
+      }
+      return;
+    }
+    if (player.isSneaking() || !ItemIdentifier.contains(item, idKey, "hammer")) {
+      return;
+    }
+    ctx.cancel();
+    StationMeta meta = station.getMeta();
+    StationInventory inventory = meta.getInventory();
+    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(station, inventory.getContents());
+    if (recipes.isEmpty()) {
+      player.sendMessage("There are not any recipes available");
+    }
+    SmaugRecipe recipe = select(station,
+        recipes, player);
+    if (recipe == null || !recipe.test(inventory.getContents()).isSuccess()) {
+      return;
+    }
+
+    final Location stationBlockLocation = station.blockLocation();
+    if (recipe.getActions() > 0) {
+      bossBarManager.show(proxy);
+      if (station.getMeta().getProgress() < recipe.getActions()) {
+        successfulAction(stationBlockLocation);
+        Bukkit.getPluginManager()
+            .callEvent(new StationUpdateEvent(
+                station.setMeta(m -> m.setProgress(progress -> progress + 1)), player));
+      } else {
+        ItemStack stack = craftRecipeOutput(recipe);
+        ItemAddResult result = inventory.setItems(recipe.getIngredients()
+            .remove(inventory.getItems())).add(List.of(stack));
+        if (result.isSuccess()) {
+          player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+          Bukkit.getPluginManager()
+              .callEvent(new StationUpdateEvent(station.setMeta(m -> m.setRecipeKey(null)
+                  .setProgress(0)
+                  .setInventory(result.getInventory())),
+                  player));
         }
       }
     } else {
-      if (!player.isSneaking()) {
-        if (!ItemIdentifier.contains(stack, idKey, "hammer")) {
-          return;
-        }
+      final IngredientList ingredientList = recipe.getIngredients();
+      final Map<Integer, ItemStack> removed = ingredientList.remove(inventory.getItems());
+      final ItemAddResult result = inventory.setItems(removed).add(craftRecipeOutput(recipe));
+      if (result.isSuccess()) {
+        station.setMeta(
+            m -> m.setRecipeKey(null).setProgress(0).setInventory(result.getInventory()));
 
-        ctx.cancel();
-        List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(
-            recipe -> recipe.getStationKey().equals(station.stationKey())
-                && recipe.test(inventory.getContents()).getStatus() == Status.SUCCESS);
-        if (recipes.isEmpty()) {
-          player.sendMessage("There are not any recipes available");
-        }
-        SmaugRecipe selectedRecipe = select(station,
-            recipes, player);
-        if (selectedRecipe != null) {
-//          if (!inventory.canAddItem(selectedRecipe.craft())) {
-//            player.sendMessage("The output is full");
-//            return;
-//          }
-          recipeConsumer.accept(selectedRecipe);
-        }
       }
     }
   }
 
-  @Override
-  public void handleAction(IActionContext ctx) {
-    final Station station = ctx.getStation();
+  @NotNull
+  private static ItemStack craftRecipeOutput(SmaugRecipe recipe) {
+    final IKeyedItem item = recipe.getOutput();
+    final ItemStack reference = item.getReference();
+    return ItemStackBuilder.create(reference).setAmount(recipe.getAmount()).build();
+  }
 
-    final SmaugRecipe recipe = ctx.getRecipe();
-    final Player player = ctx.getPlayer();
-    StationMeta meta = station.getMeta();
-    StationInventory inventory = meta.getInventory();
-    if (Status.FAILURE == recipe.test(inventory.getContents())
-        .getStatus()) {
+  private static void openMenu(IViewModel<StationPlayerModelProxy, AnvilGuiProxy> viewModel,
+      StationPlayerModelProxy proxy) {
+    IViewModelBinding binding = viewModel.getBinding(
+        proxy);
+    if (binding == null) {
       return;
     }
-    final Location location = station.blockLocation();
-    if (recipe.getActions() > 0) {
-
-      if (meta.getProgress() < recipe.getActions()) {
-        successfulAction(location);
-        meta.setProgress(meta.getProgress() + 1);
-        station.setMeta(meta);
-        IViewModel<Station, BossBar> viewModel = controller.get(
-            Key.key("smaug:anvil"));
-        IViewModelBinding binding = viewModel.getBinding(station);
-        if (binding != null) {
-          BossBar bossBar = binding.getProperty(BossBar.class);
-          if (bossBar != null) {
-            if (!playerIsViewingBossBar(player, bossBar)) {
-              player.showBossBar(bossBar);
-            }
-            BossBarPlayerComposite composite = new BossBarPlayerComposite(player,
-                station);
-            if (bossBarTaskMap.containsKey(composite)) {
-              Integer previousTaskId = bossBarTaskMap.remove(composite);
-              Bukkit.getScheduler().cancelTask(previousTaskId);
-            }
-            int taskId = new BukkitRunnable() {
-              @Override
-              public void run() {
-                player.hideBossBar(bossBar);
-              }
-            }.runTaskLater(Smaug.getPlugin(), 20L).getTaskId();
-            bossBarTaskMap.put(composite, taskId);
-          }
-        }
-
-        Bukkit.getPluginManager()
-            .callEvent(new StationUpdateEvent(station, player));
-      } else {
-        StationInventory stationInventory = meta.getInventory();
-        Map<Integer, ItemStack> removed = recipe.getIngredients()
-            .remove(stationInventory.getItems());
-        IKeyedItem item = recipe.getOutput();
-        ItemStack reference = item.getReference();
-        ItemStack stack = new ItemStack(reference);
-        stack.setAmount(recipe.getAmount());
-        ItemAddResult result = stationInventory.setItems(removed)
-            .add(List.of(stack));
-        if (result.getStatus() == Status.SUCCESS) {
-          meta.setRecipeKey(null);
-          meta.setProgress(0);
-          meta.setInventory(result.getInventory());
-          station.setMeta(meta);
-          player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
-          Bukkit.getPluginManager()
-              .callEvent(new StationUpdateEvent(station, player));
-        }
-      }
+    Gui gui = binding.getProperty(Gui.class);
+    if (gui != null) {
+      gui.open(proxy.player());
     }
   }
 
@@ -239,6 +191,7 @@ public class AnvilStationHandler implements StationHandler {
     }
     return false;
   }
+
   private SmaugRecipe select(Station station, List<SmaugRecipe> recipes, Player player) {
     final StationMeta meta = station.getMeta();
     final String recipeKey = meta.getRecipeKey();
@@ -259,11 +212,44 @@ public class AnvilStationHandler implements StationHandler {
     }
     if (size == 1) {
       SmaugRecipe recipe = recipes.getFirst();
-      meta.setRecipeKey(recipe.getKey());
-      station.setMeta(meta);
-      service.updateStation(station);
+      station.setMeta(m -> m.setProgress(0).setRecipeKey(recipe.getKey()));
+      Bukkit.getPluginManager().callEvent(new StationUpdateEvent(station, player));
       return recipe;
     }
     return null;
+  }
+
+  static final class BossBarManager {
+
+    private final Map<StationPlayerModelProxy, Integer> bossBarTaskMap = new HashMap<>();
+    private final IViewModel<Station, BossBar> viewModel;
+
+    BossBarManager(IViewModel<Station, BossBar> viewModel) {
+      this.viewModel = viewModel;
+    }
+
+    private void show(StationPlayerModelProxy proxy) {
+      IViewModelBinding binding = viewModel.getBinding(proxy.station());
+      if (binding != null) {
+        BossBar bossBar = binding.getProperty(BossBar.class);
+        if (bossBar != null) {
+          Player player = proxy.player();
+          if (!playerIsViewingBossBar(player, bossBar)) {
+            player.showBossBar(bossBar);
+          }
+          if (bossBarTaskMap.containsKey(proxy)) {
+            Integer previousTaskId = bossBarTaskMap.remove(proxy);
+            Bukkit.getScheduler().cancelTask(previousTaskId);
+          }
+          int taskId = new BukkitRunnable() {
+            @Override
+            public void run() {
+              player.hideBossBar(bossBar);
+            }
+          }.runTaskLater(Smaug.getPlugin(), 20L).getTaskId();
+          bossBarTaskMap.put(proxy, taskId);
+        }
+      }
+    }
   }
 }

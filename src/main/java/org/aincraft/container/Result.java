@@ -34,4 +34,7 @@ public interface Result {
 
   Status getStatus();
 
+  default boolean isSuccess() {
+    return getStatus() == Status.SUCCESS;
+  }
 }
