@@ -32,7 +32,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-public class StationUpdateEvent extends Event implements Cancellable {
+public final class StationUpdateEvent extends Event implements Cancellable {
 
   private static HandlerList handlers = new HandlerList();
 

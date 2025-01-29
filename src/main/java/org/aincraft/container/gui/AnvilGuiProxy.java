@@ -66,14 +66,14 @@ public class AnvilGuiProxy {
     GuiItem getGuiItem();
   }
 
-  public static final class GuiWrapper<T, G extends BaseGui> {
+  public static final class UpdatableGuiWrapper<T, G extends BaseGui> {
 
     private final G gui;
     private final IFactory<ItemStack, T> itemFactory;
     private BiConsumer<InventoryClickEvent, T> biConsumer;
-    private Consumer<GuiWrapper<T, G>> updateConsumer;
+    private Consumer<UpdatableGuiWrapper<T, G>> updateConsumer;
 
-    private GuiWrapper(G gui, IFactory<ItemStack, T> itemFactory,
+    private UpdatableGuiWrapper(G gui, IFactory<ItemStack, T> itemFactory,
         BiConsumer<InventoryClickEvent, T> biConsumer) {
       this.gui = gui;
       this.itemFactory = itemFactory;
@@ -96,16 +96,16 @@ public class AnvilGuiProxy {
       }
     }
 
-    public static <T, G extends BaseGui> GuiWrapper.Builder<T, G> create(G gui, List<T> data,
+    public static <T, G extends BaseGui> UpdatableGuiWrapper.Builder<T, G> create(G gui, List<T> data,
         IFactory<ItemStack, T> itemFactory) {
       return new Builder<>(gui, data, itemFactory);
     }
 
-    public static <T, G extends BaseGui> GuiWrapper<T, G> create(G gui, List<T> data,
+    public static <T, G extends BaseGui> UpdatableGuiWrapper<T, G> create(G gui, List<T> data,
         IFactory<ItemStack, T> itemFactory,
         BiConsumer<InventoryClickEvent, T> recipeBiConsumer,
-        Consumer<GuiWrapper<T, G>> updateConsumer) {
-      GuiWrapper<T, G> wrapper = new GuiWrapper<>(gui, itemFactory, recipeBiConsumer);
+        Consumer<UpdatableGuiWrapper<T, G>> updateConsumer) {
+      UpdatableGuiWrapper<T, G> wrapper = new UpdatableGuiWrapper<>(gui, itemFactory, recipeBiConsumer);
       if (updateConsumer != null) {
         updateConsumer.accept(wrapper);
       }
@@ -129,7 +129,7 @@ public class AnvilGuiProxy {
     }
 
     public void setUpdateConsumer(
-        Consumer<GuiWrapper<T, G>> updateConsumer) {
+        Consumer<UpdatableGuiWrapper<T, G>> updateConsumer) {
       Preconditions.checkNotNull(updateConsumer);
       this.updateConsumer = updateConsumer;
     }
@@ -148,7 +148,7 @@ public class AnvilGuiProxy {
       private final List<T> data;
       private final IFactory<ItemStack, T> itemFactory;
       private BiConsumer<InventoryClickEvent, T> clickEventConsumer;
-      private Consumer<GuiWrapper<T, G>> updateConsumer;
+      private Consumer<UpdatableGuiWrapper<T, G>> updateConsumer;
 
       private Builder(G gui, List<T> data, IFactory<ItemStack, T> itemFactory) {
         this.gui = gui;
@@ -164,13 +164,13 @@ public class AnvilGuiProxy {
       }
 
       public Builder<T, G> setUpdateConsumer(
-          Consumer<GuiWrapper<T, G>> updateConsumer) {
+          Consumer<UpdatableGuiWrapper<T, G>> updateConsumer) {
         this.updateConsumer = updateConsumer;
         return this;
       }
 
-      public GuiWrapper<T, G> build() {
-        return GuiWrapper.create(gui, data, itemFactory, clickEventConsumer, updateConsumer);
+      public UpdatableGuiWrapper<T, G> build() {
+        return UpdatableGuiWrapper.create(gui, data, itemFactory, clickEventConsumer, updateConsumer);
       }
     }
   }
@@ -221,8 +221,8 @@ public class AnvilGuiProxy {
   }
 
   public record RecipeSelectorItem(UpdatableGuiItemWrapper<SmaugRecipe> itemWrapper,
-                                   GuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGui,
-                                   GuiWrapper<SmaugRecipe, PaginatedGui> codexGui) implements
+                                   UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGui,
+                                   UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> codexGui) implements
       AnvilProxyItem {
 
     @Override

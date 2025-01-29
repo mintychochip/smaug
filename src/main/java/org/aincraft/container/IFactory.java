@@ -31,5 +31,5 @@ import org.jetbrains.annotations.Nullable;
 public interface IFactory<T, D> {
 
   @NotNull
-  T create(@Nullable D data);
+  T create(@NotNull D data);
 }

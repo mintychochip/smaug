@@ -67,7 +67,7 @@ public class ItemFactory<T> implements IFactory<ItemStack, T> {
 
   @Contract(value = "_->!null", pure = true)
   @Override
-  public @NotNull ItemStack create(@Nullable T data) {
+  public @NotNull ItemStack create(@NotNull T data) {
     ItemStack stack = ItemStack.of(materialFunction != null ? materialFunction.apply(data) : DEFAULT_MATERIAL);
     applyFunctionIfPresent(data,loreFunction,stack,DataComponentTypes.LORE);
     applyFunctionIfPresent(data,itemModelFunction,stack,DataComponentTypes.ITEM_MODEL);

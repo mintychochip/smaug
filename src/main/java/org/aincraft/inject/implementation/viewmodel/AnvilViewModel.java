@@ -68,7 +68,7 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
   static final class AnvilItemDisplayFactory implements IFactory<AnvilItemDisplayView, Station> {
 
     @Override
-    public @NotNull AnvilItemDisplayView create(Station data) {
+    public @NotNull AnvilItemDisplayView create(@NotNull Station data) {
       return new AnvilItemDisplayView();
     }
   }
