@@ -1,3 +1,28 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 mintychochip
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * provided to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 package org.aincraft.handler;
 
 import com.google.inject.name.Named;
@@ -18,6 +43,7 @@ import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
+import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
@@ -114,7 +140,7 @@ public class AnvilStationHandler implements StationHandler {
         if (recipes.isEmpty()) {
           player.sendMessage("There are not any recipes available");
         }
-        SmaugRecipe selectedRecipe = new RecipeSelector(Smaug.getStationService()).select(station,
+        SmaugRecipe selectedRecipe = select(station,
             recipes, player);
         if (selectedRecipe != null) {
 //          if (!inventory.canAddItem(selectedRecipe.craft())) {
@@ -213,36 +239,31 @@ public class AnvilStationHandler implements StationHandler {
     }
     return false;
   }
-
-  private record RecipeSelector(IStationService service, IRecipeFetcher fetcher) {
-
-    public SmaugRecipe select(Station station, List<SmaugRecipe> recipes, Player player) {
-      final StationMeta meta = station.getMeta();
-      final String recipeKey = meta.getRecipeKey();
-      if (recipeKey != null) {
-        try {
-          return fetcher.fetch(recipeKey);
-        } catch (ForwardReferenceException | UndefinedRecipeException e) {
-          throw new RuntimeException(e);
-        }
+  private SmaugRecipe select(Station station, List<SmaugRecipe> recipes, Player player) {
+    final StationMeta meta = station.getMeta();
+    final String recipeKey = meta.getRecipeKey();
+    if (recipeKey != null) {
+      try {
+        return Smaug.fetchRecipe(recipeKey);
+      } catch (ForwardReferenceException | UndefinedRecipeException e) {
+        throw new RuntimeException(e);
       }
-      int size = recipes.size();
-      if (size > 1) {
-//        PaginatedGui gui = RecipeGui.create(recipes, Component.text("Recipes"), (e, r) -> {
-//          meta.setRecipeKey(r.getKey());
-//          station.setMeta(meta);
-//          service.updateStation(station);
-//        });
-  //      gui.open(player);
-      }
-      if (size == 1) {
-        SmaugRecipe recipe = recipes.getFirst();
-        meta.setRecipeKey(recipe.getKey());
-        station.setMeta(meta);
-        service.updateStation(station);
-        return recipe;
-      }
-      return null;
     }
+    int size = recipes.size();
+    if (size > 1) {
+      IViewModelBinding binding = guiViewModel.getBinding(
+          new StationPlayerModelProxy(player, station));
+      RecipeSelectorItem selectorItem = binding.getProperty("recipe-selector",
+          RecipeSelectorItem.class);
+      selectorItem.recipeSelectorGui().open(player);
+    }
+    if (size == 1) {
+      SmaugRecipe recipe = recipes.getFirst();
+      meta.setRecipeKey(recipe.getKey());
+      station.setMeta(meta);
+      service.updateStation(station);
+      return recipe;
+    }
+    return null;
   }
 }

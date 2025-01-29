@@ -5,7 +5,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.aincraft.smaug.main.iml" filepath="$PROJECT_DIR$/.idea/modules/org.aincraft.smaug.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.aincraft.smaug.test.iml" filepath="$PROJECT_DIR$/.idea/modules/org.aincraft.smaug.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/smaug.main.iml" filepath="$PROJECT_DIR$/.idea/modules/smaug.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/smaug.test.iml" filepath="$PROJECT_DIR$/.idea/modules/smaug.test.iml" />
     </modules>
   </component>
 </project>

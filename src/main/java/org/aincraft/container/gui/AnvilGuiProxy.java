@@ -1,14 +1,42 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 mintychochip
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * provided to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 package org.aincraft.container.gui;
 
+import com.google.common.base.Preconditions;
 import dev.triumphteam.gui.components.GuiAction;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
+import dev.triumphteam.gui.guis.PaginatedGui;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
+import org.aincraft.database.model.Station;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
@@ -87,8 +115,9 @@ public class AnvilGuiProxy {
 
     public void update(List<T> data) {
       if (updateConsumer != null) {
-        this.populateGui(data);
+        updateConsumer.accept(this);
       }
+      this.populateGui(data);
     }
 
     public void open(HumanEntity entity) {
@@ -101,6 +130,7 @@ public class AnvilGuiProxy {
 
     public void setUpdateConsumer(
         Consumer<GuiWrapper<T, G>> updateConsumer) {
+      Preconditions.checkNotNull(updateConsumer);
       this.updateConsumer = updateConsumer;
     }
 
@@ -145,33 +175,55 @@ public class AnvilGuiProxy {
     }
   }
 
-  public record GuiItemWrapper<T>(GuiItem item, IFactory<ItemStack, T> itemFactory) {
+  /**
+   * Wrapper class to manage dynamic state of a {@code GuiItem}. T is passed to create a new
+   * item every update as specified by the item factory, this an implementation detail.
+   *
+   * @param item
+   * @param itemFactory
+   * @param <T>
+   */
+  public record UpdatableGuiItemWrapper<T>(GuiItem item, IFactory<ItemStack, T> itemFactory) {
 
-    static <T> GuiItemWrapper<T> create(@Nullable T object, IFactory<ItemStack, T> itemFactory) {
+    static <T> UpdatableGuiItemWrapper<T> create(@Nullable T object,
+        IFactory<ItemStack, T> itemFactory) {
       ItemStack stack = itemFactory.create(object);
-      return new GuiItemWrapper<>(new GuiItem(stack), itemFactory);
+      return new UpdatableGuiItemWrapper<>(new GuiItem(stack), itemFactory);
     }
 
-    public static <T> GuiItemWrapper<T> create(@Nullable T object,
+    public static <T> UpdatableGuiItemWrapper<T> create(@Nullable T object,
         IFactory<ItemStack, T> itemFactory,
         GuiAction<InventoryClickEvent> action) {
       ItemStack stack = itemFactory.create(object);
-      return new GuiItemWrapper<>(new GuiItem(stack, action), itemFactory);
+      return new UpdatableGuiItemWrapper<>(new GuiItem(stack, action), itemFactory);
     }
 
-    public void update(final T object) {
+    public void update(@Nullable final T object) {
       ItemStack stack = itemFactory.create(object);
       item.setItemStack(stack);
     }
   }
 
-  public record RecipeSelectorItem(GuiItemWrapper<SmaugRecipe> itemWrapper,
-                                   GuiWrapper<SmaugRecipe> recipeSelectorGui,
-                                   GuiWrapper<SmaugRecipe> codexGui) implements AnvilProxyItem {
+  public record BasicStationItem(GuiItem guiItem) implements AnvilProxyItem {
 
-    public void updateIcon(SmaugRecipe recipe) {
-      itemWrapper.update(recipe);
+    @Override
+    public GuiItem getGuiItem() {
+      return guiItem;
     }
+  }
+
+  public record MetaItem(UpdatableGuiItemWrapper<Station> itemWrapper) implements AnvilProxyItem {
+
+    @Override
+    public GuiItem getGuiItem() {
+      return itemWrapper.item();
+    }
+  }
+
+  public record RecipeSelectorItem(UpdatableGuiItemWrapper<SmaugRecipe> itemWrapper,
+                                   GuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGui,
+                                   GuiWrapper<SmaugRecipe, PaginatedGui> codexGui) implements
+      AnvilProxyItem {
 
     @Override
     public GuiItem getGuiItem() {

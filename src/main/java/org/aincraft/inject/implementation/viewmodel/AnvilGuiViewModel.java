@@ -1,5 +1,31 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 mintychochip
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * provided to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 package org.aincraft.inject.implementation.viewmodel;
 
+import com.google.gson.annotations.Expose;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
 import java.util.List;
@@ -12,7 +38,7 @@ import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory;
-import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory.RecipeSelectorItemFactory;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -32,6 +58,7 @@ public final class AnvilGuiViewModel extends
     @ExposedProperty("gui")
     private final Gui mainGui;
 
+    @ExposedProperty("recipe-selector")
     private final RecipeSelectorItem recipeSelectorItem;
 
     AnvilGuiBinding(Gui mainGui, RecipeSelectorItem recipeSelectorItem) {
@@ -56,9 +83,11 @@ public final class AnvilGuiViewModel extends
     final Gui mainGui = binding.mainGui();
     final Player player = model.player();
     StationMeta meta = model.station().getMeta();
-    String recipeKey = meta.getRecipeKey();
-    recipeSelectorItem.updateIcon(Smaug.fetchRecipe(recipeKey));
-    List<SmaugRecipe> recipes = RecipeSelectorItemFactory.retrieveAllAvailableRecipes(meta);
+    final String recipeKey = meta.getRecipeKey();
+    recipeSelectorItem.itemWrapper().update(recipeKey != null ? Smaug.fetchRecipe(recipeKey) : null);
+    List<SmaugRecipe> recipes = Smaug.getRecipeFetcher()
+        .all(model.station().stationKey(), meta.getInventory()
+            .getContents());
     recipeSelectorItem.recipeSelectorGui().update(recipes);
     recipeSelectorItem.codexGui().update(Smaug.fetchAllRecipes(model.station().stationKey()));
     for (BaseGui gui : List.of(mainGui, recipeSelectorItem.recipeSelectorGui().getGui(),
@@ -81,12 +110,13 @@ public final class AnvilGuiViewModel extends
 
   @Override
   @NotNull
-  IViewModelBinding viewToBinding(AnvilGuiProxy view) {
+  IViewModelBinding viewToBinding(@NotNull AnvilGuiProxy view) {
     return new AnvilGuiBinding(view.getMainGui(), view.getRecipeSelectorItem());
   }
 
   @Override
-  @NotNull Integer modelToKey(@NotNull StationPlayerModelProxy model) {
+  @NotNull
+  Integer modelToKey(@NotNull StationPlayerModelProxy model) {
     return model.hashCode();
   }
 

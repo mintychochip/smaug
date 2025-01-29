@@ -1,3 +1,28 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 mintychochip
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * provided to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 package org.aincraft.listener;
 
 import com.google.inject.Inject;
@@ -113,7 +138,6 @@ public class StationListener implements Listener {
       return;
     }
     Player player = event.getPlayer();
-    stationService.deleteStation(blockLocation);
     Bukkit.getPluginManager()
         .callEvent(new StationRemoveEvent(station, player, RemovalCause.PLAYER));
     for (int y = blockLocation.getBlockY() + 1; y < world.getMaxHeight(); y++) {
@@ -122,7 +146,6 @@ public class StationListener implements Listener {
       if (!IS_FALLING_BLOCK_TYPE.test(blockAbove)) {
         break;
       }
-      stationService.deleteStation(blockLocation);
       Bukkit.getPluginManager()
           .callEvent(new StationRemoveEvent(station, player, RemovalCause.PLAYER));
     }
@@ -134,6 +157,7 @@ public class StationListener implements Listener {
       return;
     }
     final Station station = event.getStation();
+    CompletableFuture.runAsync(() -> stationService.deleteStation(station.blockLocation()));
     final World world = station.world();
     StationMeta meta = station.getMeta();
     StationInventory stationInventory = meta.getInventory();
@@ -152,7 +176,7 @@ public class StationListener implements Listener {
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
-  private void handleUpdateItemDisplay(final StationUpdateEvent event) {
+  private void handleUpdateStation(final StationUpdateEvent event) {
     if (event.isCancelled()) {
       return;
     }
