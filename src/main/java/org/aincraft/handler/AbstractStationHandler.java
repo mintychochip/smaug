@@ -17,26 +17,27 @@
  *
  */
 
-package org.aincraft.container;
+package org.aincraft.handler;
 
 import net.kyori.adventure.key.Key;
-import org.aincraft.container.StationHandler.Context;
 import org.aincraft.database.model.Station;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class AbstractStationHandler {
-  private final Key stationKey;
+abstract class AbstractStationHandler implements StationHandler {
+  private final Key key;
 
-  public AbstractStationHandler(Key stationKey) {
-    this.stationKey = stationKey;
+  public AbstractStationHandler(Key key) {
+    this.key = key;
   }
 
-  public Key getStationKey() {
-    return stationKey;
+  @Override
+  public @NotNull Key key() {
+    return key;
   }
 
   record ContextImpl(Station station, PlayerInteractEvent event) implements Context {
@@ -71,5 +72,10 @@ public abstract class AbstractStationHandler {
       public void cancel() {
         event.setCancelled(true);
       }
+
+    @Override
+    public Block getClickedBlock() {
+      return event.getClickedBlock();
     }
+  }
 }

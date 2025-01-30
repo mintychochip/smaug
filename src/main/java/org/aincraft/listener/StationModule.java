@@ -23,7 +23,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import java.util.Map;
 import net.kyori.adventure.key.Key;
-import org.aincraft.container.StationHandler;
+import org.aincraft.handler.StationHandler;
 
 public class StationModule extends AbstractModule {
 

@@ -17,18 +17,19 @@
  *
  */
 
-package org.aincraft.container;
+package org.aincraft.handler;
 
 import com.google.common.base.Preconditions;
-import org.aincraft.container.AbstractStationHandler.ContextImpl;
+import net.kyori.adventure.key.Keyed;
+import org.aincraft.handler.AbstractStationHandler.ContextImpl;
 import org.aincraft.database.model.Station;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-@FunctionalInterface
-public interface StationHandler {
+public interface StationHandler extends Keyed {
 
   interface Context {
 
@@ -56,6 +57,8 @@ public interface StationHandler {
     ItemStack getItem();
 
     void cancel();
+
+    Block getClickedBlock();
   }
 
   void handle(Context ctx);

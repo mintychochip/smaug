@@ -19,22 +19,43 @@
 
 package org.aincraft.handler;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.aincraft.Smaug;
-import org.aincraft.container.SmaugRecipe;
-import org.aincraft.container.StationHandler;
+import net.kyori.adventure.key.Key;
 import org.aincraft.database.model.Station;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Levelled;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-public class CauldronHandler implements StationHandler {
+public final class CauldronHandler extends AbstractStationHandler {
+
+  public CauldronHandler(Key key) {
+    super(key);
+  }
 
   @Override
   public void handle(Context ctx) {
     final Player player = ctx.getPlayer();
     final Station station = ctx.getStation();
-//
-//    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(station.stationKey());
 
+    Block block = ctx.getClickedBlock();
+    Material material = block.getType();
+    if(material == )
+    BlockData blockData = block.getBlockData();
+    if(!(blockData instanceof Levelled levelled)) {
+      return;
+    }
+
+    block.getState().
+    blockData.
+    block.
+    player.playSound(player.getLocation(), Sound.ITEM_BUCKET_FILL, 1f, 1f);
   }
+
+  private static boolean isEmpty(Block block) {
+    return block.getType() == Material.
+  }
+
 }

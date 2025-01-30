@@ -25,15 +25,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.aincraft.Smaug;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.SmaugRecipe;
-import org.aincraft.container.StationHandler;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
-import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.container.item.ItemStackBuilder;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
@@ -58,7 +57,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-public class AnvilStationHandler implements StationHandler {
+public final class AnvilStationHandler implements StationHandler {
 
   private final IStationService service;
   private final NamespacedKey idKey;
@@ -136,14 +135,14 @@ public class AnvilStationHandler implements StationHandler {
         }
       }
     } else {
-      final IngredientList ingredientList = recipe.getIngredients();
-      final Map<Integer, ItemStack> removed = ingredientList.remove(inventory.getItems());
-      final ItemAddResult result = inventory.setItems(removed).add(craftRecipeOutput(recipe));
-      if (result.isSuccess()) {
-        station.setMeta(
-            m -> m.setRecipeKey(null).setProgress(0).setInventory(result.getInventory()));
-
-      }
+//      final IngredientList ingredientList = recipe.getIngredients();
+//      final Map<Integer, ItemStack> removed = ingredientList.remove(inventory.getItems());
+//      final ItemAddResult result = inventory.setItems(removed).add(craftRecipeOutput(recipe));
+//      if (result.isSuccess()) {
+//        station.setMeta(
+//            m -> m.setRecipeKey(null).setProgress(0).setInventory(result.getInventory()));
+//
+//      }
     }
   }
 
@@ -200,6 +199,11 @@ public class AnvilStationHandler implements StationHandler {
       Bukkit.getPluginManager().callEvent(new StationUpdateEvent(station, player));
       return recipe;
     }
+    return null;
+  }
+
+  @Override
+  public @NotNull Key key() {
     return null;
   }
 

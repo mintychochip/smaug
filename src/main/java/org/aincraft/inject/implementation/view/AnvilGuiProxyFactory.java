@@ -66,26 +66,29 @@ public final class AnvilGuiProxyFactory implements
     Preconditions.checkNotNull(data);
     Station station = data.station();
     Player player = data.player();
-    Gui main = Gui.gui(GuiType.DISPENSER).title(Component.text("Menu")).disableAllInteractions().create();
+    final Gui main = Gui.gui(GuiType.DISPENSER).title(Component.text("Menu"))
+        .disableAllInteractions()
+        .create();
     final CodexGuiWrapperFactory codexGuiWrapperFactory = new CodexGuiWrapperFactory(ROWS,
         Component.text("Codex"));
     final RecipeSelectorWrapperFactory recipeSelectorWrapperFactory = new RecipeSelectorWrapperFactory(
         ROWS,
         Component.text("Recipes"), (e, recipe) -> {
+      final HumanEntity entity = e.getWhoClicked();
       final StationMeta meta = station.getMeta();
       final String recipeKey = recipe.getKey();
       if (meta.getRecipeKey() == null) {
-        station.setMeta(m -> m.setRecipeKey(recipeKey));
-        Bukkit.getPluginManager().callEvent(new StationUpdateEvent(station, player));
+        Bukkit.getPluginManager().callEvent(
+            new StationUpdateEvent(station.setMeta(m -> m.setRecipeKey(recipeKey)), player));
         return;
       }
       if (meta.getRecipeKey() != null && !meta.getRecipeKey().equals(recipeKey)) {
-        station.setMeta(m -> m.setProgress(0).setRecipeKey(recipeKey));
         new BukkitRunnable() {
           @Override
           public void run() {
             Bukkit.getPluginManager()
-                .callEvent(new StationUpdateEvent(station, player));
+                .callEvent(new StationUpdateEvent(
+                    station.setMeta(m -> m.setProgress(0).setRecipeKey(recipeKey)), player));
           }
         }.runTask(plugin);
       }
@@ -106,6 +109,7 @@ public final class AnvilGuiProxyFactory implements
         .itemModel(Material.GRAY_STAINED_GLASS_PANE)
         .displayName(Component.empty())).asGuiItem();
   }
+
   static final class MetaItemFactory {
 
     private static MetaItem create(Station station) {

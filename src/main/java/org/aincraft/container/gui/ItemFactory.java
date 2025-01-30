@@ -114,8 +114,9 @@ public class ItemFactory<T> implements IFactory<ItemStack, T> {
       this(null, null, null);
     }
 
-    public void setMaterialFunction(Function<T, Material> materialFunction) {
+    public Builder<T> setMaterialFunction(Function<T, Material> materialFunction) {
       this.materialFunction = materialFunction;
+      return this;
     }
 
     public Builder<T> setLoreFunction(

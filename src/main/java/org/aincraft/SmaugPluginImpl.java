@@ -28,7 +28,7 @@ import net.kyori.adventure.key.Key;
 import org.aincraft.commands.IngredientCommand;
 import org.aincraft.commands.SmithCommand;
 import org.aincraft.container.IRegistry.IItemRegistry;
-import org.aincraft.container.StationHandler;
+import org.aincraft.handler.StationHandler;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.display.AnvilItemDisplayView;
@@ -38,6 +38,7 @@ import org.aincraft.container.gui.GuiListener;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.handler.AnvilStationHandler;
+import org.aincraft.handler.CauldronHandler;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
 import org.aincraft.listener.IStationService;
@@ -98,6 +99,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
         new AnvilStationHandler(stationService, new NamespacedKey(bootstrap, "id"),
             this.guiController.get(Key.key("smaug:anvil")), this.bossBarController.get(Key.key("smaug:anvil"))));
 
+    this.registerHandler(new CauldronHandler(Key.key("smaug:cauldron")));
   }
 
   private static void registerListeners(Listener[] listeners, Plugin plugin) {
@@ -136,5 +138,10 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   @Override
   public IItemRegistry getItemRegistry() {
     return itemRegistry;
+  }
+
+  @Override
+  public void registerHandler(StationHandler handler) {
+    handlers.put(handler.key(),handler);
   }
 }
