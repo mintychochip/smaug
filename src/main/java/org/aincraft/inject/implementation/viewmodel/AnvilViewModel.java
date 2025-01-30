@@ -34,12 +34,12 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
-import org.aincraft.container.IFactory;
+import org.aincraft.container.IParameterizedFactory;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.PropertyNotFoundException;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
-import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.database.model.StationMeta;
 import org.aincraft.util.Mt;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -59,7 +59,8 @@ import org.joml.Vector3f;
 
 final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayView, UUID> {
 
-  static final class AnvilItemDisplayFactory implements IFactory<AnvilItemDisplayView, Station> {
+  static final class AnvilItemDisplayParameterizedFactory implements
+      IParameterizedFactory<AnvilItemDisplayView, Station> {
 
     @Override
     public @NotNull AnvilItemDisplayView create(@NotNull Station data) {
@@ -237,8 +238,8 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
 
   @Override
   @NotNull
-  IFactory<AnvilItemDisplayView, Station> getViewFactory() {
-    return new AnvilItemDisplayFactory();
+  IParameterizedFactory<AnvilItemDisplayView, Station> getViewFactory() {
+    return new AnvilItemDisplayParameterizedFactory();
   }
 
   @Override

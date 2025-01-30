@@ -34,42 +34,57 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
-import org.aincraft.database.model.Station.StationMeta.Builder;
+import org.aincraft.database.model.meta.Meta;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
+import org.intellij.lang.annotations.Subst;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
-public record Station(String idString, String stationKeyString, String worldName,
-                      int x, int y, int z, UUID id, World world, Key stationKey,
-                      Location blockLocation,
-                      AtomicReference<org.aincraft.database.model.Station.StationMeta> metaReference) {
+/**
+ * Model Container, mutable state is held in meta
+ *
+ * @param idString
+ * @param keyString
+ * @param worldName
+ * @param x
+ * @param y
+ * @param z
+ * @param id
+ * @param world
+ * @param stationKey
+ * @param blockLocation
+ * @param metaReference
+ * @param <M>
+ */
+public record Station<M extends Meta<M>>(String idString,
+                                         String keyString,
+                                         String worldName,
+                                         int x, int y, int z, UUID id,
+                                         World world, Key stationKey,
+                                         Location blockLocation,
+                                         AtomicReference<M> metaReference) {
 
-  public static Station create(@NotNull String idString, @NotNull String stationKeyString,
-      @NotNull String worldName, int x, int y, int z,
-      org.aincraft.database.model.Station.StationMeta meta) {
+  public static <M extends Meta<M>> Station<M> create(@NotNull String idString,
+      @Subst("") @NotNull String stationKeyString, @NotNull String worldName, int x, int y, int z, M meta) {
     Preconditions.checkArgument(
         !(idString == null || stationKeyString == null || worldName == null));
     final World world = Bukkit.getWorld(worldName);
-    final Key stationkey = NamespacedKey.fromString(stationKeyString);
-    if (world == null || stationkey == null) {
+    final Key stationkey = Key.key(stationKeyString);
+    if (world == null) {
       return null;
     }
     try {
       UUID id = UUID.fromString(idString);
-      return new Station(idString, stationKeyString, worldName, x, y, z,
+      return new Station<>(idString, stationKeyString, worldName, x, y, z,
           id, world, stationkey, new Location(world, x, y, z),
           new AtomicReference<>(meta));
     } catch (IllegalArgumentException e) {
@@ -82,23 +97,28 @@ public record Station(String idString, String stationKeyString, String worldName
     return world.getBlockAt(blockLocation);
   }
 
-  public Station setMeta(StationMeta meta) {
+  public Station<M> setMeta(M meta) {
     metaReference.set(meta);
     return this;
   }
 
-  public Station setMeta(Consumer<StationMeta.Builder> metaConsumer) {
-    final StationMeta meta = this.getMeta();
-    Builder builder = new Builder(meta.getRecipeKey(), meta.getProgress(), meta.getInventory());
-    metaConsumer.accept(builder);
-    return setMeta(builder.build());
+  public Station<M> setMeta(Consumer<M> metaConsumer) {
+    final M meta = this.getMeta();
+    metaConsumer.accept(meta);
+    return setMeta(meta);
+  }
+//  public Station<M> setMeta(Consumer<StationMeta.Builder> metaConsumer) {
+//    final StationMeta meta = this.getMeta();
+//    Builder builder = new Builder(meta.getRecipeKey(), meta.getProgress(), meta.getInventory());
+//    metaConsumer.accept(builder);
+//    return setMeta(builder.build());
+//  }
+
+  public M getMeta() {
+    M meta = metaReference.get();
+    return meta.clone();
   }
 
-  public StationMeta getMeta() {
-    StationMeta meta = metaReference.get();
-    return new StationMeta(meta.getRecipeKey(), meta.getProgress(),
-        meta.getInventory());
-  }
 
   @NotNull
   public BoundingBox getBoundingBox(double horizontalOffset) {
@@ -118,49 +138,44 @@ public record Station(String idString, String stationKeyString, String worldName
   public Location centerLocation() {
     return blockLocation.clone().add(0.5, 0, 0.5);
   }
-
-  public Inventory getInventory() {
-    StationGuiAdapter guiAdapter = new StationGuiAdapter(this);
-    return guiAdapter.getInventory();
-  }
-
-  public static final class StationGuiAdapter implements InventoryHolder {
-
-    private final Station station;
-
-    private StationGuiAdapter(Station station) {
-      this.station = station;
-    }
-
-    @Override
-    public @NotNull Inventory getInventory() {
-      StationMeta meta = station.getMeta();
-      StationInventory stationInventory = meta.getInventory();
-      Map<Integer, ItemStack> map = stationInventory.getItems();
-      int i = inventorySize(map.size());
-      Inventory inventory = Bukkit.createInventory(this, i);
-      for (Entry<Integer, ItemStack> entry : map.entrySet()) {
-        inventory.setItem(entry.getKey(), entry.getValue());
-      }
-      return inventory;
-    }
-
-    public Station getStation() {
-      return station;
-    }
-
-    static int inventorySize(int size) {
-      if (size <= 9) {
-        return 9;
-      }
-
-      if (size > 54) {
-        return 54;
-      }
-
-      return (int) Math.ceil(size / 9.0) * 9;
-    }
-  }
+//
+//  public static final class StationGuiAdapter implements InventoryHolder {
+//
+//    private final Station station;
+//
+//    private StationGuiAdapter(Station station) {
+//      this.station = station;
+//    }
+//
+//    @Override
+//    public @NotNull Inventory getInventory() {
+//      StationMeta meta = station.getMeta();
+//      StationInventory stationInventory = meta.getInventory();
+//      Map<Integer, ItemStack> map = stationInventory.getItems();
+//      int i = inventorySize(map.size());
+//      Inventory inventory = Bukkit.createInventory(this, i);
+//      for (Entry<Integer, ItemStack> entry : map.entrySet()) {
+//        inventory.setItem(entry.getKey(), entry.getValue());
+//      }
+//      return inventory;
+//    }
+//
+//    public Station<M> getStation() {
+//      return station;
+//    }
+//
+//    static int inventorySize(int size) {
+//      if (size <= 9) {
+//        return 9;
+//      }
+//
+//      if (size > 54) {
+//        return 54;
+//      }
+//
+//      return (int) Math.ceil(size / 9.0) * 9;
+//    }
+//  }
 
   public record StationInventory(String inventoryString) {
 
@@ -204,6 +219,7 @@ public record Station(String idString, String stationKeyString, String worldName
     public ItemAddResult add(ItemStack stack) {
       return add(List.of(stack));
     }
+
     public ItemAddResult add(List<ItemStack> stacks) {
       Map<Integer, ItemStack> stackMap = getItems();
       List<ItemStack> remaining = new ArrayList<>();
@@ -298,85 +314,4 @@ public record Station(String idString, String stationKeyString, String worldName
 
   }
 
-  public static final class StationMeta {
-
-
-    private final AtomicReference<String> recipeKeyReference;
-    private final AtomicReference<Float> progressReference;
-    private final AtomicReference<StationInventory> inventoryReference;
-
-    public static StationMeta create(String recipeKey, float progress) {
-      return new StationMeta(recipeKey, progress, StationInventory.create());
-    }
-
-    public StationMeta(String recipeKey, float progress, StationInventory inventory) {
-      recipeKeyReference = new AtomicReference<>(recipeKey);
-      progressReference = new AtomicReference<>(progress);
-      inventoryReference = new AtomicReference<>(inventory);
-    }
-
-    public void setProgress(float progress) {
-      progressReference.set(progress);
-    }
-
-    public void setRecipeKey(String recipeKey) {
-      recipeKeyReference.set(recipeKey);
-    }
-
-    public void setInventory(StationInventory inventory) {
-      inventoryReference.set(inventory);
-    }
-
-    public float getProgress() {
-      return progressReference.get();
-    }
-
-    @Nullable
-    public String getRecipeKey() {
-      return recipeKeyReference.get();
-    }
-
-    @NotNull
-    public StationInventory getInventory() {
-      return inventoryReference.get();
-    }
-
-    public static final class Builder {
-
-      private String recipeKey;
-      private float progress;
-      private StationInventory stationInventory;
-
-      Builder(String recipeKey, float progress, StationInventory stationInventory) {
-        this.recipeKey = recipeKey;
-        this.progress = progress;
-        this.stationInventory = stationInventory;
-      }
-
-      public Builder setRecipeKey(String recipeKey) {
-        this.recipeKey = recipeKey;
-        return this;
-      }
-
-      public Builder setProgress(float progress) {
-        this.progress = progress;
-        return this;
-      }
-
-      public Builder setProgress(Function<Float, Float> progressFunction) {
-        this.progress = progressFunction.apply(progress);
-        return this;
-      }
-
-      public Builder setInventory(
-          StationInventory stationInventory) {
-        this.stationInventory = stationInventory;
-        return this;
-      }
-
-      public StationMeta build() {
-        return new StationMeta(recipeKey, progress, stationInventory);
-      }
-    }
-  }
 }

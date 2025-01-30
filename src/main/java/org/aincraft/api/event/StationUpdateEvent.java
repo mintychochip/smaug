@@ -20,23 +20,24 @@
 package org.aincraft.api.event;
 
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.meta.Meta;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-public final class StationUpdateEvent extends Event implements Cancellable {
+public final class StationUpdateEvent<M extends Meta<M>> extends Event implements Cancellable {
 
   private static HandlerList handlers = new HandlerList();
 
-  private final Station model;
+  private final Station<M> model;
 
   private final Player player;
 
   private boolean cancelled = false;
 
-  public StationUpdateEvent(Station model, Player player) {
+  public StationUpdateEvent(Station<M> model, Player player) {
     this.model = model;
     this.player = player;
   }
@@ -46,7 +47,7 @@ public final class StationUpdateEvent extends Event implements Cancellable {
     return player;
   }
 
-  public Station getModel() {
+  public Station<M> getModel() {
     return model;
   }
 

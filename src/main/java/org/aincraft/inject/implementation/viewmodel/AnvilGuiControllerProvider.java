@@ -25,7 +25,7 @@ import net.kyori.adventure.key.Key;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.gui.AnvilGuiProxy;
-import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory;
+import org.aincraft.inject.implementation.view.AnvilGuiProxyParameterizedFactory;
 import org.aincraft.listener.IStationService;
 import org.bukkit.plugin.Plugin;
 
@@ -44,7 +44,7 @@ public class AnvilGuiControllerProvider implements
   @Override
   public IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> get() {
     AnvilGuiController controller = new AnvilGuiController(stationService, plugin);
-    controller.register(Key.key("smaug:anvil"),new AnvilGuiViewModel(new AnvilGuiProxyFactory(stationService,plugin)));
+    controller.register(Key.key("smaug:anvil"),new AnvilGuiViewModel(new AnvilGuiProxyParameterizedFactory(stationService,plugin)));
     return controller;
   }
 }

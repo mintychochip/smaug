@@ -38,7 +38,6 @@ import org.aincraft.container.gui.GuiListener;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.handler.AnvilStationHandler;
-import org.aincraft.handler.CauldronHandler;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
 import org.aincraft.listener.IStationService;

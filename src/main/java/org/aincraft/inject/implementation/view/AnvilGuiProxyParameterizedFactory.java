@@ -27,17 +27,17 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.api.event.StationUpdateEvent;
-import org.aincraft.container.IFactory;
+import org.aincraft.container.IParameterizedFactory;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiItemWrapper;
 import org.aincraft.container.gui.AnvilGuiProxy.MetaItem;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.gui.AnvilGuiProxy.BasicStationItem;
-import org.aincraft.container.gui.ItemFactory.Builder;
+import org.aincraft.container.gui.ItemParameterizedFactory.Builder;
 import org.aincraft.container.item.ItemStackBuilder;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.database.model.StationMeta;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -48,15 +48,15 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-public final class AnvilGuiProxyFactory implements
-    IFactory<AnvilGuiProxy, StationPlayerModelProxy> {
+public final class AnvilGuiProxyParameterizedFactory implements
+    IParameterizedFactory<AnvilGuiProxy, StationPlayerModelProxy> {
 
   private static final int ROWS = 4;
 
   private final IStationService stationService;
   private final Plugin plugin;
 
-  public AnvilGuiProxyFactory(IStationService stationService, Plugin plugin) {
+  public AnvilGuiProxyParameterizedFactory(IStationService stationService, Plugin plugin) {
     this.stationService = stationService;
     this.plugin = plugin;
   }
@@ -69,9 +69,9 @@ public final class AnvilGuiProxyFactory implements
     final Gui main = Gui.gui(GuiType.DISPENSER).title(Component.text("Menu"))
         .disableAllInteractions()
         .create();
-    final CodexGuiWrapperFactory codexGuiWrapperFactory = new CodexGuiWrapperFactory(ROWS,
+    final CodexGuiWrapperParameterizedFactory codexGuiWrapperFactory = new CodexGuiWrapperParameterizedFactory(ROWS,
         Component.text("Codex"));
-    final RecipeSelectorWrapperFactory recipeSelectorWrapperFactory = new RecipeSelectorWrapperFactory(
+    final RecipeSelectorWrapperParameterizedFactory recipeSelectorWrapperFactory = new RecipeSelectorWrapperParameterizedFactory(
         ROWS,
         Component.text("Recipes"), (e, recipe) -> {
       final HumanEntity entity = e.getWhoClicked();
@@ -93,10 +93,10 @@ public final class AnvilGuiProxyFactory implements
         }.runTask(plugin);
       }
     });
-    RecipeSelectorItem recipeSelectorItem = new RecipeSelectorItemFactory(player, main,
+    RecipeSelectorItem recipeSelectorItem = new RecipeSelectorItemParameterizedFactory(player, main,
         codexGuiWrapperFactory, recipeSelectorWrapperFactory, createFiller()).create(station);
     MetaItem metaItem = MetaItemFactory.create(station);
-    BasicStationItem storageItem = new StorageItemFactory(stationService).create(station);
+    BasicStationItem storageItem = new StorageItemParameterizedFactory(stationService).create(station);
     main.setItem(3, storageItem.getGuiItem());
     main.setItem(4, recipeSelectorItem.getGuiItem());
     main.setItem(5, metaItem.getGuiItem());
@@ -124,11 +124,12 @@ public final class AnvilGuiProxyFactory implements
 
   }
 
-  static final class StorageItemFactory implements IFactory<BasicStationItem, Station> {
+  static final class StorageItemParameterizedFactory implements
+      IParameterizedFactory<BasicStationItem, Station> {
 
     private final IStationService stationService;
 
-    StorageItemFactory(IStationService stationService) {
+    StorageItemParameterizedFactory(IStationService stationService) {
       this.stationService = stationService;
     }
 

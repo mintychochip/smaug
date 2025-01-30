@@ -23,9 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.Station.StationGuiAdapter;
 import org.aincraft.database.model.Station.StationInventory;
-import org.aincraft.database.model.Station.StationMeta;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -38,26 +36,26 @@ import org.bukkit.inventory.ItemStack;
 
 public class GuiListener implements Listener {
 
-  @EventHandler
-  private void listenToStationGuiMenuClose(final InventoryCloseEvent event) {
-    Inventory inventory = event.getInventory();
-    InventoryHolder holder = inventory.getHolder();
-    HumanEntity player = event.getPlayer();
-    if (!(holder instanceof StationGuiAdapter gui)) {
-      return;
-    }
-    final Station station = gui.getStation();
-    StationMeta meta = station.getMeta();
-    StationInventory stationInventory = meta.getInventory();
-    Map<Integer, ItemStack> inventoryMap = inventoryToMap(inventory);
-    Map<Integer, ItemStack> stationInventoryMap = stationInventory.getItems();
-    if (inventoryMap.equals(stationInventoryMap)) {
-      return;
-    }
-    station.setMeta(m -> m.setInventory(stationInventory.setItems(inventoryMap)));
-    Bukkit.getPluginManager()
-        .callEvent(new StationUpdateEvent(station, (Player) player));
-  }
+//  @EventHandler
+//  private void listenToStationGuiMenuClose(final InventoryCloseEvent event) {
+//    Inventory inventory = event.getInventory();
+//    InventoryHolder holder = inventory.getHolder();
+//    HumanEntity player = event.getPlayer();
+//    if (!(holder instanceof StationGuiAdapter gui)) {
+//      return;
+//    }
+//    final Station station = gui.getStation();
+//    StationMeta meta = station.getMeta();
+//    StationInventory stationInventory = meta.getInventory();
+//    Map<Integer, ItemStack> inventoryMap = inventoryToMap(inventory);
+//    Map<Integer, ItemStack> stationInventoryMap = stationInventory.getItems();
+//    if (inventoryMap.equals(stationInventoryMap)) {
+//      return;
+//    }
+//    station.setMeta(m -> m.setInventory(stationInventory.setItems(inventoryMap)));
+//    Bukkit.getPluginManager()
+//        .callEvent(new StationUpdateEvent(station, (Player) player));
+//  }
 
   private static Map<Integer, ItemStack> inventoryToMap(Inventory inventory) {
     int size = inventory.getSize();

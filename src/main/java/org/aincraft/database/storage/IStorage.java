@@ -22,15 +22,15 @@ package org.aincraft.database.storage;
 import java.util.List;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationUser;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
 
 public interface IStorage {
 
   //  // Table-related methods
-  List<Station> getAllStations();
 
-  void updateStation(Station model);
+  void updateStation(Station<?> model);
 
-  Station createStation(String stationKey, String worldName, int x, int y, int z);
+  Station<?> createStation(String stationKey, String worldName, int x, int y, int z);
 
   void deleteStation(String worldName, int x, int y, int z);
 
@@ -45,6 +45,8 @@ public interface IStorage {
   StationUser getStationUser(String playerId);
 
   boolean updateStationUser(StationUser user);
+
+  IConnectionSource getSource();
 
   void close();
 }

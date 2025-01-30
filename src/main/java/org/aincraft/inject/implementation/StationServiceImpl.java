@@ -59,15 +59,6 @@ final class StationServiceImpl implements IStationService {
     userCache = createCache();
   }
 
-  @Override
-  public List<Station> getAllStations() {
-    List<Station> stations = storage.getAllStations();
-    for (Station station : stations) {
-      station2Cache.put(station.id(), station);
-      stationCache.put(station.blockLocation(), station);
-    }
-    return stations;
-  }
 
   @Override
   public void updateStation(Station station) {

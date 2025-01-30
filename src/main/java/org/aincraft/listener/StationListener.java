@@ -33,7 +33,7 @@ import org.aincraft.handler.StationHandler;
 import org.aincraft.handler.StationHandler.Context;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
-import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.database.model.StationMeta;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;

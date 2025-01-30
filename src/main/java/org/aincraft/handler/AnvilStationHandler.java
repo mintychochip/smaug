@@ -34,6 +34,7 @@ import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.item.ItemStackBuilder;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.container.gui.AnvilGuiProxy;
@@ -44,7 +45,7 @@ import org.aincraft.container.item.ItemIdentifier;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationInventory.ItemAddResult;
-import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.database.model.StationMeta;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -57,43 +58,43 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-public final class AnvilStationHandler implements StationHandler {
+public final class AnvilStationHandler implements StationHandler<TrackableProgressMeta> {
 
   private final IStationService service;
   private final NamespacedKey idKey;
-  private final IViewModel<StationPlayerModelProxy, AnvilGuiProxy> guiViewModel;
-  private final BossBarManager bossBarManager;
+  private final IViewModel<StationPlayerModelProxy<TrackableProgressMeta>, AnvilGuiProxy> guiViewModel;
 
   public AnvilStationHandler(IStationService service,
       @Named("id") NamespacedKey idKey,
-      IViewModel<StationPlayerModelProxy, AnvilGuiProxy> viewModel,
-      IViewModel<Station, BossBar> bossBarViewModel) {
+      IViewModel<StationPlayerModelProxy<TrackableProgressMeta>, AnvilGuiProxy> viewModel,
+      IViewModel<Station<TrackableProgressMeta>, BossBar> bossBarViewModel) {
     this.service = service;
     this.idKey = idKey;
     this.guiViewModel = viewModel;
-    this.bossBarManager = new BossBarManager(bossBarViewModel);
+    // this.bossBarManager = new BossBarManager(bossBarViewModel);
   }
 
   @Override
-  public void handle(final Context ctx) {
+  public void handle(final Context<TrackableProgressMeta> ctx) {
     final Player player = ctx.getPlayer();
     final ItemStack item = ctx.getItem();
-    final Station station = ctx.getStation();
-    final StationPlayerModelProxy proxy = new StationPlayerModelProxy(player, station);
+    final Station<TrackableProgressMeta> station = ctx.getStation();
+    final StationPlayerModelProxy<TrackableProgressMeta> proxy = new StationPlayerModelProxy<>(
+        player, station);
     if (ctx.isRightClick()) {
       ctx.cancel();
       if (item != null) {
         ItemAddResult result = station.getMeta().getInventory().add(List.of(item));
         if (result.isSuccess()) {
           Bukkit.getPluginManager()
-              .callEvent(new StationUpdateEvent(
+              .callEvent(new StationUpdateEvent<>(
                   station.setMeta(m -> m.setInventory(result.getInventory())), player));
           player.sendMessage(Component.empty().color(
                   NamedTextColor.WHITE).append(Component.text("Deposited:"))
               .append(item.displayName()));
         }
       } else {
-        openMenu(guiViewModel, proxy);
+        //openMenu(guiViewModel, proxy);
       }
       return;
     }
@@ -101,7 +102,7 @@ public final class AnvilStationHandler implements StationHandler {
       return;
     }
     ctx.cancel();
-    StationMeta meta = station.getMeta();
+    TrackableProgressMeta meta = station.getMeta();
     StationInventory inventory = meta.getInventory();
     List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(station, inventory.getContents());
     if (recipes.isEmpty()) {
@@ -115,11 +116,11 @@ public final class AnvilStationHandler implements StationHandler {
 
     final Location stationBlockLocation = station.blockLocation();
     if (recipe.getActions() > 0) {
-      bossBarManager.show(proxy);
+      //bossBarManager.show(proxy);
       if (station.getMeta().getProgress() < recipe.getActions()) {
         successfulAction(stationBlockLocation);
         Bukkit.getPluginManager()
-            .callEvent(new StationUpdateEvent(
+            .callEvent(new StationUpdateEvent<>(
                 station.setMeta(m -> m.setProgress(progress -> progress + 1)), player));
       } else {
         ItemStack stack = craftRecipeOutput(recipe);
@@ -128,10 +129,12 @@ public final class AnvilStationHandler implements StationHandler {
         if (result.isSuccess()) {
           player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
           Bukkit.getPluginManager()
-              .callEvent(new StationUpdateEvent(station.setMeta(m -> m.setRecipeKey(null)
-                  .setProgress(0)
-                  .setInventory(result.getInventory())),
-                  player));
+              .callEvent(
+                  new StationUpdateEvent<>(station.setMeta(m -> m.toBuilder()
+                      .setRecipeKey(null)
+                      .setProgress(0)
+                      .setInventory(result.getInventory())),
+                      player));
         }
       }
     } else {
@@ -152,19 +155,19 @@ public final class AnvilStationHandler implements StationHandler {
     final ItemStack reference = item.getReference();
     return ItemStackBuilder.create(reference).setAmount(recipe.getAmount()).build();
   }
-
-  private static void openMenu(IViewModel<StationPlayerModelProxy, AnvilGuiProxy> viewModel,
-      StationPlayerModelProxy proxy) {
-    IViewModelBinding binding = viewModel.getBinding(
-        proxy);
-    if (binding == null) {
-      return;
-    }
-    Gui gui = binding.getProperty(Gui.class);
-    if (gui != null) {
-      gui.open(proxy.player());
-    }
-  }
+//
+//  private static void openMenu(IViewModel<StationPlayerModelProxy, AnvilGuiProxy> viewModel,
+//      StationPlayerModelProxy proxy) {
+//    IViewModelBinding binding = viewModel.getBinding(
+//        proxy);
+//    if (binding == null) {
+//      return;
+//    }
+//    Gui gui = binding.getProperty(Gui.class);
+//    if (gui != null) {
+//      gui.open(proxy.player());
+//    }
+//  }
 
   private static void successfulAction(
       @NotNull Location stationLocation) {

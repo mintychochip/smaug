@@ -22,25 +22,20 @@ package org.aincraft.inject.implementation.view;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.PaginatedGui;
-import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import org.aincraft.container.IFactory;
+import org.aincraft.container.IParameterizedFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiWrapper;
-import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.util.Util;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-abstract class AbstractGuiWrapperFactory<T, G extends BaseGui, D> implements
-    IFactory<UpdatableGuiWrapper<T, G>, D> {
+abstract class AbstractGuiWrapperParameterizedFactory<T, G extends BaseGui, D> implements
+    IParameterizedFactory<UpdatableGuiWrapper<T, G>, D> {
 
   protected static final Component INGREDIENT_TITLE;
 
@@ -52,7 +47,7 @@ abstract class AbstractGuiWrapperFactory<T, G extends BaseGui, D> implements
 
   protected final Component title;
 
-  AbstractGuiWrapperFactory(int rows, Component title) {
+  AbstractGuiWrapperParameterizedFactory(int rows, Component title) {
     this.rows = rows;
     this.title = title;
   }

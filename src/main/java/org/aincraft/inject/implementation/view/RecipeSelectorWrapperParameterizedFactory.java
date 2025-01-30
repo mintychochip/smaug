@@ -26,27 +26,23 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import net.kyori.adventure.text.Component;
 import org.aincraft.Smaug;
-import org.aincraft.container.IFactory;
-import org.aincraft.container.Result.Status;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiWrapper;
-import org.aincraft.container.gui.ItemFactory;
+import org.aincraft.container.gui.ItemParameterizedFactory;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.Station.StationInventory;
-import org.aincraft.database.model.Station.StationMeta;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Creates an updatable recipe selector gui wrapper
  */
-final class RecipeSelectorWrapperFactory extends
-    AbstractGuiWrapperFactory<SmaugRecipe, PaginatedGui, Station> {
+final class RecipeSelectorWrapperParameterizedFactory extends
+    AbstractGuiWrapperParameterizedFactory<SmaugRecipe, PaginatedGui, Station> {
 
   private final BiConsumer<InventoryClickEvent, SmaugRecipe> recipeBiConsumer;
 
-  public RecipeSelectorWrapperFactory(int rows, Component title,
+  public RecipeSelectorWrapperParameterizedFactory(int rows, Component title,
       BiConsumer<InventoryClickEvent, SmaugRecipe> recipeBiConsumer) {
     super(rows, title);
     this.recipeBiConsumer = recipeBiConsumer;
@@ -56,13 +52,13 @@ final class RecipeSelectorWrapperFactory extends
   public @NotNull UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(@NotNull Station data) {
     Preconditions.checkNotNull(data);
 
-    final ItemFactory<SmaugRecipe> itemFactory = new ItemFactory.Builder<SmaugRecipe>()
-        .setDisplayNameFunction(AbstractGuiWrapperFactory::createRecipeHeader)
-        .setItemModelFunction(AbstractGuiWrapperFactory::retrieveItemModel)
+    final ItemParameterizedFactory<SmaugRecipe> itemFactory = new ItemParameterizedFactory.Builder<SmaugRecipe>()
+        .setDisplayNameFunction(AbstractGuiWrapperParameterizedFactory::createRecipeHeader)
+        .setItemModelFunction(AbstractGuiWrapperParameterizedFactory::retrieveItemModel)
         .setLoreFunction(recipe -> {
           final IngredientList ingredientList = recipe.getIngredients();
           @SuppressWarnings("UnstableApiUsage")
-          ItemLore lore = ItemLore.lore().addLine(AbstractGuiWrapperFactory.INGREDIENT_TITLE)
+          ItemLore lore = ItemLore.lore().addLine(AbstractGuiWrapperParameterizedFactory.INGREDIENT_TITLE)
               .addLines(ingredientList.components()).build();
           return lore;
         }).build();

@@ -25,7 +25,7 @@ import io.papermc.paper.datacomponent.item.ItemLore;
 import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
-import org.aincraft.container.IFactory;
+import org.aincraft.container.IParameterizedFactory;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Contract;
@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("UnstableApiUsage")
-public class ItemFactory<T> implements IFactory<ItemStack, T> {
+public class ItemParameterizedFactory<T> implements IParameterizedFactory<ItemStack, T> {
 
   private static Material DEFAULT_MATERIAL = Material.RABBIT_FOOT;
 
@@ -49,7 +49,7 @@ public class ItemFactory<T> implements IFactory<ItemStack, T> {
   @Nullable
   private Function<@Nullable T, @NotNull ItemLore> loreFunction;
 
-  public ItemFactory(
+  public ItemParameterizedFactory(
       Function<T, Material> materialFunction, @Nullable Function<T, @NotNull Key> itemModelFunction,
       @Nullable Function<T, @NotNull ItemLore> loreFunction,
       @Nullable Function<T, @NotNull Component> displayNameFunction) {
@@ -137,8 +137,8 @@ public class ItemFactory<T> implements IFactory<ItemStack, T> {
       return this;
     }
 
-    public ItemFactory<T> build() {
-      return new ItemFactory<>(materialFunction, itemModelFunction, loreFunction, displayNameFunction);
+    public ItemParameterizedFactory<T> build() {
+      return new ItemParameterizedFactory<>(materialFunction, itemModelFunction, loreFunction, displayNameFunction);
     }
   }
 }

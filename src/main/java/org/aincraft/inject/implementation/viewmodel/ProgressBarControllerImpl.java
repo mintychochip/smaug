@@ -24,7 +24,7 @@ import net.kyori.adventure.bossbar.BossBar;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.database.model.StationMeta;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 

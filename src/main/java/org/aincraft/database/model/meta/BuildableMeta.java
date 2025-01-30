@@ -17,13 +17,13 @@
  *
  */
 
-package org.aincraft.container;
+package org.aincraft.database.model.meta;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.aincraft.database.model.meta.BuildableMeta.Builder;
 
-public interface IFactory<T, D> {
-
-  @NotNull
-  T create(@NotNull D data);
+public interface BuildableMeta<M extends BuildableMeta<M, B>, B extends Builder<M, B>> extends Meta<M> {
+  B toBuilder();
+  interface Builder<M extends BuildableMeta<M, B>, B extends Builder<M, B>> {
+    M build();
+  }
 }

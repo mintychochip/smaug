@@ -19,50 +19,47 @@
 
 package org.aincraft.inject.implementation.view;
 
-import dev.triumphteam.gui.components.GuiAction;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.PaginatedGui;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.Smaug;
-import org.aincraft.container.IFactory;
+import org.aincraft.container.IParameterizedFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiItemWrapper;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiWrapper;
-import org.aincraft.container.gui.ItemFactory;
+import org.aincraft.container.gui.ItemParameterizedFactory;
 import org.aincraft.container.item.ItemStackBuilder;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.database.model.StationMeta;
 import org.aincraft.util.Util;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-final class RecipeSelectorItemFactory implements IFactory<RecipeSelectorItem, Station> {
+final class RecipeSelectorItemParameterizedFactory implements
+    IParameterizedFactory<RecipeSelectorItem, Station> {
 
   private final Player player;
   private final BaseGui mainGui;
-  private final IFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> codexGuiFactory;
-  private final IFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> recipeSelectorGuiFactory;
+  private final IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> codexGuiParameterizedFactory;
+  private final IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> recipeSelectorGuiParameterizedFactory;
   private final GuiItem filler;
 
-  RecipeSelectorItemFactory(Player player, BaseGui mainGui,
-      IFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> codexGuiFactory,
-      IFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> recipeSelectorGuiFactory,
+  RecipeSelectorItemParameterizedFactory(Player player, BaseGui mainGui,
+      IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> codexGuiParameterizedFactory,
+      IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> recipeSelectorGuiParameterizedFactory,
       GuiItem filler) {
     this.player = player;
     this.mainGui = mainGui;
-    this.codexGuiFactory = codexGuiFactory;
-    this.recipeSelectorGuiFactory = recipeSelectorGuiFactory;
+    this.codexGuiParameterizedFactory = codexGuiParameterizedFactory;
+    this.recipeSelectorGuiParameterizedFactory = recipeSelectorGuiParameterizedFactory;
     this.filler = filler;
   }
 
@@ -93,9 +90,9 @@ final class RecipeSelectorItemFactory implements IFactory<RecipeSelectorItem, St
 
   @Override
   public @NotNull RecipeSelectorItem create(@NotNull Station data) {
-    final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> codexGuiWrapper = codexGuiFactory.create(
+    final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> codexGuiWrapper = codexGuiParameterizedFactory.create(
         data);
-    final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGuiWrapper = recipeSelectorGuiFactory.create(
+    final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGuiWrapper = recipeSelectorGuiParameterizedFactory.create(
         data);
 
     final GuiItem linkedRecipeItem = createLinkedWrapperGuiItem(Material.BOOK,
@@ -121,7 +118,7 @@ final class RecipeSelectorItemFactory implements IFactory<RecipeSelectorItem, St
     final String recipeKey = meta.getRecipeKey();
     return new RecipeSelectorItem(
         UpdatableGuiItemWrapper.create(recipeKey != null ? Smaug.fetchRecipe(recipeKey) : null,
-            new ItemFactory.Builder<SmaugRecipe>().setDisplayNameFunction(r -> {
+            new ItemParameterizedFactory.Builder<SmaugRecipe>().setDisplayNameFunction(r -> {
                   if (r == null) {
                     return Component.text("No Recipe Selected");
                   }
@@ -129,7 +126,7 @@ final class RecipeSelectorItemFactory implements IFactory<RecipeSelectorItem, St
                       Placeholder.component("a",
                           Util.retrieveDisplayName(r.getOutput().getReference())));
                 })
-                .setItemModelFunction(AbstractGuiWrapperFactory::retrieveItemModel).build(),
+                .setItemModelFunction(AbstractGuiWrapperParameterizedFactory::retrieveItemModel).build(),
             e -> {
               if (e.isLeftClick()) {
                 recipeSelectorGuiWrapper.open(player);

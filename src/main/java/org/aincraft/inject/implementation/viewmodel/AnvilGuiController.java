@@ -24,7 +24,7 @@ import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.database.model.Station;
-import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory;
+import org.aincraft.inject.implementation.view.AnvilGuiProxyParameterizedFactory;
 import org.aincraft.listener.IStationService;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -53,7 +53,7 @@ public class AnvilGuiController extends
     StationPlayerModelProxy proxy = new StationPlayerModelProxy(player, model);
     IViewModel<StationPlayerModelProxy, AnvilGuiProxy> viewModel = this.get(model.stationKey());
     if (!viewModel.isBound(proxy)) {
-      viewModel.bind(proxy, new AnvilGuiProxyFactory(stationService, plugin).create(proxy));
+      viewModel.bind(proxy, new AnvilGuiProxyParameterizedFactory(stationService, plugin).create(proxy));
     }
     viewModel.update(new StationPlayerModelProxy(player, model));
   }

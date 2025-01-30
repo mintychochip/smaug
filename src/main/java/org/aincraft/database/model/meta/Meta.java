@@ -17,17 +17,9 @@
  *
  */
 
-package org.aincraft.container.anvil;
+package org.aincraft.database.model.meta;
 
-import org.aincraft.database.model.meta.Meta;
-import org.aincraft.database.model.Station;
-import org.bukkit.entity.Player;
+public interface Meta<M extends Meta<M>> {
 
-public record StationPlayerModelProxy<M extends Meta<M>>(
-    Player player, Station<M> station) {
-
-  @Override
-  public int hashCode() {
-    return player.hashCode() + station.id().hashCode();
-  }
+  M clone();
 }

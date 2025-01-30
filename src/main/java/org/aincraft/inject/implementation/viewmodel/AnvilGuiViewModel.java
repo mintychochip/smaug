@@ -24,13 +24,13 @@ import dev.triumphteam.gui.guis.Gui;
 import java.util.List;
 
 import org.aincraft.Smaug;
-import org.aincraft.container.IFactory;
+import org.aincraft.container.IParameterizedFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
-import org.aincraft.database.model.Station.StationMeta;
-import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory;
+import org.aincraft.database.model.StationMeta;
+import org.aincraft.inject.implementation.view.AnvilGuiProxyParameterizedFactory;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -39,9 +39,9 @@ import org.jetbrains.annotations.NotNull;
 public final class AnvilGuiViewModel extends
     AbstractViewModel<StationPlayerModelProxy, AnvilGuiProxy, Integer> {
 
-  private final AnvilGuiProxyFactory factory;
+  private final AnvilGuiProxyParameterizedFactory factory;
 
-  AnvilGuiViewModel(AnvilGuiProxyFactory factory) {
+  AnvilGuiViewModel(AnvilGuiProxyParameterizedFactory factory) {
     this.factory = factory;
   }
 
@@ -96,7 +96,7 @@ public final class AnvilGuiViewModel extends
 
   @Override
   @NotNull
-  IFactory<AnvilGuiProxy, StationPlayerModelProxy> getViewFactory() {
+  IParameterizedFactory<AnvilGuiProxy, StationPlayerModelProxy> getViewFactory() {
     return factory;
   }
 

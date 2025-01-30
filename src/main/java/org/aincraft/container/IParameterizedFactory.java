@@ -17,17 +17,12 @@
  *
  */
 
-package org.aincraft.container.anvil;
+package org.aincraft.container;
 
-import org.aincraft.database.model.meta.Meta;
-import org.aincraft.database.model.Station;
-import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-public record StationPlayerModelProxy<M extends Meta<M>>(
-    Player player, Station<M> station) {
+public interface IParameterizedFactory<T, D> {
 
-  @Override
-  public int hashCode() {
-    return player.hashCode() + station.id().hashCode();
-  }
+  @NotNull
+  T create(@NotNull D data);
 }

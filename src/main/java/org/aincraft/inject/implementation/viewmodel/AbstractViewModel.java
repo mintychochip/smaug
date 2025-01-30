@@ -22,13 +22,11 @@ package org.aincraft.inject.implementation.viewmodel;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
-import org.aincraft.container.IFactory;
+import org.aincraft.container.IParameterizedFactory;
 import org.aincraft.container.display.IViewModel;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +38,7 @@ abstract class AbstractViewModel<M, V, K> implements IViewModel<M, V> {
   abstract Class<? extends IViewModelBinding> getBindingClass();
 
   @NotNull
-  abstract IFactory<V, M> getViewFactory();
+  abstract IParameterizedFactory<V, M> getViewFactory();
 
   @NotNull
   abstract IViewModelBinding viewToBinding(@NotNull V view);
@@ -85,7 +83,7 @@ abstract class AbstractViewModel<M, V, K> implements IViewModel<M, V> {
     if (this.isBound(model)) {
       return bindings.get(modelKey);
     }
-    final IFactory<V, M> viewFactory = this.getViewFactory();
+    final IParameterizedFactory<V, M> viewFactory = this.getViewFactory();
     return this.bind(model, viewFactory.create(model));
   }
 

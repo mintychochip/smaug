@@ -21,6 +21,7 @@ package org.aincraft.handler;
 
 import com.google.common.base.Preconditions;
 import net.kyori.adventure.key.Keyed;
+import org.aincraft.database.model.meta.Meta;
 import org.aincraft.handler.AbstractStationHandler.ContextImpl;
 import org.aincraft.database.model.Station;
 import org.bukkit.block.Block;
@@ -29,19 +30,20 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public interface StationHandler extends Keyed {
+public interface StationHandler<M extends Meta<M>> extends Keyed {
 
-  interface Context {
+  interface Context<M extends Meta<M>> {
 
     @NotNull
-    static Context create(@NotNull Station station, @NotNull PlayerInteractEvent event) {
+    static <M extends Meta<M>> Context<M> create(@NotNull Station<M> station,
+        @NotNull PlayerInteractEvent event) {
       Preconditions.checkNotNull(station);
       Preconditions.checkNotNull(event);
       return new ContextImpl(station, event);
     }
 
     @NotNull
-    Station getStation();
+    Station<M> getStation();
 
     @NotNull
     PlayerInteractEvent getEvent();
@@ -61,5 +63,5 @@ public interface StationHandler extends Keyed {
     Block getClickedBlock();
   }
 
-  void handle(Context ctx);
+  void handle(Context<M> ctx);
 }

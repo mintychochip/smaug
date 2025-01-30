@@ -36,7 +36,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
-import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.inject.implementation.ResourceExtractor;
 
@@ -221,6 +220,11 @@ public class SqlStorageImpl implements IStorage {
   @Override
   public boolean updateStationUser(StationUser user) {
     return executor.executeUpdate(UPDATE_STATION_USER, user.getName(), user.getId());
+  }
+
+  @Override
+  public IConnectionSource getSource() {
+    return source;
   }
 
   @Override

@@ -29,11 +29,11 @@ import net.kyori.adventure.bossbar.BossBar.Overlay;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import org.aincraft.container.IFactory;
+import org.aincraft.container.IParameterizedFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.display.PropertyNotFoundException;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.database.model.StationMeta;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
@@ -82,7 +82,7 @@ final class ProgressBarViewModel extends AbstractViewModel<Station, BossBar, UUI
 
   @Override
   @NotNull
-  IFactory<BossBar, Station> getViewFactory() {
+  IParameterizedFactory<BossBar, Station> getViewFactory() {
     return data -> {
       BossBar bossBar = BossBar.bossBar(Component.empty(), 0, DEFAULT_BOSS_BAR_COLOR,
           Overlay.PROGRESS);

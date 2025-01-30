@@ -20,19 +20,17 @@
 package org.aincraft.inject.implementation.view;
 
 import com.google.common.base.Preconditions;
-import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.PaginatedGui;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.aincraft.Smaug;
-import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiWrapper;
-import org.aincraft.container.gui.ItemFactory;
-import org.aincraft.container.gui.ItemFactory.Builder;
+import org.aincraft.container.gui.ItemParameterizedFactory;
+import org.aincraft.container.gui.ItemParameterizedFactory.Builder;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.database.model.Station;
 import org.jetbrains.annotations.NotNull;
@@ -40,10 +38,10 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Creates an updatable codex gui wrapper
  */
-final class CodexGuiWrapperFactory extends
-    AbstractGuiWrapperFactory<SmaugRecipe, PaginatedGui, Station> {
+final class CodexGuiWrapperParameterizedFactory extends
+    AbstractGuiWrapperParameterizedFactory<SmaugRecipe, PaginatedGui, Station> {
 
-  CodexGuiWrapperFactory(int rows, Component title) {
+  CodexGuiWrapperParameterizedFactory(int rows, Component title) {
     super(rows, title);
   }
 
@@ -52,13 +50,13 @@ final class CodexGuiWrapperFactory extends
   public @NotNull AnvilGuiProxy.UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(
       @NotNull Station data) {
     Preconditions.checkNotNull(data);
-    final ItemFactory<SmaugRecipe> itemFactory = new Builder<SmaugRecipe>().setDisplayNameFunction(
-            AbstractGuiWrapperFactory::createRecipeHeader)
-        .setItemModelFunction(AbstractGuiWrapperFactory::retrieveItemModel)
+    final ItemParameterizedFactory<SmaugRecipe> itemFactory = new Builder<SmaugRecipe>().setDisplayNameFunction(
+            AbstractGuiWrapperParameterizedFactory::createRecipeHeader)
+        .setItemModelFunction(AbstractGuiWrapperParameterizedFactory::retrieveItemModel)
         .setLoreFunction(recipe -> {
           final IngredientList ingredientList = recipe.getIngredients();
           ItemLore.Builder builder = ItemLore.lore()
-              .addLine(AbstractGuiWrapperFactory.INGREDIENT_TITLE)
+              .addLine(AbstractGuiWrapperParameterizedFactory.INGREDIENT_TITLE)
               .addLines(ingredientList.components());
           IngredientList missing = ingredientList.findMissing(
               data.getMeta().getInventory().getContents());
