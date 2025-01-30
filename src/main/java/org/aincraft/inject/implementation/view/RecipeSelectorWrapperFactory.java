@@ -48,7 +48,7 @@ import org.jetbrains.annotations.NotNull;
  * Creates an updatable recipe selector gui wrapper
  */
 final class RecipeSelectorWrapperFactory extends
-    AbstractGuiWrapperFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> {
+    AbstractGuiWrapperFactory<SmaugRecipe, PaginatedGui, Station> {
 
   private final BiConsumer<InventoryClickEvent, SmaugRecipe> recipeBiConsumer;
 
@@ -73,7 +73,7 @@ final class RecipeSelectorWrapperFactory extends
           return lore;
         }).build();
 
-    final List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(data,null);
+    final List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(data, null);
     return UpdatableGuiWrapper.create(createGui(), recipes,
         itemFactory).setClickEventConsumer(recipeBiConsumer).build();
   }

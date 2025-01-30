@@ -36,11 +36,8 @@ import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
 import org.aincraft.api.event.StationUpdateEvent;
-import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.StationHandler;
 import org.aincraft.container.StationHandler.Context;
-import org.aincraft.container.StationHandler.IActionContext;
-import org.aincraft.container.StationHandler.IInteractionContext;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
@@ -204,90 +201,6 @@ public class StationListener implements Listener {
     if (hand == EquipmentSlot.OFF_HAND) {
       return;
     }
-    InteractionContextImpl interactionContext = new InteractionContextImpl(station, event);
-    handler.handle(interactionContext, recipe -> {
-      handler.handleAction(new ActionContextImpl(station, event.getPlayer(), event.getItem(),
-          event.getAction(), recipe));
-    });
+    handler.handle(Context.create(station,event));
   }
-
-
-  static final class ActionContextImpl extends ContextImpl implements IActionContext {
-
-    private final SmaugRecipe recipe;
-
-    ActionContextImpl(Station station, Player player, ItemStack stack, Action action,
-        SmaugRecipe recipe) {
-      super(station, player, stack, action);
-      this.recipe = recipe;
-    }
-
-    @Override
-    public SmaugRecipe getRecipe() {
-      return recipe;
-    }
-  }
-
-  static final class InteractionContextImpl extends ContextImpl implements IInteractionContext {
-
-    private final PlayerInteractEvent event;
-
-    InteractionContextImpl(Station station, PlayerInteractEvent event) {
-      super(station, event.getPlayer(), event.getItem(), event.getAction());
-      this.event = event;
-    }
-
-    @Override
-    public void cancel() {
-      event.setCancelled(true);
-    }
-  }
-
-  static abstract class ContextImpl extends Context {
-
-    private final Station station;
-    private final Player player;
-    @Nullable
-    private final ItemStack stack;
-    private final Action action;
-
-    ContextImpl(Station station, Player player, @Nullable ItemStack stack, Action action) {
-      this.station = station;
-      this.player = player;
-      this.stack = stack;
-      this.action = action;
-    }
-
-    @NotNull
-    @Override
-    public Action getAction() {
-      return action;
-    }
-
-    @NotNull
-    @Override
-    public Station getStation() {
-      return station;
-    }
-
-    @Override
-    public @Nullable ItemStack getItem() {
-      return stack;
-    }
-
-    @NotNull
-    @Override
-    public Player getPlayer() {
-      return player;
-    }
-  }
-
-  private static List<Location> getAllStationLocations(Location location) {
-    List<Location> locations = new ArrayList<>();
-    return null;
-  }
-
-  //TODO: Add Explosion/Piston handling
-
-
 }

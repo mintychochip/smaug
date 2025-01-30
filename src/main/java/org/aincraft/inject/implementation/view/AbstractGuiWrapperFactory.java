@@ -35,7 +35,9 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
+import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiWrapper;
 import org.aincraft.container.item.IKeyedItem;
+import org.aincraft.util.Util;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -43,7 +45,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-abstract class AbstractGuiWrapperFactory<T, D> implements IFactory<T, D> {
+abstract class AbstractGuiWrapperFactory<T, G extends BaseGui, D> implements
+    IFactory<UpdatableGuiWrapper<T, G>, D> {
 
   protected static final Component INGREDIENT_TITLE;
 
@@ -78,18 +81,9 @@ abstract class AbstractGuiWrapperFactory<T, D> implements IFactory<T, D> {
   }
 
   static Component createRecipeHeader(SmaugRecipe recipe) {
-    final Component displayName = retrieveDisplayName(recipe);
+    final Component displayName = Util.retrieveDisplayName(recipe.getOutput().getReference());
     return MiniMessage.miniMessage()
         .deserialize("<italic:false><white>Recipe: <a>", Placeholder.component("a", displayName));
-  }
-
-  @SuppressWarnings("UnstableApiUsage")
-  static Component retrieveDisplayName(SmaugRecipe recipe) {
-    final ItemStack reference = recipe.getOutput().getReference();
-    final ItemMeta meta = reference.getItemMeta();
-    return meta.hasDisplayName() ? meta.displayName()
-        : reference.getDataOrDefault(DataComponentTypes.ITEM_NAME,
-            Component.text("def"));
   }
 
   @NotNull
@@ -97,13 +91,6 @@ abstract class AbstractGuiWrapperFactory<T, D> implements IFactory<T, D> {
     if (recipe == null) {
       return Material.MAP.getKey();
     }
-    ItemStack reference = recipe.getOutput().getReference();
-    ItemMeta meta = reference.getItemMeta();
-    if (!meta.hasItemModel()) {
-      return reference.getType().getKey();
-    }
-    NamespacedKey itemModel = meta.getItemModel();
-    assert itemModel != null;
-    return itemModel;
+    return Util.retrieveItemModel(recipe.getOutput().getReference());
   }
 }

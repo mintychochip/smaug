@@ -23,46 +23,32 @@
  *
  */
 
-package org.aincraft.container;
+package org.aincraft.util;
 
-import com.google.common.base.Preconditions;
-import org.aincraft.container.AbstractStationHandler.ContextImpl;
-import org.aincraft.database.model.Station;
-import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerInteractEvent;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.Component;
+import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
+import org.bukkit.inventory.meta.ItemMeta;
 
-@FunctionalInterface
-public interface StationHandler {
+public class Util {
 
-  interface Context {
-
-    @NotNull
-    static Context create(@NotNull Station station, @NotNull PlayerInteractEvent event) {
-      Preconditions.checkNotNull(station);
-      Preconditions.checkNotNull(event);
-      return new ContextImpl(station, event);
-    }
-
-    @NotNull
-    Station getStation();
-
-    @NotNull
-    PlayerInteractEvent getEvent();
-
-    boolean isRightClick();
-
-    default boolean isLeftClick() {
-      return !isRightClick();
-    }
-
-    Player getPlayer();
-
-    ItemStack getItem();
-
-    void cancel();
+  @SuppressWarnings("UnstableApiUsage")
+  public static Component retrieveDisplayName(ItemStack stack) {
+    final ItemMeta meta = stack.getItemMeta();
+    return meta.hasDisplayName() ? meta.displayName()
+        : stack.getDataOrDefault(DataComponentTypes.ITEM_NAME, Component.empty());
   }
 
-  void handle(Context ctx);
+  public static Key retrieveItemModel(ItemStack stack) {
+    final ItemMeta meta = stack.getItemMeta();
+    if (!meta.hasItemModel()) {
+      return stack.getType().getKey();
+    }
+    final NamespacedKey itemModel = meta.getItemModel();
+    assert itemModel != null;
+    return itemModel;
+  }
 }

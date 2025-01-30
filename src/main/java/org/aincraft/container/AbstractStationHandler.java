@@ -45,7 +45,7 @@ public abstract class AbstractStationHandler {
     return stationKey;
   }
 
-  public record ContextImpl(Station station, PlayerInteractEvent event) implements Context {
+  record ContextImpl(Station station, PlayerInteractEvent event) implements Context {
 
     @Override
       public @NotNull Station getStation() {

@@ -87,7 +87,7 @@ public final class AnvilGuiViewModel extends
         .all(model.station().stationKey(), meta.getInventory()
             .getContents());
     recipeSelectorItem.recipeSelectorGui().update(recipes);
-    recipeSelectorItem.codexGui().update(Smaug.fetchAllRecipes(model.station().stationKey()));
+    recipeSelectorItem.codexGui().update(Smaug.fetchAllRecipes(model.station()));
     for (BaseGui gui : List.of(mainGui, recipeSelectorItem.recipeSelectorGui().getGui(),
         recipeSelectorItem.codexGui().getGui())) {
       playerIsViewingUpdate(player, gui);

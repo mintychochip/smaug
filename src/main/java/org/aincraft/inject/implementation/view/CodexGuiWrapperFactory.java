@@ -47,7 +47,7 @@ import org.jetbrains.annotations.NotNull;
  * Creates an updatable codex gui wrapper
  */
 final class CodexGuiWrapperFactory extends
-    AbstractGuiWrapperFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> {
+    AbstractGuiWrapperFactory<SmaugRecipe, PaginatedGui, Station> {
 
   CodexGuiWrapperFactory(int rows, Component title) {
     super(rows, title);
@@ -58,8 +58,7 @@ final class CodexGuiWrapperFactory extends
   public @NotNull AnvilGuiProxy.UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(
       @NotNull Station data) {
     Preconditions.checkNotNull(data);
-    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(data);
-    ItemFactory<SmaugRecipe> itemFactory = new Builder<SmaugRecipe>().setDisplayNameFunction(
+    final ItemFactory<SmaugRecipe> itemFactory = new Builder<SmaugRecipe>().setDisplayNameFunction(
             AbstractGuiWrapperFactory::createRecipeHeader)
         .setItemModelFunction(AbstractGuiWrapperFactory::retrieveItemModel)
         .setLoreFunction(recipe -> {
@@ -76,6 +75,7 @@ final class CodexGuiWrapperFactory extends
           }
           return builder.build();
         }).build();
+    final List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(data);
     return UpdatableGuiWrapper.create(createGui(), recipes, itemFactory).build();
   }
 }

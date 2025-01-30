@@ -14,8 +14,8 @@ public class CauldronHandler implements StationHandler {
   public void handle(Context ctx) {
     final Player player = ctx.getPlayer();
     final Station station = ctx.getStation();
-
-    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(station.stationKey());
+//
+//    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(station.stationKey());
 
   }
 }

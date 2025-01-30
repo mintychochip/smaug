@@ -54,17 +54,12 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlayerModelProxy> {
+public final class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlayerModelProxy> {
 
   private static final GuiType GUI_TYPE = GuiType.DISPENSER;
   private static final Component MAIN_GUI_TITLE = Component.text("Menu");
   private static final int ROWS = 4;
 
-  static final Component INGREDIENT_TITLE;
-
-  static {
-    INGREDIENT_TITLE = MiniMessage.miniMessage().deserialize("<italic:false><white>Ingredients");
-  }
   private final IStationService stationService;
   private final Plugin plugin;
 
@@ -79,26 +74,25 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
     Station station = data.station();
     Player player = data.player();
     Gui main = Gui.gui(GUI_TYPE).title(MAIN_GUI_TITLE).disableAllInteractions().create();
-    RecipeSelectorItem recipeSelector = RecipeSelectorItemFactory.create(
-        station, player, main, (e, recipe) -> {
-          final StationMeta meta = station.getMeta();
-          final String recipeKey = recipe.getKey();
-          if (meta.getRecipeKey() == null) {
-            station.setMeta(m -> m.setRecipeKey(recipeKey));
-            Bukkit.getPluginManager().callEvent(new StationUpdateEvent(station, player));
-            return;
+    RecipeSelectorItem recipeSelector = new RecipeSelectorItemFactory(player, main, (e, recipe) -> {
+      final StationMeta meta = station.getMeta();
+      final String recipeKey = recipe.getKey();
+      if (meta.getRecipeKey() == null) {
+        station.setMeta(m -> m.setRecipeKey(recipeKey));
+        Bukkit.getPluginManager().callEvent(new StationUpdateEvent(station, player));
+        return;
+      }
+      if (meta.getRecipeKey() != null && !meta.getRecipeKey().equals(recipeKey)) {
+        station.setMeta(m -> m.setProgress(0).setRecipeKey(recipeKey));
+        new BukkitRunnable() {
+          @Override
+          public void run() {
+            Bukkit.getPluginManager()
+                .callEvent(new StationUpdateEvent(station, player));
           }
-          if (meta.getRecipeKey() != null && !meta.getRecipeKey().equals(recipeKey)) {
-            station.setMeta(m -> m.setProgress(0).setRecipeKey(recipeKey));
-            new BukkitRunnable() {
-              @Override
-              public void run() {
-                Bukkit.getPluginManager()
-                    .callEvent(new StationUpdateEvent(station, player));
-              }
-            }.runTask(plugin);
-          }
-        });
+        }.runTask(plugin);
+      }
+    }).create(station);
     MetaItem metaItem = MetaItemFactory.create(station);
     GuiItem filler = ItemStackBuilder.create(Material.RABBIT_FOOT)
         .meta(meta -> meta
@@ -140,13 +134,11 @@ public class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlay
       GuiItem guiItem = ItemStackBuilder.create(Material.CHEST)
           .meta(meta -> meta.displayName(Component.text("Storage")))
           .asGuiItem(e -> {
-            if (station != null) {
-              HumanEntity entity = e.getWhoClicked();
-              Station s = stationService.getStation(station.id());
-              if (s != null) {
-                Inventory inventory = s.getInventory();
-                entity.openInventory(inventory);
-              }
+            HumanEntity entity = e.getWhoClicked();
+            Station s = stationService.getStation(station.id());
+            if (s != null) {
+              Inventory inventory = s.getInventory();
+              entity.openInventory(inventory);
             }
           });
       return new BasicStationItem(guiItem);
