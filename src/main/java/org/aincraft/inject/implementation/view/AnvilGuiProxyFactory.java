@@ -1,25 +1,19 @@
 /*
- * MIT License
  *
- * Copyright (c) 2025 mintychochip
+ * Copyright (C) 2025 mintychochip
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * provided to do so, subject to the following conditions:
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * at your option) any later version.
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -54,10 +48,9 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-public final class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, StationPlayerModelProxy> {
+public final class AnvilGuiProxyFactory implements
+    IFactory<AnvilGuiProxy, StationPlayerModelProxy> {
 
-  private static final GuiType GUI_TYPE = GuiType.DISPENSER;
-  private static final Component MAIN_GUI_TITLE = Component.text("Menu");
   private static final int ROWS = 4;
 
   private final IStationService stationService;
@@ -73,8 +66,12 @@ public final class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, Stati
     Preconditions.checkNotNull(data);
     Station station = data.station();
     Player player = data.player();
-    Gui main = Gui.gui(GUI_TYPE).title(MAIN_GUI_TITLE).disableAllInteractions().create();
-    RecipeSelectorItem recipeSelector = new RecipeSelectorItemFactory(player, main, (e, recipe) -> {
+    Gui main = Gui.gui(GuiType.DISPENSER).title(Component.text("Menu")).disableAllInteractions().create();
+    final CodexGuiWrapperFactory codexGuiWrapperFactory = new CodexGuiWrapperFactory(ROWS,
+        Component.text("Codex"));
+    final RecipeSelectorWrapperFactory recipeSelectorWrapperFactory = new RecipeSelectorWrapperFactory(
+        ROWS,
+        Component.text("Recipes"), (e, recipe) -> {
       final StationMeta meta = station.getMeta();
       final String recipeKey = recipe.getKey();
       if (meta.getRecipeKey() == null) {
@@ -92,21 +89,23 @@ public final class AnvilGuiProxyFactory implements IFactory<AnvilGuiProxy, Stati
           }
         }.runTask(plugin);
       }
-    }).create(station);
+    });
+    RecipeSelectorItem recipeSelectorItem = new RecipeSelectorItemFactory(player, main,
+        codexGuiWrapperFactory, recipeSelectorWrapperFactory, createFiller()).create(station);
     MetaItem metaItem = MetaItemFactory.create(station);
-    GuiItem filler = ItemStackBuilder.create(Material.RABBIT_FOOT)
-        .meta(meta -> meta
-            .itemModel(Material.GRAY_STAINED_GLASS_PANE)
-            .displayName(Component.empty()))
-        .asGuiItem();
     BasicStationItem storageItem = new StorageItemFactory(stationService).create(station);
     main.setItem(3, storageItem.getGuiItem());
-    main.setItem(4, recipeSelector.getGuiItem());
+    main.setItem(4, recipeSelectorItem.getGuiItem());
     main.setItem(5, metaItem.getGuiItem());
-    main.getFiller().fill(filler);
-    return new AnvilGuiProxy(main, recipeSelector);
+    main.getFiller().fill(createFiller());
+    return new AnvilGuiProxy(main, recipeSelectorItem);
   }
 
+  private static GuiItem createFiller() {
+    return ItemStackBuilder.create(Material.RABBIT_FOOT).meta(meta -> meta
+        .itemModel(Material.GRAY_STAINED_GLASS_PANE)
+        .displayName(Component.empty())).asGuiItem();
+  }
   static final class MetaItemFactory {
 
     private static MetaItem create(Station station) {
