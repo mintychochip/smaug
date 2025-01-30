@@ -36,7 +36,7 @@ import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiWrapper;
 import org.aincraft.container.gui.ItemParameterizedFactory;
 import org.aincraft.container.item.ItemStackBuilder;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationMeta;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
 import org.aincraft.util.Util;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
@@ -44,17 +44,17 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 final class RecipeSelectorItemParameterizedFactory implements
-    IParameterizedFactory<RecipeSelectorItem, Station> {
+    IParameterizedFactory<RecipeSelectorItem, Station<TrackableProgressMeta>> {
 
   private final Player player;
   private final BaseGui mainGui;
-  private final IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> codexGuiParameterizedFactory;
-  private final IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> recipeSelectorGuiParameterizedFactory;
+  private final IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station<TrackableProgressMeta>> codexGuiParameterizedFactory;
+  private final IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station<TrackableProgressMeta>> recipeSelectorGuiParameterizedFactory;
   private final GuiItem filler;
 
   RecipeSelectorItemParameterizedFactory(Player player, BaseGui mainGui,
-      IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> codexGuiParameterizedFactory,
-      IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station> recipeSelectorGuiParameterizedFactory,
+      IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station<TrackableProgressMeta>> codexGuiParameterizedFactory,
+      IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, Station<TrackableProgressMeta>> recipeSelectorGuiParameterizedFactory,
       GuiItem filler) {
     this.player = player;
     this.mainGui = mainGui;
@@ -89,7 +89,7 @@ final class RecipeSelectorItemParameterizedFactory implements
   }
 
   @Override
-  public @NotNull RecipeSelectorItem create(@NotNull Station data) {
+  public @NotNull RecipeSelectorItem create(@NotNull Station<TrackableProgressMeta> data) {
     final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> codexGuiWrapper = codexGuiParameterizedFactory.create(
         data);
     final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGuiWrapper = recipeSelectorGuiParameterizedFactory.create(
@@ -114,7 +114,7 @@ final class RecipeSelectorItemParameterizedFactory implements
       createStaticItemsAndLink(w.getGui(), linkedCodexItem);
     });
 
-    final StationMeta meta = data.getMeta();
+    final TrackableProgressMeta meta = data.getMeta();
     final String recipeKey = meta.getRecipeKey();
     return new RecipeSelectorItem(
         UpdatableGuiItemWrapper.create(recipeKey != null ? Smaug.fetchRecipe(recipeKey) : null,

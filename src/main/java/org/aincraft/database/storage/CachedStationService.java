@@ -22,6 +22,7 @@ package org.aincraft.database.storage;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.function.Function;
@@ -29,11 +30,12 @@ import net.kyori.adventure.key.Key;
 import org.aincraft.container.IParameterizedFactory;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.meta.Meta;
+import org.aincraft.listener.IStationService;
 import org.bukkit.Location;
 
-public class CachedStationService<M extends Meta<M>> {
+public class CachedStationService<M extends Meta<M>> implements IStationService<M> {
 
-  private final Cache<UUID, Station<M>> stationCache = Caffeine.newBuilder().expireAfterWrite(
+  private final Cache<Location, Station<M>> stationCache = Caffeine.newBuilder().expireAfterWrite(
       Duration.ofMinutes(5)).build();
 
   private final IConnectionSource source;
@@ -42,18 +44,44 @@ public class CachedStationService<M extends Meta<M>> {
 
   private static final String CREATE_STATION = "INSERT INTO stations (id,station_key,world_name,x,y,z) VALUES (?,?,?,?,?,?)";
 
-  private final Function<SqlExecutor,M> createMetaFunction;
-  public CachedStationService(IConnectionSource source, Function<SqlExecutor, M> createMetaFunction) {
+  private static final String GET_STATION_BY_LOCATION = "SELECT id,station_key FROM stations WHERE world_name=? AND x=? AND y=? AND z=?";
+  private final Function<SqlExecutor, M> createMetaFunction;
+  private final Function<SqlExecutor, M> getMetaFunction;
+
+  public CachedStationService(IConnectionSource source, Function<SqlExecutor, M> createMetaFunction,
+      Function<SqlExecutor, M> getMetaFunction) {
     this.source = source;
     this.executor = new SqlExecutor(source);
     this.createMetaFunction = createMetaFunction;
+    this.getMetaFunction = getMetaFunction;
   }
 
-  public Station<M> getStation(Key stationKey, Location location) {
-    Preconditions.checkNotNull(stationKey);
+  public Station<M> getStation(Location location) {
     Preconditions.checkNotNull(location);
-    stationCache.get()
+    return stationCache.get(location, key -> {
+      M meta = getMetaFunction.apply(this.executor);
+      String worldName = location.getWorld().getName();
+      int x = location.getBlockX();
+      int y = location.getBlockY();
+      int z = location.getBlockZ();
+      return executor.queryRow(scanner -> {
+        try {
+          String idString = scanner.getString("id");
+          String keyString = scanner.getString("station_key");
+          return Station.create(idString, keyString, worldName, x, y, z, meta);
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
+        }
+      }, GET_STATION_BY_LOCATION);
+    });
   }
+
+  @Override
+  public Station<M> getStation(UUID stationId) {
+    return null;
+  }
+
+  @Override
   public Station<M> createStation(Key stationKey, Location location) {
     String idString = UUID.randomUUID().toString();
     String keyString = stationKey.toString();
@@ -63,11 +91,16 @@ public class CachedStationService<M extends Meta<M>> {
     int z = location.getBlockZ();
     executor.executeUpdate(CREATE_STATION, idString, keyString, worldName, x, y, z);
     M meta = createMetaFunction.apply(this.executor);
-    return Station.create(idString,keyString,worldName,x,y,z,meta);
+    return Station.create(idString, keyString, worldName, x, y, z, meta);
   }
 
-  interface MetaParameterizedFactory<M> extends IParameterizedFactory<SqlExecutor, M> {
+  @Override
+  public void updateStation(Station<M> station) {
 
   }
 
+  @Override
+  public void deleteStation(Location location) {
+
+  }
 }

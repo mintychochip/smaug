@@ -23,27 +23,16 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.util.HashMap;
 import java.util.Map;
-import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import org.aincraft.commands.IngredientCommand;
 import org.aincraft.commands.SmithCommand;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.handler.StationHandler;
-import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.container.gui.AnvilGuiProxy;
-import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.IViewModel;
-import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.gui.GuiListener;
-import org.aincraft.database.model.Station;
-import org.aincraft.database.storage.IStorage;
 import org.aincraft.handler.AnvilStationHandler;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.listener.IStationService;
-import org.aincraft.listener.PlayerListener;
-import org.aincraft.listener.StationListener;
-import org.aincraft.listener.StationModule;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.Listener;
@@ -53,52 +42,36 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class SmaugPluginImpl implements ISmaugPlugin {
 
   private final Plugin bootstrap;
-  private final IStorage storage;
   private final Injector injector;
   private final IKeyFactory keyFactory;
-  private final Map<Key, StationHandler> handlers = new HashMap<>();
+  private final Map<Key, StationHandler<?>> handlers = new HashMap<>();
   private final IRecipeFetcher recipeFetcher;
-  private final IViewModelController<Station, AnvilItemDisplayView> controller;
-  private final IViewModelController<Station, BossBar> bossBarController;
-  private final IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController;
-  private final IStationService stationService;
   private final IItemRegistry itemRegistry;
 
   @Inject
-  SmaugPluginImpl(Plugin bootstrap, IStorage storage,
+  SmaugPluginImpl(Plugin bootstrap,
       Injector injector, IKeyFactory keyFactory,
-      IRecipeFetcher recipeFetcher, IViewModelController<Station, AnvilItemDisplayView> controller,
-      IViewModelController<Station, BossBar> bossBarController,
-      IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController,
-      IStationService stationService,
+      IRecipeFetcher recipeFetcher,
       IItemRegistry itemRegistry) {
     this.bootstrap = bootstrap;
-    this.storage = storage;
     this.injector = injector;
     this.keyFactory = keyFactory;
     this.recipeFetcher = recipeFetcher;
-    this.controller = controller;
-    this.bossBarController = bossBarController;
-    this.guiController = guiController;
-    this.stationService = stationService;
     this.itemRegistry = itemRegistry;
   }
 
   void enable() {
     Smaug.setSmaug(this);
-    Injector childInjector = injector.createChildInjector(new StationModule(handlers));
-    registerListeners(new Listener[]{childInjector.getInstance(StationListener.class),
-        injector.getInstance(PlayerListener.class), new GuiListener(),
-        controller, bossBarController, guiController}, bootstrap);
+    Injector childInjector = injector.createChildInjector();
+    registerListeners(new Listener[]{
+         new GuiListener()}, bootstrap);
     if (bootstrap instanceof JavaPlugin jp) {
       jp.getCommand("smith").setExecutor(injector.getInstance(SmithCommand.class));
       jp.getCommand("test").setExecutor(injector.getInstance(IngredientCommand.class));
     }
-    handlers.put(new NamespacedKey(bootstrap, "anvil"),
-        new AnvilStationHandler(stationService, new NamespacedKey(bootstrap, "id"),
-            this.guiController.get(Key.key("smaug:anvil")), this.bossBarController.get(Key.key("smaug:anvil"))));
+//    handlers.put(new NamespacedKey(bootstrap, "anvil"),
+//        new AnvilStationHandler(stationService, new NamespacedKey(bootstrap, "id")));
 
-    this.registerHandler(new CauldronHandler(Key.key("smaug:cauldron")));
   }
 
   private static void registerListeners(Listener[] listeners, Plugin plugin) {
@@ -108,10 +81,10 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   }
 
   void disable() {
-    storage.close();
-    if (controller != null) {
-      controller.forEach(IViewModel::removeAll);
-    }
+//    storage.close();
+//    if (controller != null) {
+//      controller.forEach(IViewModel::removeAll);
+//    }
   }
 
   @Override
@@ -130,17 +103,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   }
 
   @Override
-  public IStationService getStationService() {
-    return stationService;
-  }
-
-  @Override
   public IItemRegistry getItemRegistry() {
     return itemRegistry;
-  }
-
-  @Override
-  public void registerHandler(StationHandler handler) {
-    handlers.put(handler.key(),handler);
   }
 }

@@ -33,13 +33,14 @@ import org.aincraft.container.gui.ItemParameterizedFactory;
 import org.aincraft.container.gui.ItemParameterizedFactory.Builder;
 import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Creates an updatable codex gui wrapper
  */
 final class CodexGuiWrapperParameterizedFactory extends
-    AbstractGuiWrapperParameterizedFactory<SmaugRecipe, PaginatedGui, Station> {
+    AbstractGuiWrapperParameterizedFactory<SmaugRecipe, PaginatedGui, Station<TrackableProgressMeta>> {
 
   CodexGuiWrapperParameterizedFactory(int rows, Component title) {
     super(rows, title);
@@ -48,7 +49,7 @@ final class CodexGuiWrapperParameterizedFactory extends
   @SuppressWarnings("UnstableApiUsage")
   @Override
   public @NotNull AnvilGuiProxy.UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(
-      @NotNull Station data) {
+      @NotNull Station<TrackableProgressMeta> data) {
     Preconditions.checkNotNull(data);
     final ItemParameterizedFactory<SmaugRecipe> itemFactory = new Builder<SmaugRecipe>().setDisplayNameFunction(
             AbstractGuiWrapperParameterizedFactory::createRecipeHeader)

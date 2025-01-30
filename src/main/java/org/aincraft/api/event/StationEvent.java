@@ -30,12 +30,12 @@ public abstract class StationEvent extends Event {
 
   private static HandlerList handlers = new HandlerList();
 
-  private final Station station;
+  private final Station<?> station;
 
   @Nullable
   private final Player player;
 
-  public StationEvent(Station station, @Nullable Player player) {
+  public StationEvent(Station<?> station, @Nullable Player player) {
     this.station = station;
     this.player = player;
   }
@@ -44,7 +44,7 @@ public abstract class StationEvent extends Event {
     return player;
   }
 
-  public Station getStation() {
+  public Station<?> getStation() {
     return station;
   }
 

@@ -24,7 +24,6 @@ import com.google.inject.name.Named;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.item.ItemStackBuilder;
-import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -40,13 +39,11 @@ import org.jetbrains.annotations.NotNull;
 
 public class SmithCommand implements CommandExecutor {
 
-  private final IStationService service;
   private final NamespacedKey stationKey;
 
   @Inject
   public SmithCommand(
-      IStationService service, @Named("station") NamespacedKey stationKey) {
-    this.service = service;
+      @Named("station") NamespacedKey stationKey) {
     this.stationKey = stationKey;
   }
 

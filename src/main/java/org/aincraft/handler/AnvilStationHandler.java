@@ -45,7 +45,6 @@ import org.aincraft.container.item.ItemIdentifier;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationInventory.ItemAddResult;
-import org.aincraft.database.model.StationMeta;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -62,16 +61,11 @@ public final class AnvilStationHandler implements StationHandler<TrackableProgre
 
   private final IStationService service;
   private final NamespacedKey idKey;
-  private final IViewModel<StationPlayerModelProxy<TrackableProgressMeta>, AnvilGuiProxy> guiViewModel;
 
   public AnvilStationHandler(IStationService service,
-      @Named("id") NamespacedKey idKey,
-      IViewModel<StationPlayerModelProxy<TrackableProgressMeta>, AnvilGuiProxy> viewModel,
-      IViewModel<Station<TrackableProgressMeta>, BossBar> bossBarViewModel) {
+      @Named("id") NamespacedKey idKey) {
     this.service = service;
     this.idKey = idKey;
-    this.guiViewModel = viewModel;
-    // this.bossBarManager = new BossBarManager(bossBarViewModel);
   }
 
   @Override
@@ -178,8 +172,8 @@ public final class AnvilStationHandler implements StationHandler<TrackableProgre
         null);
   }
 
-  private SmaugRecipe select(Station station, List<SmaugRecipe> recipes, Player player) {
-    final StationMeta meta = station.getMeta();
+  private SmaugRecipe select(Station<TrackableProgressMeta> station, List<SmaugRecipe> recipes, Player player) {
+    final TrackableProgressMeta meta = station.getMeta();
     final String recipeKey = meta.getRecipeKey();
     if (recipeKey != null) {
       try {
@@ -190,15 +184,15 @@ public final class AnvilStationHandler implements StationHandler<TrackableProgre
     }
     int size = recipes.size();
     if (size > 1) {
-      IViewModelBinding binding = guiViewModel.getBinding(
-          new StationPlayerModelProxy(player, station));
-      RecipeSelectorItem selectorItem = binding.getProperty("recipe-selector",
-          RecipeSelectorItem.class);
-      selectorItem.recipeSelectorGui().open(player);
+//      IViewModelBinding binding = guiViewModel.getBinding(
+//          new StationPlayerModelProxy<>(player, station));
+//      RecipeSelectorItem selectorItem = binding.getProperty("recipe-selector",
+//          RecipeSelectorItem.class);
+//      selectorItem.recipeSelectorGui().open(player);
     }
     if (size == 1) {
       SmaugRecipe recipe = recipes.getFirst();
-      station.setMeta(m -> m.setProgress(0).setRecipeKey(recipe.getKey()));
+      station.setMeta(m -> m.toBuilder().setProgress(0).setRecipeKey(recipe.getKey()));
       Bukkit.getPluginManager().callEvent(new StationUpdateEvent(station, player));
       return recipe;
     }

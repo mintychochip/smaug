@@ -29,11 +29,12 @@ import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
 import org.aincraft.api.event.StationUpdateEvent;
+import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
 import org.aincraft.handler.StationHandler;
 import org.aincraft.handler.StationHandler.Context;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
-import org.aincraft.database.model.StationMeta;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -143,27 +144,29 @@ public class StationListener implements Listener {
     if (event.isCancelled()) {
       return;
     }
-    final Station station = event.getStation();
+    final Station<?> station = event.getStation();
     CompletableFuture.runAsync(() -> stationService.deleteStation(station.blockLocation()));
     final World world = station.world();
-    StationMeta meta = station.getMeta();
-    StationInventory stationInventory = meta.getInventory();
-    final Location location = station.centerLocation();
-    new BukkitRunnable() {
-      @Override
-      public void run() {
-        List<ItemStack> contents = stationInventory.getContents();
-        for (ItemStack content : contents) {
-          if (content != null) {
-            world.dropItemNaturally(location, content);
+    Meta<?> meta = station.getMeta();
+    if(meta instanceof TrackableProgressMeta tm) {
+      StationInventory stationInventory = tm.getInventory();
+      final Location location = station.centerLocation();
+      new BukkitRunnable() {
+        @Override
+        public void run() {
+          List<ItemStack> contents = stationInventory.getContents();
+          for (ItemStack content : contents) {
+            if (content != null) {
+              world.dropItemNaturally(location, content);
+            }
           }
         }
-      }
-    }.runTask(plugin);
+      }.runTask(plugin);
+    }
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
-  private void handleUpdateStation(final StationUpdateEvent event) {
+  private void handleUpdateStation(final StationUpdateEvent<?> event) {
     if (event.isCancelled()) {
       return;
     }
@@ -179,11 +182,11 @@ public class StationListener implements Listener {
     if (block.getType().isAir()) {
       return;
     }
-    Station station = stationService.getStation(block.getLocation());
+    Station<?> station = stationService.getStation(block.getLocation());
     if (station == null) {
       return;
     }
-    StationHandler handler = handlers.get(station.stationKey());
+    StationHandler<?> handler = handlers.get(station.stationKey());
     if (handler == null) {
       return;
     }
@@ -191,6 +194,6 @@ public class StationListener implements Listener {
     if (hand == EquipmentSlot.OFF_HAND) {
       return;
     }
-    handler.handle(Context.create(station,event));
+   /// handler.handle(Context.create(station,event));
   }
 }

@@ -37,7 +37,7 @@ import org.aincraft.container.gui.AnvilGuiProxy.BasicStationItem;
 import org.aincraft.container.gui.ItemParameterizedFactory.Builder;
 import org.aincraft.container.item.ItemStackBuilder;
 import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationMeta;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
 import org.aincraft.listener.IStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -49,7 +49,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 public final class AnvilGuiProxyParameterizedFactory implements
-    IParameterizedFactory<AnvilGuiProxy, StationPlayerModelProxy> {
+    IParameterizedFactory<AnvilGuiProxy, StationPlayerModelProxy<TrackableProgressMeta>> {
 
   private static final int ROWS = 4;
 
@@ -62,24 +62,26 @@ public final class AnvilGuiProxyParameterizedFactory implements
   }
 
   @Override
-  public @NotNull AnvilGuiProxy create(@NotNull StationPlayerModelProxy data) {
+  public @NotNull AnvilGuiProxy create(
+      @NotNull StationPlayerModelProxy<TrackableProgressMeta> data) {
     Preconditions.checkNotNull(data);
-    Station station = data.station();
+    Station<TrackableProgressMeta> station = data.station();
     Player player = data.player();
     final Gui main = Gui.gui(GuiType.DISPENSER).title(Component.text("Menu"))
         .disableAllInteractions()
         .create();
-    final CodexGuiWrapperParameterizedFactory codexGuiWrapperFactory = new CodexGuiWrapperParameterizedFactory(ROWS,
+    final CodexGuiWrapperParameterizedFactory codexGuiWrapperFactory = new CodexGuiWrapperParameterizedFactory(
+        ROWS,
         Component.text("Codex"));
     final RecipeSelectorWrapperParameterizedFactory recipeSelectorWrapperFactory = new RecipeSelectorWrapperParameterizedFactory(
         ROWS,
         Component.text("Recipes"), (e, recipe) -> {
       final HumanEntity entity = e.getWhoClicked();
-      final StationMeta meta = station.getMeta();
+      final TrackableProgressMeta meta = station.getMeta();
       final String recipeKey = recipe.getKey();
       if (meta.getRecipeKey() == null) {
         Bukkit.getPluginManager().callEvent(
-            new StationUpdateEvent(station.setMeta(m -> m.setRecipeKey(recipeKey)), player));
+            new StationUpdateEvent<>(station.setMeta(m -> m.setRecipeKey(recipeKey)), player));
         return;
       }
       if (meta.getRecipeKey() != null && !meta.getRecipeKey().equals(recipeKey)) {
@@ -87,8 +89,9 @@ public final class AnvilGuiProxyParameterizedFactory implements
           @Override
           public void run() {
             Bukkit.getPluginManager()
-                .callEvent(new StationUpdateEvent(
-                    station.setMeta(m -> m.setProgress(0).setRecipeKey(recipeKey)), player));
+                .callEvent(new StationUpdateEvent<>(
+                    station.setMeta(m -> m.toBuilder().setProgress(0).setRecipeKey(recipeKey)),
+                    player));
           }
         }.runTask(plugin);
       }
@@ -96,7 +99,8 @@ public final class AnvilGuiProxyParameterizedFactory implements
     RecipeSelectorItem recipeSelectorItem = new RecipeSelectorItemParameterizedFactory(player, main,
         codexGuiWrapperFactory, recipeSelectorWrapperFactory, createFiller()).create(station);
     MetaItem metaItem = MetaItemFactory.create(station);
-    BasicStationItem storageItem = new StorageItemParameterizedFactory(stationService).create(station);
+    BasicStationItem storageItem = new StorageItemParameterizedFactory(stationService).create(
+        station);
     main.setItem(3, storageItem.getGuiItem());
     main.setItem(4, recipeSelectorItem.getGuiItem());
     main.setItem(5, metaItem.getGuiItem());
@@ -125,7 +129,7 @@ public final class AnvilGuiProxyParameterizedFactory implements
   }
 
   static final class StorageItemParameterizedFactory implements
-      IParameterizedFactory<BasicStationItem, Station> {
+      IParameterizedFactory<BasicStationItem, Station<TrackableProgressMeta>> {
 
     private final IStationService stationService;
 
@@ -134,16 +138,16 @@ public final class AnvilGuiProxyParameterizedFactory implements
     }
 
     @Override
-    public @NotNull AnvilGuiProxy.BasicStationItem create(@NotNull Station station) {
+    public @NotNull AnvilGuiProxy.BasicStationItem create(@NotNull Station<TrackableProgressMeta> station) {
       GuiItem guiItem = ItemStackBuilder.create(Material.CHEST)
           .meta(meta -> meta.displayName(Component.text("Storage")))
           .asGuiItem(e -> {
             HumanEntity entity = e.getWhoClicked();
-            Station s = stationService.getStation(station.id());
-            if (s != null) {
-              Inventory inventory = s.getInventory();
-              entity.openInventory(inventory);
-            }
+            //Station<TrackableProgressMeta> s = stationService.getStation(station.id());
+            //if (s != null) {
+//              Inventory inventory = s.getInventory();
+//              entity.openInventory(inventory);
+            //}
           });
       return new BasicStationItem(guiItem);
     }

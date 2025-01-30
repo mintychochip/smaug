@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.database.model.Station;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
@@ -56,7 +57,7 @@ public final class Smaug {
     return smaug.getRecipeFetcher().all(recipePredicate);
   }
 
-  public static List<SmaugRecipe> fetchAllRecipes(Station station,
+  public static List<SmaugRecipe> fetchAllRecipes(Station<TrackableProgressMeta> station,
       @Nullable List<ItemStack> externalStacks) {
     Preconditions.checkNotNull(station);
 
