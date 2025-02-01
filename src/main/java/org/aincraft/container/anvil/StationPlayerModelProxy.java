@@ -19,15 +19,15 @@
 
 package org.aincraft.container.anvil;
 
+import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.Meta;
-import org.aincraft.database.model.Station;
 import org.bukkit.entity.Player;
 
 public record StationPlayerModelProxy<M extends Meta<M>>(
-    Player player, Station<M> station) {
+    Player player, MutableStation<M> mutableStation) {
 
   @Override
   public int hashCode() {
-    return player.hashCode() + station.id().hashCode();
+    return player.hashCode() + mutableStation.id().hashCode();
   }
 }

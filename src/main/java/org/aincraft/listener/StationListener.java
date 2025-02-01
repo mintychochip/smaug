@@ -19,22 +19,20 @@
 
 package org.aincraft.listener;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.List;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
-import org.aincraft.api.event.StationUpdateEvent;
-import org.aincraft.database.model.meta.Meta;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.test.IStation;
+import org.aincraft.database.storage.IConnectionSource;
+import org.aincraft.database.storage.SqlExecutor;
 import org.aincraft.handler.StationHandler;
-import org.aincraft.handler.StationHandler.Context;
-import org.aincraft.database.model.Station;
-import org.aincraft.database.model.Station.StationInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -47,14 +45,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.Nullable;
 
 public class StationListener implements Listener {
 
@@ -70,19 +66,22 @@ public class StationListener implements Listener {
         material == Material.DAMAGED_ANVIL ||
         materialString.contains("CONCRETE_POWDER");
   };
-  private final Map<Key, StationHandler> handlers;
+  private final Map<Key, StationHandler<?>> handlers;
   private final Plugin plugin;
-  private final IStationService stationService;
   private final NamespacedKey stationKey;
+  private final Map<Key, IMutableStationService<?>> serviceMap;
+  private final IConnectionSource connectionSource;
 
   @Inject
-  public StationListener(Map<Key, StationHandler> handlers,
-      Plugin plugin, IStationService stationService,
-      @Named("station") NamespacedKey stationKey) {
+  public StationListener(Map<Key, StationHandler<?>> handlers,
+      Plugin plugin,
+      @Named("station") NamespacedKey stationKey, Map<Key, IMutableStationService<?>> serviceMap,
+      IConnectionSource connectionSource) {
     this.handlers = handlers;
     this.plugin = plugin;
-    this.stationService = stationService;
     this.stationKey = stationKey;
+    this.serviceMap = serviceMap;
+    this.connectionSource = connectionSource;
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -93,8 +92,8 @@ public class StationListener implements Listener {
       return;
     }
     PersistentDataContainer pdc = itemMeta.getPersistentDataContainer();
-    String stationKey = pdc.getOrDefault(this.stationKey, PersistentDataType.STRING, "");
-    if (stationKey.isEmpty()) {
+    String keyString = pdc.getOrDefault(this.stationKey, PersistentDataType.STRING, "");
+    if (keyString.isEmpty()) {
       return;
     }
     Block block = event.getBlockPlaced();
@@ -109,19 +108,17 @@ public class StationListener implements Listener {
       return;
     }
     Player player = event.getPlayer();
-    stationService.createStation(NamespacedKey.fromString(stationKey),
-        blockLocation);
+    IMutableStationService<?> service = serviceMap.get(Key.key(keyString));
+    if (service == null) {
+      return;
+    }
+    service.createStation(Key.key(keyString), blockLocation);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   private void removeBlocksCheckForStation(final BlockBreakEvent event) {
-    Block block = event.getBlock();
-    Location blockLocation = block.getLocation();
-    World world = blockLocation.getWorld();
-    if (world == null) {
-      return;
-    }
-    Station station = stationService.getStation(blockLocation);
+    final KeyService keyService = new KeyService(new SqlExecutor(connectionSource));
+    final IStation station = keyService.getStation(event.getBlock().getLocation());
     if (station == null) {
       return;
     }
@@ -135,7 +132,7 @@ public class StationListener implements Listener {
         break;
       }
       Bukkit.getPluginManager()
-          .callEvent(new StationRemoveEvent(station, player, RemovalCause.PLAYER));
+          .callEvent(new StationRemoveEvent(IStation, player, RemovalCause.PLAYER));
     }
   }
 
@@ -144,7 +141,7 @@ public class StationListener implements Listener {
     if (event.isCancelled()) {
       return;
     }
-    final Station<?> station = event.getStation();
+    IStation station = event.getStation();
     CompletableFuture.runAsync(() -> stationService.deleteStation(station.blockLocation()));
     final World world = station.world();
     Meta<?> meta = station.getMeta();
@@ -165,35 +162,64 @@ public class StationListener implements Listener {
     }
   }
 
-  @EventHandler(priority = EventPriority.MONITOR)
-  private void handleUpdateStation(final StationUpdateEvent<?> event) {
-    if (event.isCancelled()) {
-      return;
-    }
-    CompletableFuture.runAsync(() -> stationService.updateStation(event.getModel()));
-  }
+  //  @EventHandler(priority = EventPriority.MONITOR)
+//  private void handleUpdateStation(final StationUpdateEvent<?> event) {
+//    if (event.isCancelled()) {
+//      return;
+//    }
+//    CompletableFuture.runAsync(() -> stationService.updateStation(event.getStation()));
+//  }
+//
+//  @EventHandler(priority = EventPriority.MONITOR)
+//  private void handleInteract(final PlayerInteractEvent event) {
+//    Block block = event.getClickedBlock();
+//    if (block == null) {
+//      return;
+//    }
+//    if (block.getType().isAir()) {
+//      return;
+//    }
+//    Station<?> station = stationService.getStation(block.getLocation());
+//    if (station == null) {
+//      return;
+//    }
+//    StationHandler<?> handler = handlers.get(station.stationKey());
+//    if (handler == null) {
+//      return;
+//    }
+//    EquipmentSlot hand = event.getHand();
+//    if (hand == EquipmentSlot.OFF_HAND) {
+//      return;
+//    }
+//   /// handler.handle(Context.create(station,event));
+//  }
 
-  @EventHandler(priority = EventPriority.MONITOR)
-  private void handleInteract(final PlayerInteractEvent event) {
-    Block block = event.getClickedBlock();
-    if (block == null) {
-      return;
+  static final class KeyService {
+
+    private static final String GET_KEY_BY_LOCATION = "SELECT id,station_key FROM stations WHERE world_name=? AND x=? AND y=? AND z=?";
+
+    private final SqlExecutor executor;
+
+    KeyService(SqlExecutor executor) {
+      this.executor = executor;
     }
-    if (block.getType().isAir()) {
-      return;
+
+    @Nullable
+    public IStation getStation(Location location) {
+      final String worldName = location.getWorld().getName();
+      final int x = location.getBlockX();
+      final int y = location.getBlockY();
+      final int z = location.getBlockZ();
+      Preconditions.checkNotNull(location);
+      return executor.queryRow(scanner -> {
+        try {
+          String idString = scanner.getString("id");
+          String keyString = scanner.getString("station_key");
+          return IStation.create(idString, keyString, worldName, x, y, z);
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
+        }
+      }, GET_KEY_BY_LOCATION, worldName, x, y, z);
     }
-    Station<?> station = stationService.getStation(block.getLocation());
-    if (station == null) {
-      return;
-    }
-    StationHandler<?> handler = handlers.get(station.stationKey());
-    if (handler == null) {
-      return;
-    }
-    EquipmentSlot hand = event.getHand();
-    if (hand == EquipmentSlot.OFF_HAND) {
-      return;
-    }
-   /// handler.handle(Context.create(station,event));
   }
 }

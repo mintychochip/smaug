@@ -19,9 +19,6 @@
 
 package org.aincraft.util;
 
-import org.bukkit.util.Vector;
-import org.joml.Vector3f;
-
 public class Mt {
 
   public static float random(float v1, float v2) {

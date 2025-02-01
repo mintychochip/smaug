@@ -5,10 +5,23 @@ CREATE TABLE IF NOT EXISTS stations
     world_name  TEXT    NOT NULL,
     x           INTEGER NOT NULL,
     y           INTEGER NOT NULL,
-    z           INTEGER NOT NULL,
-    inventory   TEXT    NOT NULL,
-    recipe_key  TEXT,
-    progress    FLOAT4
+    z           INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS trackable_progress_meta
+(
+    station_id TEXT   NOT NULL,
+    inventory  TEXT   NOT NULL,
+    recipe_key TEXT,
+    progress   FLOAT4 NOT NULL,
+    FOREIGN KEY (station_id) REFERENCES stations (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cauldron_meta
+(
+    station_id TEXT    NOT NULL,
+    level      INTEGER NOT NULL,
+    FOREIGN KEY (station_id) REFERENCES stations (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS station_user

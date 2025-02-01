@@ -19,7 +19,8 @@
 
 package org.aincraft.api.event;
 
-import org.aincraft.database.model.Station;
+import org.aincraft.database.model.MutableStation;
+import org.aincraft.database.model.test.IStation;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -30,12 +31,12 @@ public abstract class StationEvent extends Event {
 
   private static HandlerList handlers = new HandlerList();
 
-  private final Station<?> station;
+  private final IStation station;
 
   @Nullable
   private final Player player;
 
-  public StationEvent(Station<?> station, @Nullable Player player) {
+  public StationEvent(IStation station, @Nullable Player player) {
     this.station = station;
     this.player = player;
   }
@@ -44,7 +45,7 @@ public abstract class StationEvent extends Event {
     return player;
   }
 
-  public Station<?> getStation() {
+  public IStation getStation() {
     return station;
   }
 

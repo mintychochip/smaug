@@ -19,7 +19,16 @@
 
 package org.aincraft.database.model.meta;
 
+import org.jetbrains.annotations.NotNull;
+
 public interface Meta<M extends Meta<M>> {
 
   M clone();
+
+  interface MetaMapping<M extends Meta<M>> {
+    @NotNull
+    M createMeta(@NotNull String idString);
+    @NotNull
+    M getMeta(@NotNull String idString);
+  }
 }

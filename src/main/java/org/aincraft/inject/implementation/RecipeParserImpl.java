@@ -24,7 +24,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
-import org.aincraft.Smaug;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.ingredient.Ingredient;
@@ -33,12 +32,9 @@ import org.aincraft.container.ingredient.IngredientList;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.inject.IKeyFactory;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @Singleton
 final class RecipeParserImpl implements IRecipeParser {

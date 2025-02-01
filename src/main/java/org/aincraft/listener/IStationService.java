@@ -19,25 +19,8 @@
 
 package org.aincraft.listener;
 
-import java.util.List;
-import java.util.UUID;
-import net.kyori.adventure.key.Key;
-import org.aincraft.database.model.Station;
-import org.aincraft.database.model.StationUser;
-import org.aincraft.database.model.meta.Meta;
-import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
+import org.aincraft.database.model.test.IStation;
 
-public interface IStationService<M extends Meta<M>> {
-
-  Station<M> createStation(Key stationKey, Location location);
-
-  void updateStation(Station<M> station);
-
-  void deleteStation(Location location);
-
-  Station<M> getStation(Location location);
-
-  Station<M> getStation(UUID stationId);
+public interface IStationService {
+  void removeStation(IStation station);
 }

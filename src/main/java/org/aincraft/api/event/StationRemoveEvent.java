@@ -19,7 +19,8 @@
 
 package org.aincraft.api.event;
 
-import org.aincraft.database.model.Station;
+import org.aincraft.database.model.MutableStation;
+import org.aincraft.database.model.test.IStation;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.jetbrains.annotations.Nullable;
@@ -38,9 +39,9 @@ public final class StationRemoveEvent extends StationEvent implements Cancellabl
 
   private final RemovalCause removalCause;
 
-  public StationRemoveEvent(Station station, @Nullable Player player,
+  public StationRemoveEvent(IStation mutableStation, @Nullable Player player,
       RemovalCause removalCause) {
-    super(station, player);
+    super(mutableStation, player);
     this.removalCause = removalCause;
   }
 

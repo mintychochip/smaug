@@ -17,16 +17,12 @@
  *
  */
 
-package org.aincraft.inject.implementation;
+package org.aincraft.listener;
 
-import org.aincraft.container.SmaugRecipe;
-import org.aincraft.exception.ForwardReferenceException;
-import org.bukkit.configuration.ConfigurationSection;
-import org.jetbrains.annotations.NotNull;
+import net.kyori.adventure.key.Key;
+import org.bukkit.Location;
 
-interface IRecipeParser {
+public interface IKeyService {
 
-  @NotNull
-  SmaugRecipe parse(@NotNull ConfigurationSection recipeSection) throws ForwardReferenceException;
-
+  Key getKey(Location location);
 }

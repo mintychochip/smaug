@@ -17,16 +17,8 @@
  *
  */
 
-package org.aincraft.inject.implementation;
+package org.aincraft.listener;
 
-import org.aincraft.container.SmaugRecipe;
-import org.aincraft.exception.ForwardReferenceException;
-import org.bukkit.configuration.ConfigurationSection;
-import org.jetbrains.annotations.NotNull;
-
-interface IRecipeParser {
-
-  @NotNull
-  SmaugRecipe parse(@NotNull ConfigurationSection recipeSection) throws ForwardReferenceException;
-
+public class StationServiceFactory {
+  
 }

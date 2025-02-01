@@ -17,16 +17,18 @@
  *
  */
 
-package org.aincraft.inject.implementation;
+package org.aincraft.database.storage;
 
-import org.aincraft.container.SmaugRecipe;
-import org.aincraft.exception.ForwardReferenceException;
-import org.bukkit.configuration.ConfigurationSection;
-import org.jetbrains.annotations.NotNull;
+import java.util.UUID;
+import net.kyori.adventure.key.Key;
+import org.aincraft.database.model.test.IStation;
+import org.bukkit.Location;
 
-interface IRecipeParser {
+public interface IStorage {
+  IStation getStation(String idString);
+  IStation getStation(Location location);
+  IStation createStation(String keyString, Location location);
+  void removeStation(Location location);
 
-  @NotNull
-  SmaugRecipe parse(@NotNull ConfigurationSection recipeSection) throws ForwardReferenceException;
-
+  void close();
 }

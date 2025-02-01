@@ -20,7 +20,7 @@
 package org.aincraft.handler;
 
 import net.kyori.adventure.key.Key;
-import org.aincraft.database.model.Station;
+import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.Meta;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -41,11 +41,11 @@ abstract class AbstractStationHandler implements StationHandler {
     return key;
   }
 
-  record ContextImpl<M extends Meta<M>>(Station<M> station, PlayerInteractEvent event) implements Context {
+  record ContextImpl<M extends Meta<M>>(MutableStation<M> mutableStation, PlayerInteractEvent event) implements Context {
 
     @Override
-      public @NotNull Station<M> getStation() {
-        return station;
+      public @NotNull MutableStation<M> getStation() {
+        return mutableStation;
       }
 
       @Override

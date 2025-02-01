@@ -20,7 +20,6 @@
 package org.aincraft.handler;
 
 import com.google.inject.name.Named;
-import dev.triumphteam.gui.guis.Gui;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,23 +28,21 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.aincraft.Smaug;
-import org.aincraft.api.event.StationUpdateEvent;
+import org.aincraft.api.event.TrackableProgressUpdateEvent;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
-import org.aincraft.container.item.ItemStackBuilder;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
-import org.aincraft.exception.ForwardReferenceException;
-import org.aincraft.exception.UndefinedRecipeException;
-import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.display.IViewModel;
 import org.aincraft.container.display.IViewModel.IViewModelBinding;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.container.item.ItemIdentifier;
-import org.aincraft.database.model.Station;
-import org.aincraft.database.model.Station.StationInventory;
-import org.aincraft.database.model.Station.StationInventory.ItemAddResult;
-import org.aincraft.listener.IStationService;
+import org.aincraft.container.item.ItemStackBuilder;
+import org.aincraft.database.model.MutableStation;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.meta.TrackableProgressMeta.StationInventory;
+import org.aincraft.database.model.meta.TrackableProgressMeta.StationInventory.ItemAddResult;
+import org.aincraft.exception.ForwardReferenceException;
+import org.aincraft.exception.UndefinedRecipeException;
+import org.aincraft.listener.IMutableStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -59,10 +56,10 @@ import org.jetbrains.annotations.NotNull;
 
 public final class AnvilStationHandler implements StationHandler<TrackableProgressMeta> {
 
-  private final IStationService service;
+  private final IMutableStationService<TrackableProgressMeta> service;
   private final NamespacedKey idKey;
 
-  public AnvilStationHandler(IStationService service,
+  public AnvilStationHandler(IMutableStationService<TrackableProgressMeta> service,
       @Named("id") NamespacedKey idKey) {
     this.service = service;
     this.idKey = idKey;
@@ -72,17 +69,17 @@ public final class AnvilStationHandler implements StationHandler<TrackableProgre
   public void handle(final Context<TrackableProgressMeta> ctx) {
     final Player player = ctx.getPlayer();
     final ItemStack item = ctx.getItem();
-    final Station<TrackableProgressMeta> station = ctx.getStation();
+    final MutableStation<TrackableProgressMeta> mutableStation = ctx.getStation();
     final StationPlayerModelProxy<TrackableProgressMeta> proxy = new StationPlayerModelProxy<>(
-        player, station);
+        player, mutableStation);
     if (ctx.isRightClick()) {
       ctx.cancel();
       if (item != null) {
-        ItemAddResult result = station.getMeta().getInventory().add(List.of(item));
+        ItemAddResult result = mutableStation.getMeta().getInventory().add(List.of(item));
         if (result.isSuccess()) {
           Bukkit.getPluginManager()
-              .callEvent(new StationUpdateEvent<>(
-                  station.setMeta(m -> m.setInventory(result.getInventory())), player));
+              .callEvent(new TrackableProgressUpdateEvent(
+                  mutableStation.setMeta(m -> m.setInventory(result.getInventory())),player));
           player.sendMessage(Component.empty().color(
                   NamedTextColor.WHITE).append(Component.text("Deposited:"))
               .append(item.displayName()));
@@ -96,26 +93,26 @@ public final class AnvilStationHandler implements StationHandler<TrackableProgre
       return;
     }
     ctx.cancel();
-    TrackableProgressMeta meta = station.getMeta();
+    TrackableProgressMeta meta = mutableStation.getMeta();
     StationInventory inventory = meta.getInventory();
-    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(station, inventory.getContents());
+    List<SmaugRecipe> recipes = Smaug.fetchAllRecipes(mutableStation, inventory.getContents());
     if (recipes.isEmpty()) {
       player.sendMessage("There are not any recipes available");
     }
-    SmaugRecipe recipe = select(station,
+    SmaugRecipe recipe = select(mutableStation,
         recipes, player);
     if (recipe == null || !recipe.test(inventory.getContents()).isSuccess()) {
       return;
     }
 
-    final Location stationBlockLocation = station.blockLocation();
+    final Location stationBlockLocation = mutableStation.blockLocation();
     if (recipe.getActions() > 0) {
       //bossBarManager.show(proxy);
-      if (station.getMeta().getProgress() < recipe.getActions()) {
+      if (mutableStation.getMeta().getProgress() < recipe.getActions()) {
         successfulAction(stationBlockLocation);
         Bukkit.getPluginManager()
-            .callEvent(new StationUpdateEvent<>(
-                station.setMeta(m -> m.setProgress(progress -> progress + 1)), player));
+            .callEvent(new TrackableProgressUpdateEvent(
+                mutableStation.setMeta(m -> m.setProgress(progress -> progress + 1)),player));
       } else {
         ItemStack stack = craftRecipeOutput(recipe);
         ItemAddResult result = inventory.setItems(recipe.getIngredients()
@@ -123,12 +120,10 @@ public final class AnvilStationHandler implements StationHandler<TrackableProgre
         if (result.isSuccess()) {
           player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
           Bukkit.getPluginManager()
-              .callEvent(
-                  new StationUpdateEvent<>(station.setMeta(m -> m.toBuilder()
-                      .setRecipeKey(null)
-                      .setProgress(0)
-                      .setInventory(result.getInventory())),
-                      player));
+              .callEvent(new TrackableProgressUpdateEvent(mutableStation.setMeta(m -> m.toBuilder()
+                  .setRecipeKey(null)
+                  .setProgress(0)
+                  .setInventory(result.getInventory())),player));
         }
       }
     } else {
@@ -172,8 +167,9 @@ public final class AnvilStationHandler implements StationHandler<TrackableProgre
         null);
   }
 
-  private SmaugRecipe select(Station<TrackableProgressMeta> station, List<SmaugRecipe> recipes, Player player) {
-    final TrackableProgressMeta meta = station.getMeta();
+  private SmaugRecipe select(MutableStation<TrackableProgressMeta> mutableStation, List<SmaugRecipe> recipes,
+      Player player) {
+    final TrackableProgressMeta meta = mutableStation.getMeta();
     final String recipeKey = meta.getRecipeKey();
     if (recipeKey != null) {
       try {
@@ -192,8 +188,8 @@ public final class AnvilStationHandler implements StationHandler<TrackableProgre
     }
     if (size == 1) {
       SmaugRecipe recipe = recipes.getFirst();
-      station.setMeta(m -> m.toBuilder().setProgress(0).setRecipeKey(recipe.getKey()));
-      Bukkit.getPluginManager().callEvent(new StationUpdateEvent(station, player));
+      mutableStation.setMeta(m -> m.toBuilder().setProgress(0).setRecipeKey(recipe.getKey()));
+      Bukkit.getPluginManager().callEvent(new TrackableProgressUpdateEvent(mutableStation,player));
       return recipe;
     }
     return null;
@@ -207,14 +203,14 @@ public final class AnvilStationHandler implements StationHandler<TrackableProgre
   static final class BossBarManager {
 
     private final Map<StationPlayerModelProxy, Integer> bossBarTaskMap = new HashMap<>();
-    private final IViewModel<Station, BossBar> viewModel;
+    private final IViewModel<MutableStation, BossBar> viewModel;
 
-    BossBarManager(IViewModel<Station, BossBar> viewModel) {
+    BossBarManager(IViewModel<MutableStation, BossBar> viewModel) {
       this.viewModel = viewModel;
     }
 
     private void show(StationPlayerModelProxy proxy) {
-      IViewModelBinding binding = viewModel.getBinding(proxy.station());
+      IViewModelBinding binding = viewModel.getBinding(proxy.mutableStation());
       if (binding != null) {
         BossBar bossBar = binding.getProperty(BossBar.class);
         if (bossBar != null) {

@@ -17,16 +17,20 @@
  *
  */
 
-package org.aincraft.inject.implementation;
+package org.aincraft.database.model.test;
 
-import org.aincraft.container.SmaugRecipe;
-import org.aincraft.exception.ForwardReferenceException;
-import org.bukkit.configuration.ConfigurationSection;
-import org.jetbrains.annotations.NotNull;
+import java.util.function.Consumer;
+import org.aincraft.database.model.meta.Meta;
 
-interface IRecipeParser {
+public interface IMetaStation<M extends Meta<M>> {
 
-  @NotNull
-  SmaugRecipe parse(@NotNull ConfigurationSection recipeSection) throws ForwardReferenceException;
+  static <M extends Meta<M>> IMetaStation<M> create(IStation station, M meta) {
+    return MetaStationImpl.create(station, meta);
+  }
 
+  IMetaStation<M> setMeta(M meta);
+
+  IMetaStation<M> setMeta(Consumer<M> metaConsumer);
+
+  M getMeta();
 }

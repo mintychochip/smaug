@@ -17,16 +17,17 @@
  *
  */
 
-package org.aincraft.inject.implementation;
+package org.aincraft.api.event;
 
-import org.aincraft.container.SmaugRecipe;
-import org.aincraft.exception.ForwardReferenceException;
-import org.bukkit.configuration.ConfigurationSection;
-import org.jetbrains.annotations.NotNull;
+import org.aincraft.database.model.MutableStation;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.bukkit.entity.Player;
 
-interface IRecipeParser {
+public class TrackableProgressUpdateEvent extends StationUpdateEvent<TrackableProgressMeta> {
 
-  @NotNull
-  SmaugRecipe parse(@NotNull ConfigurationSection recipeSection) throws ForwardReferenceException;
-
+  public TrackableProgressUpdateEvent(
+      MutableStation<TrackableProgressMeta> model,
+      Player player) {
+    super(model, player);
+  }
 }

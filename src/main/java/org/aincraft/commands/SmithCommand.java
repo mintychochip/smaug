@@ -20,43 +20,33 @@
 package org.aincraft.commands;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import net.kyori.adventure.key.Key;
-import org.aincraft.container.item.ItemStackBuilder;
+import org.aincraft.database.model.MutableStation;
+import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.listener.IMutableStationService;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 public class SmithCommand implements CommandExecutor {
 
-  private final NamespacedKey stationKey;
+  private final IMutableStationService<TrackableProgressMeta> service;
 
   @Inject
-  public SmithCommand(
-      @Named("station") NamespacedKey stationKey) {
-    this.stationKey = stationKey;
+  public SmithCommand(IMutableStationService<TrackableProgressMeta> service) {
+    this.service = service;
   }
 
   @Override
   public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command,
       @NotNull String s, @NotNull String[] strings) {
-    Player mintychochip = Bukkit.getPlayer("mintychochip");
-    ItemStack build = ItemStackBuilder.create(Material.CAULDRON).build();
-    ItemMeta meta = build.getItemMeta();
-    PersistentDataContainer pdc = meta.getPersistentDataContainer();
-    pdc.set(stationKey, PersistentDataType.STRING,"smaug:cauldron");
-    build.setItemMeta(meta);
-    mintychochip.getInventory().addItem(build);
+    MutableStation<TrackableProgressMeta> mutableStation = service.getStation(
+        ((Player) commandSender).getLocation());
+    if(mutableStation != null) {
+      Bukkit.broadcastMessage(mutableStation.toString());
+    }
     return true;
   }
 }

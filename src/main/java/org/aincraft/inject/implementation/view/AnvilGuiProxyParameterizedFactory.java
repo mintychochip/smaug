@@ -26,24 +26,23 @@ import dev.triumphteam.gui.guis.GuiItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import org.aincraft.api.event.StationUpdateEvent;
+import org.aincraft.api.event.TrackableProgressUpdateEvent;
 import org.aincraft.container.IParameterizedFactory;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
 import org.aincraft.container.gui.AnvilGuiProxy;
-import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiItemWrapper;
+import org.aincraft.container.gui.AnvilGuiProxy.BasicStationItem;
 import org.aincraft.container.gui.AnvilGuiProxy.MetaItem;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
-import org.aincraft.container.gui.AnvilGuiProxy.BasicStationItem;
+import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiItemWrapper;
 import org.aincraft.container.gui.ItemParameterizedFactory.Builder;
 import org.aincraft.container.item.ItemStackBuilder;
-import org.aincraft.database.model.Station;
+import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.TrackableProgressMeta;
-import org.aincraft.listener.IStationService;
+import org.aincraft.listener.IMutableStationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -53,10 +52,10 @@ public final class AnvilGuiProxyParameterizedFactory implements
 
   private static final int ROWS = 4;
 
-  private final IStationService stationService;
+  private final IMutableStationService stationService;
   private final Plugin plugin;
 
-  public AnvilGuiProxyParameterizedFactory(IStationService stationService, Plugin plugin) {
+  public AnvilGuiProxyParameterizedFactory(IMutableStationService stationService, Plugin plugin) {
     this.stationService = stationService;
     this.plugin = plugin;
   }
@@ -65,7 +64,7 @@ public final class AnvilGuiProxyParameterizedFactory implements
   public @NotNull AnvilGuiProxy create(
       @NotNull StationPlayerModelProxy<TrackableProgressMeta> data) {
     Preconditions.checkNotNull(data);
-    Station<TrackableProgressMeta> station = data.station();
+    MutableStation<TrackableProgressMeta> mutableStation = data.mutableStation();
     Player player = data.player();
     final Gui main = Gui.gui(GuiType.DISPENSER).title(Component.text("Menu"))
         .disableAllInteractions()
@@ -77,11 +76,12 @@ public final class AnvilGuiProxyParameterizedFactory implements
         ROWS,
         Component.text("Recipes"), (e, recipe) -> {
       final HumanEntity entity = e.getWhoClicked();
-      final TrackableProgressMeta meta = station.getMeta();
+      final TrackableProgressMeta meta = mutableStation.getMeta();
       final String recipeKey = recipe.getKey();
       if (meta.getRecipeKey() == null) {
         Bukkit.getPluginManager().callEvent(
-            new StationUpdateEvent<>(station.setMeta(m -> m.setRecipeKey(recipeKey)), player));
+            new TrackableProgressUpdateEvent(mutableStation.setMeta(m -> m.setRecipeKey(recipeKey)),
+                player));
         return;
       }
       if (meta.getRecipeKey() != null && !meta.getRecipeKey().equals(recipeKey)) {
@@ -89,18 +89,18 @@ public final class AnvilGuiProxyParameterizedFactory implements
           @Override
           public void run() {
             Bukkit.getPluginManager()
-                .callEvent(new StationUpdateEvent<>(
-                    station.setMeta(m -> m.toBuilder().setProgress(0).setRecipeKey(recipeKey)),
+                .callEvent(new TrackableProgressUpdateEvent(
+                    mutableStation.setMeta(m -> m.toBuilder().setProgress(0).setRecipeKey(recipeKey)),
                     player));
           }
         }.runTask(plugin);
       }
     });
     RecipeSelectorItem recipeSelectorItem = new RecipeSelectorItemParameterizedFactory(player, main,
-        codexGuiWrapperFactory, recipeSelectorWrapperFactory, createFiller()).create(station);
-    MetaItem metaItem = MetaItemFactory.create(station);
+        codexGuiWrapperFactory, recipeSelectorWrapperFactory, createFiller()).create(mutableStation);
+    MetaItem metaItem = MetaItemFactory.create(mutableStation);
     BasicStationItem storageItem = new StorageItemParameterizedFactory(stationService).create(
-        station);
+        mutableStation);
     main.setItem(3, storageItem.getGuiItem());
     main.setItem(4, recipeSelectorItem.getGuiItem());
     main.setItem(5, metaItem.getGuiItem());
@@ -116,9 +116,10 @@ public final class AnvilGuiProxyParameterizedFactory implements
 
   static final class MetaItemFactory {
 
-    private static MetaItem create(Station station) {
-      final UpdatableGuiItemWrapper<Station> itemWrapper = UpdatableGuiItemWrapper.create(station,
-          new Builder<Station>().setDisplayNameFunction(
+    private static MetaItem create(MutableStation<TrackableProgressMeta> mutableStation) {
+      final UpdatableGuiItemWrapper<MutableStation<TrackableProgressMeta>> itemWrapper = UpdatableGuiItemWrapper.create(
+          mutableStation,
+          new Builder<MutableStation<TrackableProgressMeta>>().setDisplayNameFunction(
                   s -> MiniMessage.miniMessage().deserialize("Station: <a>",
                       Placeholder.component("a", Component.text(s.id().toString()))))
               .setItemModelFunction( // can make this dynamic off the station key
@@ -129,16 +130,17 @@ public final class AnvilGuiProxyParameterizedFactory implements
   }
 
   static final class StorageItemParameterizedFactory implements
-      IParameterizedFactory<BasicStationItem, Station<TrackableProgressMeta>> {
+      IParameterizedFactory<BasicStationItem, MutableStation<TrackableProgressMeta>> {
 
-    private final IStationService stationService;
+    private final IMutableStationService stationService;
 
-    StorageItemParameterizedFactory(IStationService stationService) {
+    StorageItemParameterizedFactory(IMutableStationService stationService) {
       this.stationService = stationService;
     }
 
     @Override
-    public @NotNull AnvilGuiProxy.BasicStationItem create(@NotNull Station<TrackableProgressMeta> station) {
+    public @NotNull AnvilGuiProxy.BasicStationItem create(
+        @NotNull MutableStation<TrackableProgressMeta> mutableStation) {
       GuiItem guiItem = ItemStackBuilder.create(Material.CHEST)
           .meta(meta -> meta.displayName(Component.text("Storage")))
           .asGuiItem(e -> {

@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.SmaugRecipe;
-import org.aincraft.database.model.Station;
+import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.TrackableProgressMeta;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
@@ -57,13 +57,14 @@ public final class Smaug {
     return smaug.getRecipeFetcher().all(recipePredicate);
   }
 
-  public static List<SmaugRecipe> fetchAllRecipes(Station<TrackableProgressMeta> station,
+  public static List<SmaugRecipe> fetchAllRecipes(
+      MutableStation<TrackableProgressMeta> mutableStation,
       @Nullable List<ItemStack> externalStacks) {
-    Preconditions.checkNotNull(station);
+    Preconditions.checkNotNull(mutableStation);
 
-    Predicate<SmaugRecipe> keyMatches = r -> r.getStationKey().equals(station.stationKey());
+    Predicate<SmaugRecipe> keyMatches = r -> r.getStationKey().equals(mutableStation.stationKey());
     List<ItemStack> contents = (externalStacks == null)
-        ? station.getMeta().getInventory().getContents()
+        ? mutableStation.getMeta().getInventory().getContents()
         : externalStacks;
 
     return fetchAllRecipes(keyMatches.and(r -> r.test(contents).isSuccess()));
@@ -77,11 +78,11 @@ public final class Smaug {
    * will be returned.
    * </p>
    *
-   * @param station whose key is being checked
+   * @param mutableStation whose key is being checked
    * @return list of {@code SmaugRecipe}
    */
-  public static List<SmaugRecipe> fetchAllRecipes(Station station) {
-    return smaug.getRecipeFetcher().all(r -> r.getStationKey().equals(station.stationKey()));
+  public static List<SmaugRecipe> fetchAllRecipes(MutableStation mutableStation) {
+    return smaug.getRecipeFetcher().all(r -> r.getStationKey().equals(mutableStation.stationKey()));
   }
 
   public static Key resolveKey(String keyString, boolean minecraft) {

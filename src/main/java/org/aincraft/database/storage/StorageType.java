@@ -19,6 +19,13 @@
 
 package org.aincraft.database.storage;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import org.aincraft.inject.implementation.ResourceExtractor;
+
 public enum StorageType {
   H2("h2", "org.h2.Driver"),
   SQLITE("sqlite", "org.sqlite.JDBC"),
@@ -59,5 +66,16 @@ public enum StorageType {
       }
     }
     return StorageType.getDefault();
+  }
+  public List<String> getSqlTables(ResourceExtractor extractor) {
+    try (InputStream resourceStream = extractor.getResourceStream(
+        "sql/%s.sql".formatted(identifier))) {
+      String sqlTables = new String(resourceStream.readAllBytes(), StandardCharsets.UTF_8);
+      return Arrays.stream(sqlTables.split(";")).toList().stream()
+          .map(s -> s.trim() + ";").filter(s -> !s.equals(";"))
+          .toList();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
