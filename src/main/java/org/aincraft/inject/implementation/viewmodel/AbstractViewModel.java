@@ -23,7 +23,7 @@ import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import org.aincraft.container.IParameterizedFactory;
+import org.aincraft.container.IFactory;
 import org.aincraft.container.display.IViewModel;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +37,7 @@ abstract class AbstractViewModel<M, V, K> implements IViewModel<M, V> {
   abstract Class<? extends IViewModelBinding> getBindingClass();
 
   @NotNull
-  abstract IParameterizedFactory<V, M> getViewFactory();
+  abstract IFactory<V, M> getViewFactory();
 
   @NotNull
   abstract IViewModelBinding viewToBinding(@NotNull V view);
@@ -82,7 +82,7 @@ abstract class AbstractViewModel<M, V, K> implements IViewModel<M, V> {
     if (this.isBound(model)) {
       return bindings.get(modelKey);
     }
-    final IParameterizedFactory<V, M> viewFactory = this.getViewFactory();
+    final IFactory<V, M> viewFactory = this.getViewFactory();
     return this.bind(model, viewFactory.create(model));
   }
 

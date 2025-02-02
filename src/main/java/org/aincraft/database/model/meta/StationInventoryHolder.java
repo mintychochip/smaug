@@ -17,27 +17,10 @@
  *
  */
 
-package org.aincraft.listener;
+package org.aincraft.database.model.meta;
 
-import java.util.UUID;
-import net.kyori.adventure.key.Key;
-import org.aincraft.database.model.MutableStation;
-import org.aincraft.database.model.meta.Meta;
-import org.bukkit.Location;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.aincraft.database.model.meta.TrackableProgressMeta.StationInventory;
 
-public interface IMutableStationService<M extends Meta<M>> {
-
-  MutableStation<M> createStation(Key stationKey, Location location);
-
-  void updateStation(MutableStation<M> mutableStation);
-
-  void deleteStation(Location location);
-
-  @Nullable
-  MutableStation<M> getStation(@NotNull Location location);
-
-  @Nullable
-  MutableStation<M> getStation(@NotNull UUID stationId);
+public interface StationInventoryHolder {
+  StationInventory getInventory();
 }

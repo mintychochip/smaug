@@ -28,38 +28,38 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.aincraft.Smaug;
-import org.aincraft.container.IParameterizedFactory;
+import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiItemWrapper;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiWrapper;
-import org.aincraft.container.gui.ItemParameterizedFactory;
+import org.aincraft.container.gui.ItemFactory;
 import org.aincraft.container.item.ItemStackBuilder;
-import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.util.Util;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-final class RecipeSelectorItemParameterizedFactory implements
-    IParameterizedFactory<RecipeSelectorItem, MutableStation<TrackableProgressMeta>> {
+final class RecipeSelectorItemFactory implements
+    IFactory<RecipeSelectorItem, IMetaStation<TrackableProgressMeta>> {
 
   private final Player player;
   private final BaseGui mainGui;
-  private final IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, MutableStation<TrackableProgressMeta>> codexGuiParameterizedFactory;
-  private final IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, MutableStation<TrackableProgressMeta>> recipeSelectorGuiParameterizedFactory;
+  private final IFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, IMetaStation<TrackableProgressMeta>> codexGuiFactory;
+  private final IFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, IMetaStation<TrackableProgressMeta>> recipeSelectorGuiFactory;
   private final GuiItem filler;
 
-  RecipeSelectorItemParameterizedFactory(Player player, BaseGui mainGui,
-      IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, MutableStation<TrackableProgressMeta>> codexGuiParameterizedFactory,
-      IParameterizedFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, MutableStation<TrackableProgressMeta>> recipeSelectorGuiParameterizedFactory,
+  RecipeSelectorItemFactory(Player player, BaseGui mainGui,
+      IFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, IMetaStation<TrackableProgressMeta>> codexGuiFactory,
+      IFactory<UpdatableGuiWrapper<SmaugRecipe, PaginatedGui>, IMetaStation<TrackableProgressMeta>> recipeSelectorGuiFactory,
       GuiItem filler) {
     this.player = player;
     this.mainGui = mainGui;
-    this.codexGuiParameterizedFactory = codexGuiParameterizedFactory;
-    this.recipeSelectorGuiParameterizedFactory = recipeSelectorGuiParameterizedFactory;
+    this.codexGuiFactory = codexGuiFactory;
+    this.recipeSelectorGuiFactory = recipeSelectorGuiFactory;
     this.filler = filler;
   }
 
@@ -89,10 +89,10 @@ final class RecipeSelectorItemParameterizedFactory implements
   }
 
   @Override
-  public @NotNull RecipeSelectorItem create(@NotNull MutableStation<TrackableProgressMeta> data) {
-    final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> codexGuiWrapper = codexGuiParameterizedFactory.create(
+  public @NotNull RecipeSelectorItem create(@NotNull IMetaStation<TrackableProgressMeta> data) {
+    final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> codexGuiWrapper = codexGuiFactory.create(
         data);
-    final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGuiWrapper = recipeSelectorGuiParameterizedFactory.create(
+    final UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> recipeSelectorGuiWrapper = recipeSelectorGuiFactory.create(
         data);
 
     final GuiItem linkedRecipeItem = createLinkedWrapperGuiItem(Material.BOOK,
@@ -118,7 +118,7 @@ final class RecipeSelectorItemParameterizedFactory implements
     final String recipeKey = meta.getRecipeKey();
     return new RecipeSelectorItem(
         UpdatableGuiItemWrapper.create(recipeKey != null ? Smaug.fetchRecipe(recipeKey) : null,
-            new ItemParameterizedFactory.Builder<SmaugRecipe>().setDisplayNameFunction(r -> {
+            new ItemFactory.Builder<SmaugRecipe>().setDisplayNameFunction(r -> {
                   if (r == null) {
                     return Component.text("No Recipe Selected");
                   }
@@ -126,7 +126,7 @@ final class RecipeSelectorItemParameterizedFactory implements
                       Placeholder.component("a",
                           Util.retrieveDisplayName(r.getOutput().getReference())));
                 })
-                .setItemModelFunction(AbstractGuiWrapperParameterizedFactory::retrieveItemModel).build(),
+                .setItemModelFunction(AbstractGuiWrapperFactory::retrieveItemModel).build(),
             e -> {
               if (e.isLeftClick()) {
                 recipeSelectorGuiWrapper.open(player);

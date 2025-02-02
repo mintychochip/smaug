@@ -17,20 +17,18 @@
  *
  */
 
-package org.aincraft.database.model.meta;
+package org.aincraft.container.anvil;
 
-import org.jetbrains.annotations.NotNull;
+import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.test.IMetaStation;
+import org.aincraft.database.model.test.IStation;
+import org.bukkit.entity.Player;
 
-public interface Meta<M extends Meta<M>> {
+public record MetaStationPlayerModel<M extends Meta<M>>(
+    Player player, IMetaStation<M> station) {
 
-  M clone();
-
-  interface MetaMapping<M extends Meta<M>> {
-    @NotNull
-    M createMeta(@NotNull String idString);
-    @NotNull
-    M getMeta(@NotNull String idString);
-
-    void updateMeta(@NotNull String idString, @NotNull M meta) throws IllegalArgumentException;
+  @Override
+  public int hashCode() {
+    return player.hashCode() + station.getId().hashCode();
   }
 }

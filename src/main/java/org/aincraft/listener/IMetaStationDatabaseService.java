@@ -19,6 +19,23 @@
 
 package org.aincraft.listener;
 
-public class StationServiceFactory {
-  
+import java.util.UUID;
+import net.kyori.adventure.key.Key;
+import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.test.IMetaStation;
+import org.bukkit.Location;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public interface IMetaStationDatabaseService<M extends Meta<M>> extends IStationDatabaseService {
+
+  IMetaStation<M> createStation(Key stationKey, Location location);
+
+  void updateStation(IMetaStation<M> mutableStation);
+
+  @Nullable
+  IMetaStation<M> getStation(@NotNull Location location);
+
+  @Nullable
+  IMetaStation<M> getStation(@NotNull UUID stationId);
 }

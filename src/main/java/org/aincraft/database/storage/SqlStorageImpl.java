@@ -20,11 +20,8 @@
 package org.aincraft.database.storage;
 
 import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
 import java.sql.SQLException;
 import java.util.UUID;
-import net.kyori.adventure.key.Key;
-import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.test.IStation;
 import org.bukkit.Location;
 
@@ -98,7 +95,12 @@ public class SqlStorageImpl implements IStorage {
     final int x = location.getBlockX();
     final int y = location.getBlockY();
     final int z = location.getBlockZ();
-    executor.executeUpdate(REMOVE_STATION_BY_LOCATION,worldName,x,y,z);
+    executor.executeUpdate(REMOVE_STATION_BY_LOCATION,worldName, x, y, z);
+  }
+
+  @Override
+  public SqlExecutor getExecutor() {
+    return executor;
   }
 
   @Override

@@ -17,12 +17,40 @@
  *
  */
 
-package org.aincraft.container;
+package org.aincraft.handler;
 
+import org.aincraft.database.model.test.IStation;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public interface IParameterizedFactory<T, D> {
+public interface Context {
 
   @NotNull
-  T create(@NotNull D data);
+  static Context create(@NotNull IStation station,
+      @NotNull PlayerInteractEvent event) {
+    return new ContextImpl(station, event);
+  }
+
+  @NotNull
+  IStation getStation();
+
+  @NotNull
+  PlayerInteractEvent getEvent();
+
+  boolean isRightClick();
+
+  default boolean isLeftClick() {
+    return !isRightClick();
+  }
+
+  Player getPlayer();
+
+  ItemStack getItem();
+
+  void cancel();
+
+  Block getClickedBlock();
 }

@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.SmaugRecipe;
-import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
@@ -58,11 +58,11 @@ public final class Smaug {
   }
 
   public static List<SmaugRecipe> fetchAllRecipes(
-      MutableStation<TrackableProgressMeta> mutableStation,
+      IMetaStation<TrackableProgressMeta> mutableStation,
       @Nullable List<ItemStack> externalStacks) {
     Preconditions.checkNotNull(mutableStation);
 
-    Predicate<SmaugRecipe> keyMatches = r -> r.getStationKey().equals(mutableStation.stationKey());
+    Predicate<SmaugRecipe> keyMatches = r -> r.getStationKey().equals(mutableStation.getKey());
     List<ItemStack> contents = (externalStacks == null)
         ? mutableStation.getMeta().getInventory().getContents()
         : externalStacks;
@@ -81,8 +81,8 @@ public final class Smaug {
    * @param mutableStation whose key is being checked
    * @return list of {@code SmaugRecipe}
    */
-  public static List<SmaugRecipe> fetchAllRecipes(MutableStation mutableStation) {
-    return smaug.getRecipeFetcher().all(r -> r.getStationKey().equals(mutableStation.stationKey()));
+  public static List<SmaugRecipe> fetchAllRecipes(IMetaStation mutableStation) {
+    return smaug.getRecipeFetcher().all(r -> r.getStationKey().equals(mutableStation.getKey()));
   }
 
   public static Key resolveKey(String keyString, boolean minecraft) {

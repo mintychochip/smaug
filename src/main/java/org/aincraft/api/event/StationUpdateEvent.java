@@ -19,8 +19,8 @@
 
 package org.aincraft.api.event;
 
-import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.test.IMetaStation;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -31,13 +31,13 @@ public abstract class StationUpdateEvent<M extends Meta<M>> extends Event implem
 
   private static HandlerList handlers = new HandlerList();
 
-  private final MutableStation<M> mutableStation;
+  private final IMetaStation<M> mutableStation;
 
   private final Player player;
 
   private boolean cancelled = false;
 
-  StationUpdateEvent(MutableStation<M> mutableStation, Player player) {
+  StationUpdateEvent(IMetaStation<M> mutableStation, Player player) {
     this.mutableStation = mutableStation;
     this.player = player;
   }
@@ -47,7 +47,7 @@ public abstract class StationUpdateEvent<M extends Meta<M>> extends Event implem
     return player;
   }
 
-  public MutableStation<M> getStation() {
+  public IMetaStation<M> getStation() {
     return mutableStation;
   }
 

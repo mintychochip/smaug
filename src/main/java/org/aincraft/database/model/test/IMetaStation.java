@@ -22,7 +22,7 @@ package org.aincraft.database.model.test;
 import java.util.function.Consumer;
 import org.aincraft.database.model.meta.Meta;
 
-public interface IMetaStation<M extends Meta<M>> {
+public interface IMetaStation<M extends Meta<M>> extends IStation {
 
   static <M extends Meta<M>> IMetaStation<M> create(IStation station, M meta) {
     return MetaStationImpl.create(station, meta);

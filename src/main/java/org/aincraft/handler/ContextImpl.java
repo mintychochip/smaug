@@ -17,44 +17,53 @@
  *
  */
 
-package org.aincraft.api.event;
+package org.aincraft.handler;
 
 import org.aincraft.database.model.test.IStation;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
-import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public abstract class StationEvent extends Event {
+record ContextImpl(IStation station,
+                   PlayerInteractEvent event) implements
+    Context {
 
-  private static HandlerList handlers = new HandlerList();
-
-  private final IStation station;
-
-  @Nullable
-  private final Player player;
-
-  public StationEvent(IStation station, @Nullable Player player) {
-    this.station = station;
-    this.player = player;
-  }
-
-  public @Nullable Player getPlayer() {
-    return player;
-  }
-
-  public IStation getStation() {
+  @Override
+  public @NotNull IStation getStation() {
     return station;
   }
 
-  @NotNull
   @Override
-  public HandlerList getHandlers() {
-    return handlers;
+  public @NotNull PlayerInteractEvent getEvent() {
+    return event;
   }
 
-  public static HandlerList getHandlerList() {
-    return handlers;
+  @Override
+  public boolean isRightClick() {
+    final Action a = event.getAction();
+    return a.isRightClick();
+  }
+
+  @Override
+  public Player getPlayer() {
+    return event.getPlayer();
+  }
+
+  @Override
+  public ItemStack getItem() {
+    return event.getItem();
+  }
+
+  @Override
+  public void cancel() {
+    event.setCancelled(true);
+  }
+
+  @Override
+  public Block getClickedBlock() {
+    return event.getClickedBlock();
   }
 }

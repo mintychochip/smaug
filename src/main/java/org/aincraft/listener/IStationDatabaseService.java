@@ -19,8 +19,14 @@
 
 package org.aincraft.listener;
 
+import java.util.UUID;
+import net.kyori.adventure.key.Key;
 import org.aincraft.database.model.test.IStation;
+import org.bukkit.Location;
 
-public interface IStationService {
+public interface IStationDatabaseService {
   void removeStation(IStation station);
+  IStation createStation(Key stationKey, Location location);
+  IStation getStation(Location location);
+  IStation getStation(UUID stationId);
 }

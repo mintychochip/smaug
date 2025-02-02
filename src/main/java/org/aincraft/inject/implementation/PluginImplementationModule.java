@@ -40,7 +40,6 @@ public final class PluginImplementationModule extends AbstractModule {
   private Class<? extends IRecipeFetcher> recipeFetcherClazz = RecipeFetcherImpl.class;
   private Class<? extends IRecipeParser> recipeParserClazz = RecipeParserImpl.class;
   private Class<? extends Provider<IStorage>> storageProviderClazz = StorageProvider.class;
-  //  private Class<? extends IStationService> stationServiceClazz = StationServiceImpl.class;
   private Class<? extends Provider<IItemRegistry>> itemRegistryProviderClazz = ItemRegistryProvider.class;
   private Class<? extends Provider<SqlConfig>> sqlConfigProviderClazz = SqlConfigProvider.class;
 //  private Class<? extends Provider<IViewModelController<Station, AnvilItemDisplayView>>> stationViewModelControllerClazz = ItemDisplayControllerProvider.class;
@@ -89,12 +88,6 @@ public final class PluginImplementationModule extends AbstractModule {
   public void setRecipeParserClazz(
       Class<? extends IRecipeParser> recipeParserClazz) {
     this.recipeParserClazz = recipeParserClazz;
-  }
-
-  public PluginImplementationModule setSourceProviderClazz(
-      Class<? extends Provider<IConnectionSource>> sourceProviderClazz) {
-    this.sourceProviderClazz = sourceProviderClazz;
-    return this;
   }
 
   public void setItemRegistryProviderClazz(

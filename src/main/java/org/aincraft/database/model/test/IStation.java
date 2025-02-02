@@ -30,7 +30,11 @@ import org.jetbrains.annotations.NotNull;
 public interface IStation {
 
   static IStation create(String idString, String keyString, String worldName, int x, int y, int z) {
-    return StationImpl.create(idString, keyString, worldName, x, y, z);
+    final UUID id = UUID.fromString(idString);
+    final Key key = Key.key(keyString);
+    final World world = Bukkit.getWorld(worldName);
+    return new StationImpl(idString, keyString, worldName, x, y, z, id, key, world,
+        new Location(world, x, y, z));
   }
 
   String getIdString();

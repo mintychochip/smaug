@@ -28,10 +28,10 @@ import dev.triumphteam.gui.guis.PaginatedGui;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import org.aincraft.container.IParameterizedFactory;
+import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
-import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.test.IMetaStation;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
@@ -64,11 +64,11 @@ public class AnvilGuiProxy {
   public static final class UpdatableGuiWrapper<T, G extends BaseGui> {
 
     private final G gui;
-    private final IParameterizedFactory<ItemStack, T> itemFactory;
+    private final IFactory<ItemStack, T> itemFactory;
     private BiConsumer<InventoryClickEvent, T> biConsumer;
     private Consumer<UpdatableGuiWrapper<T, G>> updateConsumer;
 
-    private UpdatableGuiWrapper(G gui, IParameterizedFactory<ItemStack, T> itemFactory,
+    private UpdatableGuiWrapper(G gui, IFactory<ItemStack, T> itemFactory,
         BiConsumer<InventoryClickEvent, T> biConsumer) {
       this.gui = gui;
       this.itemFactory = itemFactory;
@@ -92,12 +92,12 @@ public class AnvilGuiProxy {
     }
 
     public static <T, G extends BaseGui> UpdatableGuiWrapper.Builder<T, G> create(G gui, List<T> data,
-        IParameterizedFactory<ItemStack, T> itemFactory) {
+        IFactory<ItemStack, T> itemFactory) {
       return new Builder<>(gui, data, itemFactory);
     }
 
     public static <T, G extends BaseGui> UpdatableGuiWrapper<T, G> create(G gui, List<T> data,
-        IParameterizedFactory<ItemStack, T> itemFactory,
+        IFactory<ItemStack, T> itemFactory,
         BiConsumer<InventoryClickEvent, T> recipeBiConsumer,
         Consumer<UpdatableGuiWrapper<T, G>> updateConsumer) {
       UpdatableGuiWrapper<T, G> wrapper = new UpdatableGuiWrapper<>(gui, itemFactory, recipeBiConsumer);
@@ -129,7 +129,7 @@ public class AnvilGuiProxy {
       this.updateConsumer = updateConsumer;
     }
 
-    public IParameterizedFactory<ItemStack, T> getItemFactory() {
+    public IFactory<ItemStack, T> getItemFactory() {
       return itemFactory;
     }
 
@@ -141,11 +141,11 @@ public class AnvilGuiProxy {
 
       private final G gui;
       private final List<T> data;
-      private final IParameterizedFactory<ItemStack, T> itemFactory;
+      private final IFactory<ItemStack, T> itemFactory;
       private BiConsumer<InventoryClickEvent, T> clickEventConsumer;
       private Consumer<UpdatableGuiWrapper<T, G>> updateConsumer;
 
-      private Builder(G gui, List<T> data, IParameterizedFactory<ItemStack, T> itemFactory) {
+      private Builder(G gui, List<T> data, IFactory<ItemStack, T> itemFactory) {
         this.gui = gui;
         this.data = data;
         this.itemFactory = itemFactory;
@@ -178,16 +178,16 @@ public class AnvilGuiProxy {
    * @param itemFactory
    * @param <T>
    */
-  public record UpdatableGuiItemWrapper<T>(GuiItem item, IParameterizedFactory<ItemStack, T> itemFactory) {
+  public record UpdatableGuiItemWrapper<T>(GuiItem item, IFactory<ItemStack, T> itemFactory) {
 
     static <T> UpdatableGuiItemWrapper<T> create(@Nullable T object,
-        IParameterizedFactory<ItemStack, T> itemFactory) {
+        IFactory<ItemStack, T> itemFactory) {
       ItemStack stack = itemFactory.create(object);
       return new UpdatableGuiItemWrapper<>(new GuiItem(stack), itemFactory);
     }
 
     public static <T> UpdatableGuiItemWrapper<T> create(@Nullable T object,
-        IParameterizedFactory<ItemStack, T> itemFactory,
+        IFactory<ItemStack, T> itemFactory,
         GuiAction<InventoryClickEvent> action) {
       ItemStack stack = itemFactory.create(object);
       return new UpdatableGuiItemWrapper<>(new GuiItem(stack, action), itemFactory);
@@ -207,7 +207,7 @@ public class AnvilGuiProxy {
     }
   }
 
-  public record MetaItem(UpdatableGuiItemWrapper<MutableStation<TrackableProgressMeta>> itemWrapper) implements AnvilProxyItem {
+  public record MetaItem(UpdatableGuiItemWrapper<IMetaStation<TrackableProgressMeta>> itemWrapper) implements AnvilProxyItem {
 
     @Override
     public GuiItem getGuiItem() {

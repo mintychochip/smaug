@@ -52,14 +52,6 @@ class StationImpl implements IStation {
     this.blockLocation = blockLocation;
   }
 
-  static IStation create(String idString, String keyString, String worldName, int x, int y, int z) {
-    final UUID id = UUID.fromString(idString);
-    final Key key = Key.key(keyString);
-    final World world = Bukkit.getWorld(worldName);
-    return new StationImpl(idString, keyString, worldName, x, y, z, id, key, world,
-        new Location(world, x, y, z));
-  }
-
   @Override
   public String getIdString() {
     return idString;

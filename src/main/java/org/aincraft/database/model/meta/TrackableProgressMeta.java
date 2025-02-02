@@ -38,13 +38,15 @@ import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
 import org.aincraft.database.model.meta.TrackableProgressMeta.Builder;
 import org.aincraft.database.storage.SqlExecutor;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 public final class TrackableProgressMeta implements
-    BuildableMeta<TrackableProgressMeta, Builder> {
+    BuildableMeta<TrackableProgressMeta, Builder>, StationInventoryHolder {
 
   private final AtomicReference<String> recipeKeyReference;
   private final AtomicReference<Float> progressReference;
@@ -89,10 +91,6 @@ public final class TrackableProgressMeta implements
     return recipeKeyReference.get();
   }
 
-  @Nullable
-  public StationInventory getInventory() {
-    return inventoryReference.get();
-  }
 
   public float getProgress() {
     return progressReference.get();
@@ -102,6 +100,11 @@ public final class TrackableProgressMeta implements
   public Builder toBuilder() {
     return new Builder(this.getRecipeKey(), this.getProgress(),
         this.getInventory());
+  }
+
+  @Override
+  public StationInventory getInventory() {
+    return inventoryReference.get();
   }
 
   public static final class Builder implements
@@ -284,6 +287,8 @@ public final class TrackableProgressMeta implements
 
     private static final String GET_META = "SELECT inventory,recipe_key,progress FROM trackable_progress_meta WHERE station_id=?";
 
+    private static final String UPDATE_META = "UPDATE trackable_progress_meta SET inventory=?,recipe_key=?,progress=? WHERE station_id=?";
+
     @Override
     public @NotNull TrackableProgressMeta createMeta(@NotNull String idString) {
       Preconditions.checkNotNull(idString);
@@ -306,6 +311,19 @@ public final class TrackableProgressMeta implements
           throw new RuntimeException(e);
         }
       }, GET_META, idString);
+    }
+
+    @Override
+    public void updateMeta(@NotNull String idString, @NotNull TrackableProgressMeta meta)
+        throws IllegalArgumentException {
+      Preconditions.checkNotNull(idString);
+      Preconditions.checkNotNull(meta);
+      final StationInventory inventory = meta.getInventory();
+      if (inventory == null) {
+        throw new IllegalArgumentException();
+      }
+      executor.executeUpdate(UPDATE_META, inventory.inventoryString, meta.getRecipeKey(),
+          meta.getProgress());
     }
   }
 }

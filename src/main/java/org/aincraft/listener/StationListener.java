@@ -19,20 +19,24 @@
 
 package org.aincraft.listener;
 
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
+import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.meta.StationInventoryHolder;
+import org.aincraft.database.model.meta.TrackableProgressMeta.StationInventory;
+import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.database.model.test.IStation;
-import org.aincraft.database.storage.IConnectionSource;
-import org.aincraft.database.storage.SqlExecutor;
-import org.aincraft.handler.StationHandler;
+import org.aincraft.database.storage.IStorage;
+import org.aincraft.handler.Context;
+import org.aincraft.handler.IStationHandler;
+import org.aincraft.listener.StationServiceLocator.StationServices;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -45,12 +49,14 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.Nullable;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class StationListener implements Listener {
 
@@ -66,22 +72,24 @@ public class StationListener implements Listener {
         material == Material.DAMAGED_ANVIL ||
         materialString.contains("CONCRETE_POWDER");
   };
-  private final Map<Key, StationHandler<?>> handlers;
+  private final Map<Key, IStationHandler> handlers;
   private final Plugin plugin;
+  private final IStationDatabaseService stationService;
   private final NamespacedKey stationKey;
-  private final Map<Key, IMutableStationService<?>> serviceMap;
-  private final IConnectionSource connectionSource;
+  private final IStorage storage;
+  private final StationServiceLocator serviceLocator;
 
   @Inject
-  public StationListener(Map<Key, StationHandler<?>> handlers,
-      Plugin plugin,
-      @Named("station") NamespacedKey stationKey, Map<Key, IMutableStationService<?>> serviceMap,
-      IConnectionSource connectionSource) {
+  public StationListener(Map<Key, IStationHandler> handlers,
+      Plugin plugin, IStationDatabaseService stationService,
+      @Named("station") NamespacedKey stationKey, StationServiceLocator serviceLocator,
+      IStorage storage) {
     this.handlers = handlers;
     this.plugin = plugin;
+    this.stationService = stationService;
     this.stationKey = stationKey;
-    this.serviceMap = serviceMap;
-    this.connectionSource = connectionSource;
+    this.serviceLocator = serviceLocator;
+    this.storage = storage;
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -108,31 +116,38 @@ public class StationListener implements Listener {
       return;
     }
     Player player = event.getPlayer();
-    IMutableStationService<?> service = serviceMap.get(Key.key(keyString));
-    if (service == null) {
+    StationServices services = serviceLocator.getServices(Key.key(keyString));
+    if (services == null) {
       return;
     }
-    service.createStation(Key.key(keyString), blockLocation);
+    services.getDatabaseService().createStation(Key.key(keyString), blockLocation);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   private void removeBlocksCheckForStation(final BlockBreakEvent event) {
-    final KeyService keyService = new KeyService(new SqlExecutor(connectionSource));
-    final IStation station = keyService.getStation(event.getBlock().getLocation());
+    final Block block = event.getBlock();
+    final Location location = block.getLocation();
+    final StationServices services = serviceLocator.getServices(location);
+    if (services == null) {
+      return;
+    }
+    final IStationDatabaseService databaseService = services.getDatabaseService();
+    final IStation station = databaseService.getStation(location);
     if (station == null) {
       return;
     }
+    World world = station.getWorld();
     Player player = event.getPlayer();
     Bukkit.getPluginManager()
         .callEvent(new StationRemoveEvent(station, player, RemovalCause.PLAYER));
-    for (int y = blockLocation.getBlockY() + 1; y < world.getMaxHeight(); y++) {
+    for (int y = location.getBlockY() + 1; y < world.getMaxHeight(); y++) {
       Block blockAbove = world.getBlockAt(
-          new Location(world, blockLocation.getBlockX(), y, blockLocation.getBlockZ()));
+          new Location(world, location.getBlockX(), y, location.getBlockZ()));
       if (!IS_FALLING_BLOCK_TYPE.test(blockAbove)) {
         break;
       }
       Bukkit.getPluginManager()
-          .callEvent(new StationRemoveEvent(IStation, player, RemovalCause.PLAYER));
+          .callEvent(new StationRemoveEvent(station, player, RemovalCause.PLAYER));
     }
   }
 
@@ -141,85 +156,51 @@ public class StationListener implements Listener {
     if (event.isCancelled()) {
       return;
     }
-    IStation station = event.getStation();
-    CompletableFuture.runAsync(() -> stationService.deleteStation(station.blockLocation()));
-    final World world = station.world();
-    Meta<?> meta = station.getMeta();
-    if(meta instanceof TrackableProgressMeta tm) {
-      StationInventory stationInventory = tm.getInventory();
-      final Location location = station.centerLocation();
-      new BukkitRunnable() {
-        @Override
-        public void run() {
-          List<ItemStack> contents = stationInventory.getContents();
-          for (ItemStack content : contents) {
-            if (content != null) {
-              world.dropItemNaturally(location, content);
-            }
-          }
-        }
-      }.runTask(plugin);
+    final IStation station = event.getStation();
+    CompletableFuture.runAsync(() -> stationService.removeStation(station));
+    if (!(station instanceof IMetaStation<?> metaStation
+        && metaStation.getMeta() instanceof StationInventoryHolder holder)) {
+      return;
+    }
+    final StationInventory inventory = holder.getInventory();
+    for (ItemStack content : inventory.getContents()) {
+      if (content != null) {
+        station.getWorld().dropItemNaturally(
+            station.getCenterLocation(), content);
+      }
     }
   }
 
-  //  @EventHandler(priority = EventPriority.MONITOR)
+//    @EventHandler(priority = EventPriority.MONITOR)
 //  private void handleUpdateStation(final StationUpdateEvent<?> event) {
 //    if (event.isCancelled()) {
 //      return;
 //    }
 //    CompletableFuture.runAsync(() -> stationService.updateStation(event.getStation()));
 //  }
-//
-//  @EventHandler(priority = EventPriority.MONITOR)
-//  private void handleInteract(final PlayerInteractEvent event) {
-//    Block block = event.getClickedBlock();
-//    if (block == null) {
-//      return;
-//    }
-//    if (block.getType().isAir()) {
-//      return;
-//    }
-//    Station<?> station = stationService.getStation(block.getLocation());
-//    if (station == null) {
-//      return;
-//    }
-//    StationHandler<?> handler = handlers.get(station.stationKey());
-//    if (handler == null) {
-//      return;
-//    }
-//    EquipmentSlot hand = event.getHand();
-//    if (hand == EquipmentSlot.OFF_HAND) {
-//      return;
-//    }
-//   /// handler.handle(Context.create(station,event));
-//  }
 
-  static final class KeyService {
-
-    private static final String GET_KEY_BY_LOCATION = "SELECT id,station_key FROM stations WHERE world_name=? AND x=? AND y=? AND z=?";
-
-    private final SqlExecutor executor;
-
-    KeyService(SqlExecutor executor) {
-      this.executor = executor;
+  @EventHandler(priority = EventPriority.MONITOR)
+  private void handleInteract(final PlayerInteractEvent event) {
+    Block block = event.getClickedBlock();
+    if (block == null) {
+      return;
     }
-
-    @Nullable
-    public IStation getStation(Location location) {
-      final String worldName = location.getWorld().getName();
-      final int x = location.getBlockX();
-      final int y = location.getBlockY();
-      final int z = location.getBlockZ();
-      Preconditions.checkNotNull(location);
-      return executor.queryRow(scanner -> {
-        try {
-          String idString = scanner.getString("id");
-          String keyString = scanner.getString("station_key");
-          return IStation.create(idString, keyString, worldName, x, y, z);
-        } catch (SQLException e) {
-          throw new RuntimeException(e);
-        }
-      }, GET_KEY_BY_LOCATION, worldName, x, y, z);
+    if (block.getType().isAir()) {
+      return;
     }
+    StationServices services = serviceLocator.getServices(block.getLocation());
+    if (services == null) {
+      return;
+    }
+    IStationHandler handler = services.getHandler();
+    IStationDatabaseService databaseService = services.getDatabaseService();
+    if (handler == null) {
+      return;
+    }
+    EquipmentSlot hand = event.getHand();
+    if (hand == EquipmentSlot.OFF_HAND) {
+      return;
+    }
+    handler.handle(Context.create(databaseService.getStation(block.getLocation()), event));
   }
 }

@@ -19,14 +19,14 @@
 
 package org.aincraft.api.event;
 
-import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.test.IMetaStation;
 import org.bukkit.entity.Player;
 
 public class TrackableProgressUpdateEvent extends StationUpdateEvent<TrackableProgressMeta> {
 
   public TrackableProgressUpdateEvent(
-      MutableStation<TrackableProgressMeta> model,
+      IMetaStation<TrackableProgressMeta> model,
       Player player) {
     super(model, player);
   }

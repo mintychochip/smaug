@@ -29,6 +29,6 @@ public interface IStorage {
   IStation getStation(Location location);
   IStation createStation(String keyString, Location location);
   void removeStation(Location location);
-
+  SqlExecutor getExecutor();
   void close();
 }

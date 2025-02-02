@@ -20,9 +20,9 @@
 package org.aincraft.commands;
 
 import com.google.inject.Inject;
-import org.aincraft.database.model.MutableStation;
 import org.aincraft.database.model.meta.TrackableProgressMeta;
-import org.aincraft.listener.IMutableStationService;
+import org.aincraft.database.model.test.IMetaStation;
+import org.aincraft.listener.IMetaStationDatabaseService;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -32,17 +32,17 @@ import org.jetbrains.annotations.NotNull;
 
 public class SmithCommand implements CommandExecutor {
 
-  private final IMutableStationService<TrackableProgressMeta> service;
+  private final IMetaStationDatabaseService<TrackableProgressMeta> service;
 
   @Inject
-  public SmithCommand(IMutableStationService<TrackableProgressMeta> service) {
+  public SmithCommand(IMetaStationDatabaseService<TrackableProgressMeta> service) {
     this.service = service;
   }
 
   @Override
   public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command,
       @NotNull String s, @NotNull String[] strings) {
-    MutableStation<TrackableProgressMeta> mutableStation = service.getStation(
+    IMetaStation<TrackableProgressMeta> mutableStation = service.getStation(
         ((Player) commandSender).getLocation());
     if(mutableStation != null) {
       Bukkit.broadcastMessage(mutableStation.toString());
