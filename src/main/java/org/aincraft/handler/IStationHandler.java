@@ -19,7 +19,11 @@
 
 package org.aincraft.handler;
 
-@FunctionalInterface
+import org.aincraft.database.model.test.IStation;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.jetbrains.annotations.NotNull;
+
 public interface IStationHandler {
-  void handle(Context ctx);
+  void handle(PlayerInteractEvent event);
 }

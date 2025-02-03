@@ -28,17 +28,12 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface IViewModel<M, V> {
+public interface IViewModel<M> {
 
-  IViewModelBinding bind(@NotNull M model, @NotNull V view);
 
   void update(@NotNull M model);
 
-  void remove(@NotNull M model, @Nullable Consumer<IViewModelBinding> bindingConsumer);
-
-  default void remove(@NotNull M model) {
-    remove(model, null);
-  }
+  IViewModelBinding remove(@NotNull M model);
 
   default void removeAll() {
     removeAll(null);

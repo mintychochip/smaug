@@ -63,7 +63,7 @@ public interface IStation {
 
   @NotNull
   default BoundingBox getBoundingBox(double offsetX, double offsetZ) {
-    final Location location = this.getCenterLocation();
+    final Location location = this.getCenterLocation().clone().add(0,1,0);
     final double x = location.getX();
     final double y = location.getY();
     final double z = location.getZ();

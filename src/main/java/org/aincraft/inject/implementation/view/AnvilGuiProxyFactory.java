@@ -55,7 +55,8 @@ public final class AnvilGuiProxyFactory implements
   private final IMetaStationDatabaseService<TrackableProgressMeta> stationService;
   private final Plugin plugin;
 
-  public AnvilGuiProxyFactory(IMetaStationDatabaseService<TrackableProgressMeta> stationService, Plugin plugin) {
+  public AnvilGuiProxyFactory(IMetaStationDatabaseService<TrackableProgressMeta> stationService,
+      Plugin plugin) {
     this.stationService = stationService;
     this.plugin = plugin;
   }
@@ -90,7 +91,10 @@ public final class AnvilGuiProxyFactory implements
           public void run() {
             Bukkit.getPluginManager()
                 .callEvent(new TrackableProgressUpdateEvent(
-                    metaStation.setMeta(m -> m.toBuilder().setProgress(0).setRecipeKey(recipeKey)),
+                    metaStation.setMeta(m -> {
+                      m.setProgress(0);
+                      m.setRecipeKey(recipeKey);
+                    }),
                     player));
           }
         }.runTask(plugin);
@@ -139,7 +143,8 @@ public final class AnvilGuiProxyFactory implements
     }
 
     @Override
-    public @NotNull AnvilGuiProxy.BasicStationItem create(@NotNull IMetaStation<TrackableProgressMeta> mutableStation) {
+    public @NotNull AnvilGuiProxy.BasicStationItem create(
+        @NotNull IMetaStation<TrackableProgressMeta> mutableStation) {
       GuiItem guiItem = ItemStackBuilder.create(Material.CHEST)
           .meta(meta -> meta.displayName(Component.text("Storage")))
           .asGuiItem(e -> {

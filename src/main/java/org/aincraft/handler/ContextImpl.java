@@ -19,6 +19,8 @@
 
 package org.aincraft.handler;
 
+import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.database.model.test.IStation;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -35,6 +37,14 @@ record ContextImpl(IStation station,
   public @NotNull IStation getStation() {
     return station;
   }
+
+//  @Override
+//  public <M extends Meta<M>> IMetaStation<M> getStation(Class<M> mClazz) {
+//    if(!(this.getStation() instanceof IMetaStation<?>)) {
+//      return IMetaStation.create(this.getStation(),null);
+//    }
+//    return null;
+//  }
 
   @Override
   public @NotNull PlayerInteractEvent getEvent() {

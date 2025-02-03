@@ -27,7 +27,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class StationUpdateEvent<M extends Meta<M>> extends Event implements Cancellable {
+public class StationUpdateEvent<M extends Meta<M>> extends Event implements Cancellable {
 
   private static HandlerList handlers = new HandlerList();
 

@@ -24,13 +24,13 @@ import net.kyori.adventure.key.Key;
 import org.bukkit.event.Listener;
 import org.jetbrains.annotations.NotNull;
 
-public interface IViewModelController<M, V> extends Iterable<IViewModel<M, V>>, Listener {
+public interface IViewModelController<M> extends Iterable<IViewModel<M>>, Listener {
 
-  void register(@NotNull Key stationKey, @NotNull IViewModel<M, V> viewModel);
+  void register(@NotNull Key stationKey, @NotNull IViewModel<M> viewModel);
 
   boolean isRegistered(@NotNull Key stationKey);
 
-  IViewModel<M, V> get(@NotNull Key stationKey);
+  IViewModel<M> get(@NotNull Key stationKey);
 
-  Collection<IViewModel<M, V>> getAll();
+  Collection<IViewModel<M>> getAll();
 }

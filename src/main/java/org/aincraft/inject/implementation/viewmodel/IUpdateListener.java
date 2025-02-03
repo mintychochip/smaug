@@ -17,36 +17,16 @@
  *
  */
 
-package org.aincraft.database.model;
+package org.aincraft.inject.implementation.viewmodel;
 
-import java.sql.Timestamp;
-import java.util.UUID;
+import org.aincraft.api.event.StationUpdateEvent;
+import org.aincraft.database.model.meta.Meta;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 
-public class StationUser {
+public interface IUpdateListener<M extends Meta<M>,E extends StationUpdateEvent<M>> extends Listener {
+  @EventHandler
+  void onUpdateMetaStation(E event);
 
-  private final String id;
-  private String name;
-  private final Timestamp joined;
-
-  public StationUser(String id, String name, Timestamp joined) {
-    this.id = id;
-    this.name = name;
-    this.joined = joined;
-  }
-
-  public UUID getId() {
-    return UUID.fromString(id);
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public Timestamp getJoined() {
-    return joined;
-  }
+  Class<M> getMetaClass();
 }

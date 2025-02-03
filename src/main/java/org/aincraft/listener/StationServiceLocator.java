@@ -21,7 +21,10 @@ package org.aincraft.listener;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import net.kyori.adventure.key.Key;
+import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.database.model.test.IStation;
 import org.aincraft.handler.IStationHandler;
 import org.bukkit.Location;
@@ -30,10 +33,10 @@ import org.jetbrains.annotations.Nullable;
 
 public class StationServiceLocator {
 
-  private final Map<Key, StationServices> services;
+  private final Map<Key, IStationFacade> services;
   private final IStationDatabaseService databaseService;
 
-  private StationServiceLocator(Map<Key, StationServices> services,
+  private StationServiceLocator(Map<Key, IStationFacade> services,
       IStationDatabaseService databaseService) {
     this.services = services;
     this.databaseService = databaseService;
@@ -45,12 +48,12 @@ public class StationServiceLocator {
   }
 
   @Nullable
-  public StationServices getServices(Key key) {
+  public StationServiceLocator.IStationFacade getServices(Key key) {
     return services.get(key);
   }
 
   @Nullable
-  public StationServices getServices(Location location) {
+  public StationServiceLocator.IStationFacade getServices(Location location) {
     final IStation station = databaseService.getStation(location);
     if (station == null) {
       return null;
@@ -58,33 +61,88 @@ public class StationServiceLocator {
     return services.get(station.getKey());
   }
 
+  public interface IStationFacade {
 
-  public static final class StationServices {
+    IStationHandler getHandler();
 
-    private final IStationDatabaseService databaseService;
+    void removeStation(IStation station);
+
+    IStation createStation(Key stationKey, Location location);
+
+    IStation getStation(Location location);
+
+    IStation getStation(UUID stationId);
+
+    void updateStation(IStation station);
+
+//    <M extends Meta<M>> IMetaStation<M> getStation(Location location, Class<M> metaClass);
+  }
+
+  public static class StationFacadeImpl implements IStationFacade {
+
+    protected final IStationDatabaseService databaseService;
     private final IStationHandler handler;
 
-    public StationServices(@NotNull IStationHandler handler,
+    public StationFacadeImpl(@NotNull IStationHandler handler,
         @NotNull IStationDatabaseService databaseService) {
       this.handler = handler;
       this.databaseService = databaseService;
     }
 
+    @Override
     public IStationHandler getHandler() {
       return handler;
     }
 
-    public IStationDatabaseService getDatabaseService() {
-      return databaseService;
+    @Override
+    public void removeStation(IStation station) {
+      databaseService.removeStation(station);
     }
+
+    @Override
+    public IStation createStation(Key stationKey, Location location) {
+      return databaseService.createStation(stationKey, location);
+    }
+
+    @Override
+    public IStation getStation(Location location) {
+      return databaseService.getStation(location);
+    }
+
+    @Override
+    public IStation getStation(UUID stationId) {
+      return databaseService.getStation(stationId);
+    }
+
+    @Override
+    public void updateStation(IStation station) {
+      if(!(station instanceof IMetaStation<?> metaStation)) {
+        return;
+      }
+      IMetaStationDatabaseService<?> databaseService1 = (IMetaStationDatabaseService<?>) databaseService;
+    }
+
+//    @Override
+//    public <M extends Meta<M>> IMetaStation<M> getStation(Location location, Class<M> metaClass) {
+//      IStation station = this.getStation(location);
+//      if (!(station instanceof IMetaStation<?> metaStation)) {
+//        return null;
+//      }
+//      if (!metaClass.isAssignableFrom(metaStation.getMeta().getClass())) {
+//        return null;
+//      }
+//      @SuppressWarnings("unchecked")
+//      IMetaStation<M> mStation = (IMetaStation<M>) metaStation;
+//      return mStation;
+//    }
   }
 
   public static final class Builder {
 
-    private final Map<Key, StationServices> services;
+    private final Map<Key, IStationFacade> services;
     private final IStationDatabaseService databaseService;
 
-    private Builder(Map<Key, StationServices> services, IStationDatabaseService databaseService) {
+    private Builder(Map<Key, IStationFacade> services, IStationDatabaseService databaseService) {
       this.services = services;
       this.databaseService = databaseService;
     }
@@ -93,7 +151,7 @@ public class StationServiceLocator {
       this(new HashMap<>(), databaseService);
     }
 
-    public Builder setService(Key key, StationServices services) {
+    public Builder setService(Key key, IStationFacade services) {
       this.services.put(key, services);
       return this;
     }

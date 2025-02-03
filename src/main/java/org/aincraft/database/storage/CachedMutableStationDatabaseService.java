@@ -97,7 +97,9 @@ public final class CachedMutableStationDatabaseService<M extends Meta<M>> implem
   }
 
   @Override
-  public void updateStation(IMetaStation<M> mutableStation) {
-
+  public void updateStation(IMetaStation<M> station) {
+    metaMapping.updateMeta(station.getIdString(),station.getMeta());
+    stationCache.put(station.getId(),station);
+    stationLocationCache.put(station.getBlockLocation(),station);
   }
 }

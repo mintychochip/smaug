@@ -36,8 +36,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
-import org.aincraft.database.model.meta.TrackableProgressMeta.Builder;
 import org.aincraft.database.storage.SqlExecutor;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -46,7 +46,7 @@ import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 public final class TrackableProgressMeta implements
-    BuildableMeta<TrackableProgressMeta, Builder>, StationInventoryHolder {
+   Meta<TrackableProgressMeta>, StationInventoryHolder {
 
   private final AtomicReference<String> recipeKeyReference;
   private final AtomicReference<Float> progressReference;
@@ -97,50 +97,17 @@ public final class TrackableProgressMeta implements
   }
 
   @Override
-  public Builder toBuilder() {
-    return new Builder(this.getRecipeKey(), this.getProgress(),
-        this.getInventory());
-  }
-
-  @Override
   public StationInventory getInventory() {
     return inventoryReference.get();
   }
 
-  public static final class Builder implements
-      BuildableMeta.Builder<TrackableProgressMeta, Builder> {
-
-    private String recipeKey;
-    private float progress;
-    private StationInventory inventory;
-
-    Builder(String recipeKey, float progress,
-        StationInventory inventory) {
-      this.recipeKey = recipeKey;
-      this.progress = progress;
-      this.inventory = inventory;
-    }
-
-    public Builder setRecipeKey(String recipeKey) {
-      this.recipeKey = recipeKey;
-      return this;
-    }
-
-    public Builder setProgress(float progress) {
-      this.progress = progress;
-      return this;
-    }
-
-    public Builder setInventory(
-        StationInventory inventory) {
-      this.inventory = inventory;
-      return this;
-    }
-
-    @Override
-    public TrackableProgressMeta build() {
-      return new TrackableProgressMeta(recipeKey, progress, inventory);
-    }
+  @Override
+  public String toString() {
+    return "TrackableProgressMeta{" +
+        "recipeKeyReference=" + recipeKeyReference.get() +
+        ", progressReference=" + progressReference.get() +
+        ", inventoryReference=" + inventoryReference.get() +
+        '}';
   }
 
   public record StationInventory(String inventoryString) {
@@ -322,8 +289,9 @@ public final class TrackableProgressMeta implements
       if (inventory == null) {
         throw new IllegalArgumentException();
       }
+
       executor.executeUpdate(UPDATE_META, inventory.inventoryString, meta.getRecipeKey(),
-          meta.getProgress());
+          meta.getProgress(),idString);
     }
   }
 }

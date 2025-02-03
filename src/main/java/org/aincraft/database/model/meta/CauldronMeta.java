@@ -22,11 +22,10 @@ package org.aincraft.database.model.meta;
 import com.google.common.base.Preconditions;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.aincraft.database.model.meta.CauldronMeta.Builder;
 import org.aincraft.database.storage.SqlExecutor;
 import org.jetbrains.annotations.NotNull;
 
-public final class CauldronMeta implements BuildableMeta<CauldronMeta, Builder> {
+public final class CauldronMeta implements Meta<CauldronMeta> {
 
   private final AtomicReference<Integer> levelReference;
 
@@ -47,32 +46,8 @@ public final class CauldronMeta implements BuildableMeta<CauldronMeta, Builder> 
   }
 
   @Override
-  public Builder toBuilder() {
-    return new Builder(levelReference.get());
-  }
-
-  @Override
   public CauldronMeta clone() {
     return null;
-  }
-
-  public static final class Builder implements BuildableMeta.Builder<CauldronMeta, Builder> {
-
-    private int level;
-
-    public Builder(int level) {
-      this.level = level;
-    }
-
-    public Builder setLevel(int level) {
-      this.level = level;
-      return this;
-    }
-
-    @Override
-    public CauldronMeta build() {
-      return new CauldronMeta(level);
-    }
   }
 
   private record CauldronMetaMapping(SqlExecutor executor) implements MetaMapping<CauldronMeta> {

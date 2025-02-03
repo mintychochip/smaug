@@ -21,9 +21,9 @@ package org.aincraft;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import net.kyori.adventure.key.Key;
+import org.aincraft.api.event.TrackableProgressUpdateEvent;
 import org.aincraft.commands.IngredientCommand;
 import org.aincraft.commands.SmithCommand;
 import org.aincraft.container.IRegistry.IItemRegistry;
@@ -34,13 +34,15 @@ import org.aincraft.database.storage.CachedMutableStationDatabaseService;
 import org.aincraft.database.storage.CachedStationDatabaseService;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.handler.AnvilStationHandler;
-import org.aincraft.handler.IStationHandler;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
+import org.aincraft.inject.implementation.viewmodel.MetaListener;
+import org.aincraft.inject.implementation.viewmodel.AnvilViewModel;
+import org.aincraft.inject.implementation.viewmodel.ProgressBarViewModel;
 import org.aincraft.listener.IMetaStationDatabaseService;
 import org.aincraft.listener.StationListener;
 import org.aincraft.listener.StationServiceLocator;
-import org.aincraft.listener.StationServiceLocator.StationServices;
+import org.aincraft.listener.StationServiceLocator.StationFacadeImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.Listener;
@@ -52,11 +54,9 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   private final Plugin bootstrap;
   private final Injector injector;
   private final IKeyFactory keyFactory;
-  private final Map<Key, IStationHandler> handlers = new HashMap<>();
   private final IRecipeFetcher recipeFetcher;
   private final IItemRegistry itemRegistry;
   private final IStorage storage;
-  private final Map<Key, IMetaStationDatabaseService<?>> service = new HashMap<>();
 
   @Inject
   SmaugPluginImpl(Plugin bootstrap,
@@ -86,18 +86,28 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
       jp.getCommand("smith").setExecutor(new SmithCommand(trackableProgressService));
       jp.getCommand("test").setExecutor(injector.getInstance(IngredientCommand.class));
     }
-
+    ProgressBarViewModel viewModel = new ProgressBarViewModel();
     StationServiceLocator serviceLocator = new StationServiceLocator.Builder(stationService)
-        .setService(Key.key("smaug:anvil"), new StationServices(
-            new AnvilStationHandler(trackableProgressService, new NamespacedKey(bootstrap, "id")),
+        .setService(Key.key("smaug:anvil"), new StationFacadeImpl(
+            new AnvilStationHandler(new NamespacedKey(bootstrap, "id"),
+                event -> trackableProgressService.getStation(
+                    event.getClickedBlock().getLocation()), viewModel),
             trackableProgressService))
-        .setService(Key.key("smaug:cauldron"), new StationServices(
-            ctx -> {
-            }, cauldronService)
-        ).build();
-    StationListener stationListener = new StationListener(handlers, bootstrap, stationService,
+        .setService(Key.key("smaug:cauldron"), new StationFacadeImpl(
+            event -> {
+
+            }, cauldronService
+        ))
+        .build();
+    MetaListener<TrackableProgressMeta, TrackableProgressUpdateEvent> listener = new MetaListener<>(
+        TrackableProgressMeta.class, trackableProgressService);
+    listener.register(Key.key("smaug:anvil"),
+        List.of(new AnvilViewModel(), viewModel));
+    StationListener stationListener = new StationListener(bootstrap,
         new NamespacedKey(bootstrap, "station"), serviceLocator, storage);
+
     Bukkit.getPluginManager().registerEvents(stationListener, bootstrap);
+    Bukkit.getPluginManager().registerEvents(listener, bootstrap);
   }
 
   private static void registerListeners(Listener[] listeners, Plugin plugin) {

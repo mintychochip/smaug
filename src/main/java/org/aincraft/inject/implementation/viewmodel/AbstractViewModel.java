@@ -29,7 +29,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-abstract class AbstractViewModel<M, V, K> implements IViewModel<M, V> {
+abstract class AbstractViewModel<M, V, K> implements IViewModel<M> {
 
   private final Map<K, IViewModelBinding> bindings = new HashMap<>();
 
@@ -45,7 +45,6 @@ abstract class AbstractViewModel<M, V, K> implements IViewModel<M, V> {
   @NotNull
   abstract K modelToKey(@NotNull M model);
 
-  @Override
   public IViewModelBinding bind(@NotNull M model, @NotNull V view) {
     Preconditions.checkNotNull(model);
     Preconditions.checkNotNull(view);
@@ -56,13 +55,10 @@ abstract class AbstractViewModel<M, V, K> implements IViewModel<M, V> {
   }
 
   @Override
-  public void remove(@NotNull M model, @Nullable Consumer<IViewModelBinding> bindingConsumer) {
+  public IViewModelBinding remove(@NotNull M model) {
     Preconditions.checkNotNull(model);
     final K modelKey = modelToKey(model);
-    final IViewModelBinding binding = bindings.remove(modelKey);
-    if (bindingConsumer != null && binding != null) {
-      bindingConsumer.accept(binding);
-    }
+    return bindings.remove(modelKey);
   }
 
   @Override

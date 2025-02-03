@@ -21,14 +21,12 @@ package org.aincraft.listener;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationRemoveEvent.RemovalCause;
-import org.aincraft.database.model.meta.Meta;
 import org.aincraft.database.model.meta.StationInventoryHolder;
 import org.aincraft.database.model.meta.TrackableProgressMeta.StationInventory;
 import org.aincraft.database.model.test.IMetaStation;
@@ -36,7 +34,7 @@ import org.aincraft.database.model.test.IStation;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.handler.Context;
 import org.aincraft.handler.IStationHandler;
-import org.aincraft.listener.StationServiceLocator.StationServices;
+import org.aincraft.listener.StationServiceLocator.IStationFacade;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -56,7 +54,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class StationListener implements Listener {
 
@@ -72,21 +69,17 @@ public class StationListener implements Listener {
         material == Material.DAMAGED_ANVIL ||
         materialString.contains("CONCRETE_POWDER");
   };
-  private final Map<Key, IStationHandler> handlers;
   private final Plugin plugin;
-  private final IStationDatabaseService stationService;
-  private final NamespacedKey stationKey;
   private final IStorage storage;
+  private final NamespacedKey stationKey;
   private final StationServiceLocator serviceLocator;
 
   @Inject
-  public StationListener(Map<Key, IStationHandler> handlers,
-      Plugin plugin, IStationDatabaseService stationService,
+  public StationListener(
+      Plugin plugin,
       @Named("station") NamespacedKey stationKey, StationServiceLocator serviceLocator,
       IStorage storage) {
-    this.handlers = handlers;
     this.plugin = plugin;
-    this.stationService = stationService;
     this.stationKey = stationKey;
     this.serviceLocator = serviceLocator;
     this.storage = storage;
@@ -116,23 +109,22 @@ public class StationListener implements Listener {
       return;
     }
     Player player = event.getPlayer();
-    StationServices services = serviceLocator.getServices(Key.key(keyString));
+    IStationFacade services = serviceLocator.getServices(Key.key(keyString));
     if (services == null) {
       return;
     }
-    services.getDatabaseService().createStation(Key.key(keyString), blockLocation);
+    services.createStation(Key.key(keyString), blockLocation);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
   private void removeBlocksCheckForStation(final BlockBreakEvent event) {
     final Block block = event.getBlock();
     final Location location = block.getLocation();
-    final StationServices services = serviceLocator.getServices(location);
-    if (services == null) {
+    final IStationFacade facade = serviceLocator.getServices(location);
+    if (facade == null) {
       return;
     }
-    final IStationDatabaseService databaseService = services.getDatabaseService();
-    final IStation station = databaseService.getStation(location);
+    final IStation station = facade.getStation(location);
     if (station == null) {
       return;
     }
@@ -157,7 +149,13 @@ public class StationListener implements Listener {
       return;
     }
     final IStation station = event.getStation();
-    CompletableFuture.runAsync(() -> stationService.removeStation(station));
+    IStationFacade facade = serviceLocator.getServices(station.getKey());
+    if(facade == null) {
+      return;
+    }
+    CompletableFuture.runAsync(() -> facade.removeStation(station));
+
+    //TODO abstract this in facade
     if (!(station instanceof IMetaStation<?> metaStation
         && metaStation.getMeta() instanceof StationInventoryHolder holder)) {
       return;
@@ -171,14 +169,6 @@ public class StationListener implements Listener {
     }
   }
 
-//    @EventHandler(priority = EventPriority.MONITOR)
-//  private void handleUpdateStation(final StationUpdateEvent<?> event) {
-//    if (event.isCancelled()) {
-//      return;
-//    }
-//    CompletableFuture.runAsync(() -> stationService.updateStation(event.getStation()));
-//  }
-
   @EventHandler(priority = EventPriority.MONITOR)
   private void handleInteract(final PlayerInteractEvent event) {
     Block block = event.getClickedBlock();
@@ -188,12 +178,11 @@ public class StationListener implements Listener {
     if (block.getType().isAir()) {
       return;
     }
-    StationServices services = serviceLocator.getServices(block.getLocation());
+    IStationFacade services = serviceLocator.getServices(block.getLocation());
     if (services == null) {
       return;
     }
     IStationHandler handler = services.getHandler();
-    IStationDatabaseService databaseService = services.getDatabaseService();
     if (handler == null) {
       return;
     }
@@ -201,6 +190,6 @@ public class StationListener implements Listener {
     if (hand == EquipmentSlot.OFF_HAND) {
       return;
     }
-    handler.handle(Context.create(databaseService.getStation(block.getLocation()), event));
+    handler.handle(event);
   }
 }

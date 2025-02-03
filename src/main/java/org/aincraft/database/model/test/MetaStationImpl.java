@@ -27,7 +27,7 @@ import org.aincraft.database.model.meta.Meta;
 import org.bukkit.Location;
 import org.bukkit.World;
 
-public class MetaStationImpl<M extends Meta<M>> extends StationImpl implements IMetaStation<M> {
+final class MetaStationImpl<M extends Meta<M>> extends StationImpl implements IMetaStation<M> {
 
   private final AtomicReference<M> metaReference;
 
@@ -60,5 +60,12 @@ public class MetaStationImpl<M extends Meta<M>> extends StationImpl implements I
   public M getMeta() {
     final M meta = metaReference.get();
     return meta.clone();
+  }
+
+  @Override
+  public String toString() {
+    return "MetaStationImpl{" +
+        "metaReference=" + metaReference +
+        '}';
   }
 }

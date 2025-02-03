@@ -45,7 +45,6 @@ public class SmithCommand implements CommandExecutor {
     IMetaStation<TrackableProgressMeta> mutableStation = service.getStation(
         ((Player) commandSender).getLocation());
     if(mutableStation != null) {
-      Bukkit.broadcastMessage(mutableStation.toString());
     }
     return true;
   }
