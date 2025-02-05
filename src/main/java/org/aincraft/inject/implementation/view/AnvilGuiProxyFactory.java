@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import dev.triumphteam.gui.components.GuiType;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
+import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -81,7 +82,8 @@ public final class AnvilGuiProxyFactory implements
       final String recipeKey = recipe.getKey();
       if (meta.getRecipeKey() == null) {
         Bukkit.getPluginManager().callEvent(
-            new TrackableProgressUpdateEvent(metaStation.setMeta(m -> m.setRecipeKey(recipeKey)),
+            new TrackableProgressUpdateEvent(metaStation.setMeta(
+                (Consumer<TrackableProgressMeta>) m -> m.setRecipeKey(recipeKey)),
                 player));
         return;
       }

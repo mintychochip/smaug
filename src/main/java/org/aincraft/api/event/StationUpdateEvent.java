@@ -19,7 +19,7 @@
 
 package org.aincraft.api.event;
 
-import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.meta.IMeta;
 import org.aincraft.database.model.test.IMetaStation;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -27,7 +27,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-public class StationUpdateEvent<M extends Meta<M>> extends Event implements Cancellable {
+public class StationUpdateEvent<M extends IMeta<M>> extends Event implements Cancellable {
 
   private static HandlerList handlers = new HandlerList();
 

@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -96,7 +97,11 @@ public final class AnvilStationHandler implements IStationHandler {
         if (result.isSuccess()) {
           Bukkit.getPluginManager()
               .callEvent(new TrackableProgressUpdateEvent(
-                  station.setMeta(m -> m.setInventory(result.getInventory())), player));
+                  station.setMeta(
+                      m -> {
+                        m.setInventory(result.getInventory());
+                        return m;
+                      }), player));
           player.sendMessage(Component.empty().color(
                   NamedTextColor.WHITE).append(Component.text("Deposited:"))
               .append(item.displayName()));
@@ -127,7 +132,10 @@ public final class AnvilStationHandler implements IStationHandler {
       if (meta.getProgress() < recipe.getActions()) {
         successfulAction(stationBlockLocation);
         IMetaStation<TrackableProgressMeta> s = station.setMeta(
-            m -> m.setProgress(progress -> progress + 1));
+            m -> {
+              m.setProgress(progress -> progress + 1);
+              return m;
+            });
         Bukkit.getPluginManager()
             .callEvent(new TrackableProgressUpdateEvent(s
                 , player));
@@ -142,6 +150,7 @@ public final class AnvilStationHandler implements IStationHandler {
                     m.setRecipeKey(null);
                     m.setProgress(0);
                     m.setInventory(result.getInventory());
+                    return m;
                   }
               ), player));
         }

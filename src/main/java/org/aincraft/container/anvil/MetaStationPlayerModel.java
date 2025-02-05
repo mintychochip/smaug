@@ -19,12 +19,11 @@
 
 package org.aincraft.container.anvil;
 
-import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.meta.IMeta;
 import org.aincraft.database.model.test.IMetaStation;
-import org.aincraft.database.model.test.IStation;
 import org.bukkit.entity.Player;
 
-public record MetaStationPlayerModel<M extends Meta<M>>(
+public record MetaStationPlayerModel<M extends IMeta<M>>(
     Player player, IMetaStation<M> station) {
 
   @Override

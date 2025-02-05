@@ -30,5 +30,6 @@ public interface IStorage {
   IStation createStation(String keyString, Location location);
   void removeStation(Location location);
   SqlExecutor getExecutor();
+  IConnectionSource getSource();
   void close();
 }

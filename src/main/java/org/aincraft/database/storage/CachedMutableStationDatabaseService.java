@@ -25,8 +25,8 @@ import com.google.common.base.Preconditions;
 import java.time.Duration;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
-import org.aincraft.database.model.meta.Meta;
-import org.aincraft.database.model.meta.Meta.MetaMapping;
+import org.aincraft.database.model.meta.IMeta;
+import org.aincraft.database.model.meta.IMeta.MetaMapping;
 import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.database.model.test.IStation;
 import org.aincraft.listener.IMetaStationDatabaseService;
@@ -35,7 +35,7 @@ import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class CachedMutableStationDatabaseService<M extends Meta<M>> implements
+public final class CachedMutableStationDatabaseService<M extends IMeta<M>> implements
     IMetaStationDatabaseService<M> {
 
   private final Cache<UUID, IMetaStation<M>> stationCache = Caffeine.newBuilder().expireAfterWrite(

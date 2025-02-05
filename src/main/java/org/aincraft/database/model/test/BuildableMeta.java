@@ -19,11 +19,11 @@
 
 package org.aincraft.database.model.test;
 
-import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.meta.IMeta;
 import org.aincraft.database.model.test.BuildableMeta.Builder;
 
 public interface BuildableMeta<M extends BuildableMeta<M, B>, B extends Builder<M, B>> extends
-    Meta<M> {
+    IMeta<M> {
 
   B toBuilder();
 

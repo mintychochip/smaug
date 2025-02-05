@@ -21,17 +21,15 @@ package org.aincraft.database.model.test;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.meta.IMeta;
 
-public interface IMetaStation<M extends Meta<M>> extends IStation {
+public interface IMetaStation<M extends IMeta<M>> extends IStation {
 
-  static <M extends Meta<M>> IMetaStation<M> create(IStation station, M meta) {
+  static <M extends IMeta<M>> IMetaStation<M> create(IStation station, M meta) {
     return MetaStationImpl.create(station, meta);
   }
 
   IMetaStation<M> setMeta(M meta);
-
-  IMetaStation<M> setMeta(Consumer<M> metaConsumer);
 
   IMetaStation<M> setMeta(Function<M,M> metaFunction);
 

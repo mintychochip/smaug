@@ -20,11 +20,11 @@
 package org.aincraft.inject.implementation.viewmodel;
 
 import org.aincraft.api.event.StationUpdateEvent;
-import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.meta.IMeta;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-public interface IUpdateListener<M extends Meta<M>,E extends StationUpdateEvent<M>> extends Listener {
+public interface IUpdateListener<M extends IMeta<M>,E extends StationUpdateEvent<M>> extends Listener {
   @EventHandler
   void onUpdateMetaStation(E event);
 

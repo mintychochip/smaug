@@ -37,16 +37,13 @@ import java.util.function.Function;
 import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
 import org.aincraft.database.storage.SqlExecutor;
-import org.bukkit.Bukkit;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 public final class TrackableProgressMeta implements
-   Meta<TrackableProgressMeta>, StationInventoryHolder {
+    IMeta<TrackableProgressMeta>, StationInventoryHolder {
 
   private final AtomicReference<String> recipeKeyReference;
   private final AtomicReference<Float> progressReference;

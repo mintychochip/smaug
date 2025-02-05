@@ -24,11 +24,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import net.kyori.adventure.key.Key;
-import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.meta.IMeta;
 import org.bukkit.Location;
 import org.bukkit.World;
 
-final class MetaStationImpl<M extends Meta<M>> extends StationImpl implements IMetaStation<M> {
+final class MetaStationImpl<M extends IMeta<M>> extends StationImpl implements IMetaStation<M> {
 
   private final AtomicReference<M> metaReference;
 
@@ -38,7 +38,7 @@ final class MetaStationImpl<M extends Meta<M>> extends StationImpl implements IM
     this.metaReference = new AtomicReference<>(meta);
   }
 
-  static <M extends Meta<M>> MetaStationImpl<M> create(IStation station, M meta) {
+  static <M extends IMeta<M>> MetaStationImpl<M> create(IStation station, M meta) {
     return new MetaStationImpl<>(station.getIdString(), station.getKeyString(),
         station.getWorldName(), station.getBlockX(), station.getBlockY(), station.getBlockZ(),
         station.getId(), station.getKey(), station.getWorld(), station.getBlockLocation(), meta);
@@ -48,13 +48,6 @@ final class MetaStationImpl<M extends Meta<M>> extends StationImpl implements IM
   public IMetaStation<M> setMeta(M meta) {
     metaReference.set(meta);
     return this;
-  }
-
-  @Override
-  public IMetaStation<M> setMeta(Consumer<M> metaConsumer) {
-    final M meta = this.getMeta();
-    metaConsumer.accept(meta);
-    return this.setMeta(meta);
   }
 
   @Override

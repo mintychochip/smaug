@@ -104,6 +104,11 @@ public class SqlStorageImpl implements IStorage {
   }
 
   @Override
+  public IConnectionSource getSource() {
+    return source;
+  }
+
+  @Override
   public void close() {
     try {
       source.close();

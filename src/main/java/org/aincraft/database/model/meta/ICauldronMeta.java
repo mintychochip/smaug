@@ -19,18 +19,23 @@
 
 package org.aincraft.database.model.meta;
 
-import org.jetbrains.annotations.NotNull;
+import org.aincraft.database.model.meta.ICauldronMeta.Builder;
+import org.aincraft.database.model.test.BuildableMeta;
+import org.aincraft.database.storage.IConnectionSource;
+import org.aincraft.database.storage.SqlExecutor;
 
-public interface Meta<M extends Meta<M>> {
+public interface ICauldronMeta extends BuildableMeta<ICauldronMeta, Builder> {
 
-  M clone();
+  static MetaMapping<ICauldronMeta> createMapping(IConnectionSource source) {
+    return new CauldronMetaImpl.CauldronMetaMapping(new SqlExecutor(source));
+  }
 
-  interface MetaMapping<M extends Meta<M>> {
-    @NotNull
-    M createMeta(@NotNull String idString);
-    @NotNull
-    M getMeta(@NotNull String idString);
+  void setLevel(int level);
 
-    void updateMeta(@NotNull String idString, @NotNull M meta) throws IllegalArgumentException;
+  int getLevel();
+
+  interface Builder extends BuildableMeta.Builder<ICauldronMeta, Builder> {
+
+    Builder setLevel(int level);
   }
 }

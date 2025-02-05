@@ -22,21 +22,19 @@ package org.aincraft.database.model.meta;
 import com.google.common.base.Preconditions;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.aincraft.database.model.meta.CauldronMeta.Builder;
-import org.aincraft.database.model.t.ICauldronMeta;
-import org.aincraft.database.model.test.BuildableMeta;
+import org.aincraft.database.storage.IConnectionSource;
 import org.aincraft.database.storage.SqlExecutor;
 import org.jetbrains.annotations.NotNull;
 
-public final class CauldronMeta implements ICauldronMeta {
+final class CauldronMetaImpl implements ICauldronMeta {
 
   private final AtomicReference<Integer> levelReference;
 
-  public static MetaMapping<ICauldronMeta> createMapping(SqlExecutor executor) {
-    return new CauldronMetaMapping(executor);
+  static MetaMapping<ICauldronMeta> createMapping(IConnectionSource source) {
+    return new CauldronMetaMapping(new SqlExecutor(source));
   }
 
-  public CauldronMeta(int level) {
+  public CauldronMetaImpl(int level) {
     this.levelReference = new AtomicReference<>(level);
   }
 
@@ -49,26 +47,26 @@ public final class CauldronMeta implements ICauldronMeta {
   }
 
   @Override
-  public CauldronMeta clone() {
+  public CauldronMetaImpl clone() {
     return null;
   }
 
   @Override
-  public Builder toBuilder() {
-    return new Builder(this.getLevel());
+  public ICauldronMeta.Builder toBuilder() {
+    return new BuilderImpl(this.getLevel());
   }
 
-  public static final class Builder implements ICauldronMeta.Builder {
+  static final class BuilderImpl implements ICauldronMeta.Builder {
 
     private int level;
 
-    private Builder(int level) {
+    private BuilderImpl(int level) {
       this.level = level;
     }
 
     @Override
     public ICauldronMeta build() {
-      return new CauldronMeta(level);
+      return new CauldronMetaImpl(level);
     }
 
     @Override
@@ -78,7 +76,7 @@ public final class CauldronMeta implements ICauldronMeta {
     }
   }
 
-  private record CauldronMetaMapping(SqlExecutor executor) implements MetaMapping<ICauldronMeta> {
+  record CauldronMetaMapping(SqlExecutor executor) implements MetaMapping<ICauldronMeta> {
 
     private static final String CREATE_META = "INSERT INTO cauldron_meta (station_id,level) VALUES (?,?)";
 
@@ -90,7 +88,7 @@ public final class CauldronMeta implements ICauldronMeta {
     public @NotNull ICauldronMeta createMeta(@NotNull String idString) {
       Preconditions.checkNotNull(idString);
       executor.executeUpdate(CREATE_META, idString, 0);
-      return new CauldronMeta(0);
+      return new CauldronMetaImpl(0);
     }
 
     @Override
@@ -99,7 +97,7 @@ public final class CauldronMeta implements ICauldronMeta {
       return executor.queryRow(scanner -> {
         try {
           int level = scanner.getInt("level");
-          return new CauldronMeta(level);
+          return new CauldronMetaImpl(level);
         } catch (SQLException e) {
           throw new RuntimeException(e);
         }

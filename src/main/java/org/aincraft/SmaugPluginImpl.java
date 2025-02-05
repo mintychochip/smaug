@@ -28,8 +28,8 @@ import org.aincraft.commands.IngredientCommand;
 import org.aincraft.commands.SmithCommand;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.gui.GuiListener;
-import org.aincraft.database.model.meta.CauldronMeta;
 import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.meta.ICauldronMeta;
 import org.aincraft.database.storage.CachedMutableStationDatabaseService;
 import org.aincraft.database.storage.CachedStationDatabaseService;
 import org.aincraft.database.storage.IStorage;
@@ -79,9 +79,9 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     IMetaStationDatabaseService<TrackableProgressMeta> trackableProgressService = new CachedMutableStationDatabaseService<>(
         stationService,
         TrackableProgressMeta.createMapping(storage.getExecutor()));
-    IMetaStationDatabaseService<CauldronMeta> cauldronService = new CachedMutableStationDatabaseService<>(
+    IMetaStationDatabaseService<ICauldronMeta> cauldronService = new CachedMutableStationDatabaseService<>(
         stationService,
-        CauldronMeta.createMapping(storage.getExecutor()));
+        ICauldronMeta.createMapping(storage.getSource()));
     if (bootstrap instanceof JavaPlugin jp) {
       jp.getCommand("smith").setExecutor(new SmithCommand(trackableProgressService));
       jp.getCommand("test").setExecutor(injector.getInstance(IngredientCommand.class));

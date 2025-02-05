@@ -27,13 +27,13 @@ import net.kyori.adventure.key.Key;
 import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.container.display.IViewModel;
-import org.aincraft.database.model.meta.Meta;
+import org.aincraft.database.model.meta.IMeta;
 import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.listener.IMetaStationDatabaseService;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 
-public final class MetaListener<M extends Meta<M>, E extends StationUpdateEvent<M>> implements
+public final class MetaListener<M extends IMeta<M>, E extends StationUpdateEvent<M>> implements
     IUpdateListener<M, E> {
 
   private final Class<M> metaClass;

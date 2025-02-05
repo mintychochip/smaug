@@ -17,19 +17,20 @@
  *
  */
 
-package org.aincraft.database.model.t;
+package org.aincraft.database.model.meta;
 
-import org.aincraft.database.model.t.ICauldronMeta.Builder;
-import org.aincraft.database.model.test.BuildableMeta;
+import org.jetbrains.annotations.NotNull;
 
-public interface ICauldronMeta extends BuildableMeta<ICauldronMeta, Builder> {
+public interface IMeta<M extends IMeta<M>> {
 
-  void setLevel(int level);
+  M clone();
 
-  int getLevel();
+  interface MetaMapping<M extends IMeta<M>> {
+    @NotNull
+    M createMeta(@NotNull String idString);
+    @NotNull
+    M getMeta(@NotNull String idString);
 
-  interface Builder extends BuildableMeta.Builder<ICauldronMeta, Builder> {
-
-    Builder setLevel(int level);
+    void updateMeta(@NotNull String idString, @NotNull M meta) throws IllegalArgumentException;
   }
 }
