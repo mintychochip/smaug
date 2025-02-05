@@ -22,6 +22,7 @@ package org.aincraft.database.model.test;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import org.aincraft.database.model.meta.Meta;
 import org.bukkit.Location;
@@ -54,6 +55,13 @@ final class MetaStationImpl<M extends Meta<M>> extends StationImpl implements IM
     final M meta = this.getMeta();
     metaConsumer.accept(meta);
     return this.setMeta(meta);
+  }
+
+  @Override
+  public IMetaStation<M> setMeta(Function<M,M> metaFunction) {
+    final M meta = this.getMeta();
+    final M appliedMeta = metaFunction.apply(meta);
+    return this.setMeta(appliedMeta);
   }
 
   @Override

@@ -17,10 +17,19 @@
  *
  */
 
-package org.aincraft.container.display;
+package org.aincraft.database.model.t;
 
-import net.kyori.adventure.key.Key;
+import org.aincraft.database.model.t.ICauldronMeta.Builder;
+import org.aincraft.database.model.test.BuildableMeta;
 
-public class AnvilConstants {
-  public static final Key ANVIL_STATION_KEY = Key.key("smaug:anvil");
+public interface ICauldronMeta extends BuildableMeta<ICauldronMeta, Builder> {
+
+  void setLevel(int level);
+
+  int getLevel();
+
+  interface Builder extends BuildableMeta.Builder<ICauldronMeta, Builder> {
+
+    Builder setLevel(int level);
+  }
 }

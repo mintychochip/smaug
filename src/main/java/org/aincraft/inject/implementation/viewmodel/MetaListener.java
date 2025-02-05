@@ -33,7 +33,7 @@ import org.aincraft.listener.IMetaStationDatabaseService;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 
-public class MetaListener<M extends Meta<M>, E extends StationUpdateEvent<M>> implements
+public final class MetaListener<M extends Meta<M>, E extends StationUpdateEvent<M>> implements
     IUpdateListener<M, E> {
 
   private final Class<M> metaClass;
@@ -67,15 +67,12 @@ public class MetaListener<M extends Meta<M>, E extends StationUpdateEvent<M>> im
     if (event.isCancelled()) {
       return;
     }
-    if (!(event.getStation() instanceof IMetaStation<?> ms)) {
-      return;
-    }
-    Meta<?> meta = ms.getMeta();
-    if (!this.getMetaClass().isAssignableFrom(meta.getClass())) {
+    if (!(event.getStation() instanceof IMetaStation<?> metaStation && this.getMetaClass()
+        .isAssignableFrom(metaStation.getMeta().getClass()))) {
       return;
     }
     List<IViewModel<IMetaStation<M>>> vms = this.viewModels.getOrDefault(
-        event.getStation().getKey(),
+        metaStation.getKey(),
         new ArrayList<>());
     if (vms.isEmpty()) {
       return;

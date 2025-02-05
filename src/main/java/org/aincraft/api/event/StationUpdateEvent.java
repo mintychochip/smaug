@@ -31,14 +31,14 @@ public class StationUpdateEvent<M extends Meta<M>> extends Event implements Canc
 
   private static HandlerList handlers = new HandlerList();
 
-  private final IMetaStation<M> mutableStation;
+  private final IMetaStation<M> metaStation;
 
   private final Player player;
 
   private boolean cancelled = false;
 
-  StationUpdateEvent(IMetaStation<M> mutableStation, Player player) {
-    this.mutableStation = mutableStation;
+  StationUpdateEvent(IMetaStation<M> metaStation, Player player) {
+    this.metaStation = metaStation;
     this.player = player;
   }
 
@@ -48,7 +48,7 @@ public class StationUpdateEvent<M extends Meta<M>> extends Event implements Canc
   }
 
   public IMetaStation<M> getStation() {
-    return mutableStation;
+    return metaStation;
   }
 
   @Override

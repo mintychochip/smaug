@@ -22,14 +22,17 @@ package org.aincraft.database.model.meta;
 import com.google.common.base.Preconditions;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicReference;
+import org.aincraft.database.model.meta.CauldronMeta.Builder;
+import org.aincraft.database.model.t.ICauldronMeta;
+import org.aincraft.database.model.test.BuildableMeta;
 import org.aincraft.database.storage.SqlExecutor;
 import org.jetbrains.annotations.NotNull;
 
-public final class CauldronMeta implements Meta<CauldronMeta> {
+public final class CauldronMeta implements ICauldronMeta {
 
   private final AtomicReference<Integer> levelReference;
 
-  public static MetaMapping<CauldronMeta> createMapping(SqlExecutor executor) {
+  public static MetaMapping<ICauldronMeta> createMapping(SqlExecutor executor) {
     return new CauldronMetaMapping(executor);
   }
 
@@ -50,7 +53,32 @@ public final class CauldronMeta implements Meta<CauldronMeta> {
     return null;
   }
 
-  private record CauldronMetaMapping(SqlExecutor executor) implements MetaMapping<CauldronMeta> {
+  @Override
+  public Builder toBuilder() {
+    return new Builder(this.getLevel());
+  }
+
+  public static final class Builder implements ICauldronMeta.Builder {
+
+    private int level;
+
+    private Builder(int level) {
+      this.level = level;
+    }
+
+    @Override
+    public ICauldronMeta build() {
+      return new CauldronMeta(level);
+    }
+
+    @Override
+    public ICauldronMeta.Builder setLevel(int level) {
+      this.level = level;
+      return this;
+    }
+  }
+
+  private record CauldronMetaMapping(SqlExecutor executor) implements MetaMapping<ICauldronMeta> {
 
     private static final String CREATE_META = "INSERT INTO cauldron_meta (station_id,level) VALUES (?,?)";
 
@@ -59,14 +87,14 @@ public final class CauldronMeta implements Meta<CauldronMeta> {
     private static final String UPDATE_META = "UPDATE cauldron_meta SET level=? WHERE station_id=?";
 
     @Override
-    public @NotNull CauldronMeta createMeta(@NotNull String idString) {
+    public @NotNull ICauldronMeta createMeta(@NotNull String idString) {
       Preconditions.checkNotNull(idString);
       executor.executeUpdate(CREATE_META, idString, 0);
       return new CauldronMeta(0);
     }
 
     @Override
-    public @NotNull CauldronMeta getMeta(@NotNull String idString) {
+    public @NotNull ICauldronMeta getMeta(@NotNull String idString) {
       Preconditions.checkNotNull(idString);
       return executor.queryRow(scanner -> {
         try {
@@ -79,7 +107,8 @@ public final class CauldronMeta implements Meta<CauldronMeta> {
     }
 
     @Override
-    public void updateMeta(@NotNull String idString, @NotNull CauldronMeta meta) {
+    public void updateMeta(@NotNull String idString, @NotNull ICauldronMeta meta)
+        throws IllegalArgumentException {
       Preconditions.checkNotNull(idString);
       Preconditions.checkNotNull(meta);
       executor.executeUpdate(UPDATE_META, meta.getLevel(), idString);
