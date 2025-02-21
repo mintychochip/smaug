@@ -30,7 +30,8 @@ import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiWrapper;
 import org.aincraft.container.gui.ItemFactory;
 import org.aincraft.container.ingredient.IngredientList;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.meta.ITrackableProgressMeta;
+import org.aincraft.database.model.meta.TrackableProgressMetaImpl;
 import org.aincraft.database.model.test.IMetaStation;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
@@ -39,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
  * Creates an updatable recipe selector gui wrapper
  */
 final class RecipeSelectorWrapperFactory extends
-    AbstractGuiWrapperFactory<SmaugRecipe, PaginatedGui, IMetaStation<TrackableProgressMeta>> {
+    AbstractGuiWrapperFactory<SmaugRecipe, PaginatedGui, IMetaStation<ITrackableProgressMeta>> {
 
   private final BiConsumer<InventoryClickEvent, SmaugRecipe> recipeBiConsumer;
 
@@ -50,7 +51,7 @@ final class RecipeSelectorWrapperFactory extends
   }
 
   @Override
-  public @NotNull UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(@NotNull IMetaStation<TrackableProgressMeta> data) {
+  public @NotNull UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(@NotNull IMetaStation<ITrackableProgressMeta> data) {
     Preconditions.checkNotNull(data);
 
     final ItemFactory<SmaugRecipe> itemFactory = new ItemFactory.Builder<SmaugRecipe>()

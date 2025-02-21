@@ -31,7 +31,8 @@ import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiWrapper;
 import org.aincraft.container.gui.ItemFactory;
 import org.aincraft.container.gui.ItemFactory.Builder;
 import org.aincraft.container.ingredient.IngredientList;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.meta.ITrackableProgressMeta;
+import org.aincraft.database.model.meta.TrackableProgressMetaImpl;
 import org.aincraft.database.model.test.IMetaStation;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
  * Creates an updatable codex gui wrapper
  */
 final class CodexGuiWrapperFactory extends
-    AbstractGuiWrapperFactory<SmaugRecipe, PaginatedGui, IMetaStation<TrackableProgressMeta>> {
+    AbstractGuiWrapperFactory<SmaugRecipe, PaginatedGui, IMetaStation<ITrackableProgressMeta>> {
 
   CodexGuiWrapperFactory(int rows, Component title) {
     super(rows, title);
@@ -48,9 +49,10 @@ final class CodexGuiWrapperFactory extends
   @SuppressWarnings("UnstableApiUsage")
   @Override
   public @NotNull AnvilGuiProxy.UpdatableGuiWrapper<SmaugRecipe, PaginatedGui> create(
-      @NotNull IMetaStation<TrackableProgressMeta> data) {
+      @NotNull IMetaStation<ITrackableProgressMeta> data) {
     Preconditions.checkNotNull(data);
-    final ItemFactory<SmaugRecipe> itemFactory = new Builder<SmaugRecipe>().setDisplayNameFunction(
+    final ItemFactory<SmaugRecipe> itemFactory = new Builder<SmaugRecipe>()
+        .setDisplayNameFunction(
             AbstractGuiWrapperFactory::createRecipeHeader)
         .setItemModelFunction(AbstractGuiWrapperFactory::retrieveItemModel)
         .setLoreFunction(recipe -> {

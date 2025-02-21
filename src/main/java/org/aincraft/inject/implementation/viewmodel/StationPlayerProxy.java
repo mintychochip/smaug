@@ -17,10 +17,33 @@
  *
  */
 
-package org.aincraft.database.model.meta;
+package org.aincraft.inject.implementation.viewmodel;
 
-import org.aincraft.database.model.meta.TrackableProgressMetaImpl.StationInventory;
+import org.aincraft.database.model.meta.IMeta;
+import org.aincraft.database.model.test.IMetaStation;
+import org.bukkit.entity.Player;
 
-public interface StationInventoryHolder {
-  StationInventory getInventory();
+public class StationPlayerProxy<M extends IMeta<M>> {
+
+  private final Player player;
+
+  private final IMetaStation<M> station;
+  public StationPlayerProxy(Player player, IMetaStation<M> station) {
+    this.player = player;
+    this.station = station;
+  }
+
+  public Player getPlayer() {
+    return player;
+  }
+
+  public IMetaStation<M> getStation() {
+    return station;
+  }
+
+  @Override
+  public int hashCode() {
+    return player.getUniqueId().hashCode() + station.hashCode();
+  }
 }
+

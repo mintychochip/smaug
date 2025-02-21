@@ -87,6 +87,8 @@ public final class CachedMutableStationDatabaseService<M extends IMeta<M>> imple
   @Override
   public void removeStation(IStation station) {
     stationService.removeStation(station);
+    stationCache.invalidate(station.getId());
+    stationLocationCache.invalidate(station.getBlockLocation());
   }
 
   @Override

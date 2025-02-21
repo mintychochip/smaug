@@ -33,27 +33,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
 import org.aincraft.database.storage.SqlExecutor;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
-public final class TrackableProgressMeta implements
-    IMeta<TrackableProgressMeta>, StationInventoryHolder {
+public final class TrackableProgressMetaImpl implements ITrackableProgressMeta {
 
   private final AtomicReference<String> recipeKeyReference;
   private final AtomicReference<Float> progressReference;
   private final AtomicReference<StationInventory> inventoryReference;
 
-  public static MetaMapping<TrackableProgressMeta> createMapping(SqlExecutor executor) {
-    return new TrackableProgressMetaMapping(executor);
-  }
-
-  public TrackableProgressMeta(String recipeKey, float progress,
+  public TrackableProgressMetaImpl(String recipeKey, float progress,
       StationInventory inventory) {
     recipeKeyReference = new AtomicReference<>(recipeKey);
     progressReference = new AtomicReference<>(progress);
@@ -61,34 +56,24 @@ public final class TrackableProgressMeta implements
   }
 
   @Override
-  public TrackableProgressMeta clone() {
-    return new TrackableProgressMeta(recipeKeyReference.get(), progressReference.get(),
+  public ITrackableProgressMeta clone() {
+    return new TrackableProgressMetaImpl(recipeKeyReference.get(), progressReference.get(),
         inventoryReference.get());
   }
 
-  public void setProgress(float progress) {
-    progressReference.set(progress);
+
+
+  @Override
+  public ITrackableProgressMeta.Builder toBuilder() {
+    return new Builder(recipeKeyReference.get(), progressReference.get(), inventoryReference.get());
   }
 
-  public void setProgress(Function<Float, Float> progressConsumer) {
-    float progress = progressConsumer.apply(this.getProgress());
-    this.setProgress(progress);
-  }
-
-  public void setRecipeKey(@Nullable String recipeKey) {
-    recipeKeyReference.set(recipeKey);
-  }
-
-  public void setInventory(StationInventory inventory) {
-    inventoryReference.set(inventory);
-  }
-
-  @Nullable
+  @Override
   public String getRecipeKey() {
     return recipeKeyReference.get();
   }
 
-
+  @Override
   public float getProgress() {
     return progressReference.get();
   }
@@ -99,12 +84,54 @@ public final class TrackableProgressMeta implements
   }
 
   @Override
-  public String toString() {
-    return "TrackableProgressMeta{" +
-        "recipeKeyReference=" + recipeKeyReference.get() +
-        ", progressReference=" + progressReference.get() +
-        ", inventoryReference=" + inventoryReference.get() +
-        '}';
+  public void setRecipeKey(String recipeKey) {
+    recipeKeyReference.set(recipeKey);
+  }
+
+  @Override
+  public void setProgress(float progress) {
+    progressReference.set(progress);
+  }
+
+  @Override
+  public void setInventory(StationInventory inventory) {
+    inventoryReference.set(inventory);
+  }
+
+  private static final class Builder implements ITrackableProgressMeta.Builder {
+
+    private String recipeKey;
+    private float progress;
+    private StationInventory inventory;
+
+    Builder(String recipeKey, float progress, StationInventory inventory) {
+      this.recipeKey = recipeKey;
+      this.progress = progress;
+      this.inventory = inventory;
+    }
+
+    @Override
+    public ITrackableProgressMeta.Builder setRecipeKey(String recipeKey) {
+      this.recipeKey = recipeKey;
+      return this;
+    }
+
+    @Override
+    public ITrackableProgressMeta.Builder setInventory(
+        StationInventory inventory) {
+      this.inventory = inventory;
+      return this;
+    }
+
+    public ITrackableProgressMeta.Builder setProgress(float progress) {
+      this.progress = progress;
+      return this;
+    }
+
+    @Override
+    public TrackableProgressMetaImpl build() {
+      return new TrackableProgressMetaImpl(recipeKey, progress, inventory);
+    }
   }
 
   public record StationInventory(String inventoryString) {
@@ -244,8 +271,8 @@ public final class TrackableProgressMeta implements
 
   }
 
-  private record TrackableProgressMetaMapping(SqlExecutor executor) implements
-      MetaMapping<TrackableProgressMeta> {
+  record TrackableProgressMetaMapping(SqlExecutor executor) implements
+      MetaMapping<ITrackableProgressMeta> {
 
     private static final String CREATE_META = "INSERT INTO trackable_progress_meta (station_id,inventory,recipe_key,progress) VALUES (?,?,?,?)";
 
@@ -254,22 +281,22 @@ public final class TrackableProgressMeta implements
     private static final String UPDATE_META = "UPDATE trackable_progress_meta SET inventory=?,recipe_key=?,progress=? WHERE station_id=?";
 
     @Override
-    public @NotNull TrackableProgressMeta createMeta(@NotNull String idString) {
+    public @NotNull ITrackableProgressMeta createMeta(@NotNull String idString) {
       Preconditions.checkNotNull(idString);
       final StationInventory inventory = StationInventory.create();
       executor.executeUpdate(CREATE_META, idString, inventory.inventoryString(), null, 0f);
-      return new TrackableProgressMeta(null, 0f, inventory);
+      return new TrackableProgressMetaImpl(null, 0f, inventory);
     }
 
     @Override
-    public @NotNull TrackableProgressMeta getMeta(@NotNull String idString) {
+    public @NotNull ITrackableProgressMeta getMeta(@NotNull String idString) {
       Preconditions.checkNotNull(idString);
       return executor.queryRow(scanner -> {
         try {
           String recipeKey = scanner.getString("recipe_key");
           String inventoryString = scanner.getString("inventory");
           float progress = scanner.getFloat("progress");
-          return new TrackableProgressMeta(recipeKey, progress,
+          return new TrackableProgressMetaImpl(recipeKey, progress,
               new StationInventory(inventoryString));
         } catch (SQLException e) {
           throw new RuntimeException(e);
@@ -278,7 +305,7 @@ public final class TrackableProgressMeta implements
     }
 
     @Override
-    public void updateMeta(@NotNull String idString, @NotNull TrackableProgressMeta meta)
+    public void updateMeta(@NotNull String idString, @NotNull ITrackableProgressMeta meta)
         throws IllegalArgumentException {
       Preconditions.checkNotNull(idString);
       Preconditions.checkNotNull(meta);
@@ -286,9 +313,8 @@ public final class TrackableProgressMeta implements
       if (inventory == null) {
         throw new IllegalArgumentException();
       }
-
       executor.executeUpdate(UPDATE_META, inventory.inventoryString, meta.getRecipeKey(),
-          meta.getProgress(),idString);
+          meta.getProgress(), idString);
     }
   }
 }

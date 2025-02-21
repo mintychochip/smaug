@@ -72,8 +72,6 @@ public class StationServiceLocator {
 
     IStation getStation(UUID stationId);
 
-    void updateStation(IStation station);
-
 //    <M extends Meta<M>> IMetaStation<M> getStation(Location location, Class<M> metaClass);
   }
 
@@ -111,14 +109,6 @@ public class StationServiceLocator {
     @Override
     public IStation getStation(UUID stationId) {
       return databaseService.getStation(stationId);
-    }
-
-    @Override
-    public void updateStation(IStation station) {
-      if(!(station instanceof IMetaStation<?> metaStation)) {
-        return;
-      }
-      IMetaStationDatabaseService<?> databaseService1 = (IMetaStationDatabaseService<?>) databaseService;
     }
 
 //    @Override

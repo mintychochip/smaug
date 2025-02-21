@@ -20,17 +20,16 @@
 package org.aincraft.container.display;
 
 import java.util.Collection;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import org.bukkit.event.Listener;
 import org.jetbrains.annotations.NotNull;
 
-public interface IViewModelController<M> extends Iterable<IViewModel<M>>, Listener {
+public interface IViewModelController<M> extends Listener {
 
   void register(@NotNull Key stationKey, @NotNull IViewModel<M> viewModel);
 
   boolean isRegistered(@NotNull Key stationKey);
 
-  IViewModel<M> get(@NotNull Key stationKey);
-
-  Collection<IViewModel<M>> getAll();
+  List<IViewModel<M>> get(@NotNull Key stationKey);
 }

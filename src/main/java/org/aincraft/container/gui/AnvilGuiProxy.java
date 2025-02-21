@@ -30,7 +30,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.meta.ITrackableProgressMeta;
+import org.aincraft.database.model.meta.TrackableProgressMetaImpl;
 import org.aincraft.database.model.test.IMetaStation;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -207,7 +208,7 @@ public class AnvilGuiProxy {
     }
   }
 
-  public record MetaItem(UpdatableGuiItemWrapper<IMetaStation<TrackableProgressMeta>> itemWrapper) implements AnvilProxyItem {
+  public record MetaItem(UpdatableGuiItemWrapper<IMetaStation<ITrackableProgressMeta>> itemWrapper) implements AnvilProxyItem {
 
     @Override
     public GuiItem getGuiItem() {

@@ -30,15 +30,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.IFactory;
 import org.aincraft.container.display.AnvilItemDisplayView;
 import org.aincraft.container.display.PropertyNotFoundException;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
-import org.aincraft.database.model.meta.TrackableProgressMeta.StationInventory;
+import org.aincraft.database.model.meta.ITrackableProgressMeta;
+import org.aincraft.database.model.meta.TrackableProgressMetaImpl;
+import org.aincraft.database.model.meta.TrackableProgressMetaImpl.StationInventory;
 import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.util.Mt;
 import org.bukkit.Location;
@@ -58,7 +58,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 public final class AnvilViewModel extends
-    AbstractViewModel<IMetaStation<TrackableProgressMeta>, AnvilItemDisplayView, UUID> {
+    AbstractViewModel<IMetaStation<ITrackableProgressMeta>, AnvilItemDisplayView, UUID> {
 
 
 
@@ -146,7 +146,7 @@ public final class AnvilViewModel extends
   }
 
   @Override
-  public IViewModelBinding remove(IMetaStation<TrackableProgressMeta> model) {
+  public IViewModelBinding remove(@NotNull IMetaStation<ITrackableProgressMeta> model) {
     final IViewModelBinding binding = super.remove(model);
     if(binding != null) {
       try {
@@ -197,9 +197,9 @@ public final class AnvilViewModel extends
   }
 
   @Override
-  public void update(@NotNull IMetaStation<TrackableProgressMeta> model) {
+  public void update(@NotNull IMetaStation<ITrackableProgressMeta> model) {
     AnvilDisplayBinding binding = (AnvilDisplayBinding) this.getBinding(model);
-    TrackableProgressMeta meta = model.getMeta();
+    ITrackableProgressMeta meta = model.getMeta();
     StationInventory inventory = meta.getInventory();
     List<ItemStack> contents = inventory.getContents();
     if (contents.isEmpty()) {
@@ -233,7 +233,7 @@ public final class AnvilViewModel extends
   }
 
   @Override
-  @NotNull IFactory<AnvilItemDisplayView, IMetaStation<TrackableProgressMeta>> getViewFactory() {
+  @NotNull IFactory<AnvilItemDisplayView, IMetaStation<ITrackableProgressMeta>> getViewFactory() {
     return s -> new AnvilItemDisplayView();
   }
 
@@ -244,7 +244,7 @@ public final class AnvilViewModel extends
   }
 
   @Override
-  @NotNull UUID modelToKey(@NotNull IMetaStation<TrackableProgressMeta> model) {
+  @NotNull UUID modelToKey(@NotNull IMetaStation<ITrackableProgressMeta> model) {
     return model.getId();
   }
 

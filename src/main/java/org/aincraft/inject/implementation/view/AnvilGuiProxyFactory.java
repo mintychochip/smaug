@@ -37,8 +37,10 @@ import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.container.gui.AnvilGuiProxy.UpdatableGuiItemWrapper;
 import org.aincraft.container.gui.ItemFactory.Builder;
 import org.aincraft.container.item.ItemStackBuilder;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.meta.ITrackableProgressMeta;
+import org.aincraft.database.model.meta.TrackableProgressMetaImpl;
 import org.aincraft.database.model.test.IMetaStation;
+import org.aincraft.inject.implementation.viewmodel.StationPlayerProxy;
 import org.aincraft.listener.IMetaStationDatabaseService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -49,14 +51,14 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 public final class AnvilGuiProxyFactory implements
-    IFactory<AnvilGuiProxy, MetaStationPlayerModel<TrackableProgressMeta>> {
+    IFactory<AnvilGuiProxy, StationPlayerProxy<ITrackableProgressMeta>> {
 
   private static final int ROWS = 4;
 
-  private final IMetaStationDatabaseService<TrackableProgressMeta> stationService;
+  private final IMetaStationDatabaseService<ITrackableProgressMeta> stationService;
   private final Plugin plugin;
 
-  public AnvilGuiProxyFactory(IMetaStationDatabaseService<TrackableProgressMeta> stationService,
+  public AnvilGuiProxyFactory(IMetaStationDatabaseService<ITrackableProgressMeta> stationService,
       Plugin plugin) {
     this.stationService = stationService;
     this.plugin = plugin;
@@ -64,10 +66,10 @@ public final class AnvilGuiProxyFactory implements
 
   @Override
   public @NotNull AnvilGuiProxy create(
-      @NotNull MetaStationPlayerModel<TrackableProgressMeta> data) {
+      @NotNull StationPlayerProxy<ITrackableProgressMeta> data) {
     Preconditions.checkNotNull(data);
-    IMetaStation<TrackableProgressMeta> metaStation = data.station();
-    Player player = data.player();
+    IMetaStation<ITrackableProgressMeta> metaStation = data.getStation();
+    Player player = data.getPlayer();
     final Gui main = Gui.gui(GuiType.DISPENSER).title(Component.text("Menu"))
         .disableAllInteractions()
         .create();
@@ -78,12 +80,12 @@ public final class AnvilGuiProxyFactory implements
         ROWS,
         Component.text("Recipes"), (e, recipe) -> {
       final HumanEntity entity = e.getWhoClicked();
-      final TrackableProgressMeta meta = metaStation.getMeta();
+      final ITrackableProgressMeta meta = metaStation.getMeta();
       final String recipeKey = recipe.getKey();
       if (meta.getRecipeKey() == null) {
         Bukkit.getPluginManager().callEvent(
             new TrackableProgressUpdateEvent(metaStation.setMeta(
-                (Consumer<TrackableProgressMeta>) m -> m.setRecipeKey(recipeKey)),
+                m -> m.toBuilder().setRecipeKey(recipeKey).build()),
                 player));
         return;
       }
@@ -93,10 +95,8 @@ public final class AnvilGuiProxyFactory implements
           public void run() {
             Bukkit.getPluginManager()
                 .callEvent(new TrackableProgressUpdateEvent(
-                    metaStation.setMeta(m -> {
-                      m.setProgress(0);
-                      m.setRecipeKey(recipeKey);
-                    }),
+                    metaStation.setMeta(
+                        m -> m.toBuilder().setProgress(0).setRecipeKey(recipeKey).build()),
                     player));
           }
         }.runTask(plugin);
@@ -122,10 +122,10 @@ public final class AnvilGuiProxyFactory implements
 
   static final class MetaItemFactory {
 
-    private static MetaItem create(IMetaStation<TrackableProgressMeta> mutableStation) {
-      final UpdatableGuiItemWrapper<IMetaStation<TrackableProgressMeta>> itemWrapper = UpdatableGuiItemWrapper.create(
+    private static MetaItem create(IMetaStation<ITrackableProgressMeta> mutableStation) {
+      final UpdatableGuiItemWrapper<IMetaStation<ITrackableProgressMeta>> itemWrapper = UpdatableGuiItemWrapper.create(
           mutableStation,
-          new Builder<IMetaStation<TrackableProgressMeta>>().setDisplayNameFunction(
+          new Builder<IMetaStation<ITrackableProgressMeta>>().setDisplayNameFunction(
                   s -> MiniMessage.miniMessage().deserialize("Station: <a>",
                       Placeholder.component("a", Component.text(s.getIdString()))))
               .setItemModelFunction( // can make this dynamic off the station key
@@ -136,17 +136,17 @@ public final class AnvilGuiProxyFactory implements
   }
 
   static final class StorageItemFactory implements
-      IFactory<BasicStationItem, IMetaStation<TrackableProgressMeta>> {
+      IFactory<BasicStationItem, IMetaStation<ITrackableProgressMeta>> {
 
-    private final IMetaStationDatabaseService<TrackableProgressMeta> stationService;
+    private final IMetaStationDatabaseService<ITrackableProgressMeta> stationService;
 
-    StorageItemFactory(IMetaStationDatabaseService<TrackableProgressMeta> stationService) {
+    StorageItemFactory(IMetaStationDatabaseService<ITrackableProgressMeta> stationService) {
       this.stationService = stationService;
     }
 
     @Override
     public @NotNull AnvilGuiProxy.BasicStationItem create(
-        @NotNull IMetaStation<TrackableProgressMeta> mutableStation) {
+        @NotNull IMetaStation<ITrackableProgressMeta> mutableStation) {
       GuiItem guiItem = ItemStackBuilder.create(Material.CHEST)
           .meta(meta -> meta.displayName(Component.text("Storage")))
           .asGuiItem(e -> {

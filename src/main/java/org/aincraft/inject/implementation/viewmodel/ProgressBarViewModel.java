@@ -31,23 +31,22 @@ import org.aincraft.Smaug;
 import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.display.PropertyNotFoundException;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.meta.ITrackableProgressMeta;
+import org.aincraft.database.model.meta.TrackableProgressMetaImpl;
 import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
-import org.aincraft.inject.IRecipeFetcher;
-import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 public final class ProgressBarViewModel extends
-    AbstractViewModel<IMetaStation<TrackableProgressMeta>, BossBar, UUID> {
+    AbstractViewModel<IMetaStation<ITrackableProgressMeta>, BossBar, UUID> {
 
   private static final Color DEFAULT_BOSS_BAR_COLOR = Color.BLUE;
 
   @Override
-  public void update(@NotNull IMetaStation<TrackableProgressMeta> model) {
+  public void update(@NotNull IMetaStation<ITrackableProgressMeta> model) {
     try {
       final BossBar reference = this.getBinding(model).getProperty("bossbar", BossBar.class);
       updateBossBar(reference, model);
@@ -78,7 +77,7 @@ public final class ProgressBarViewModel extends
 
   @Override
   @NotNull
-  IFactory<BossBar, IMetaStation<TrackableProgressMeta>> getViewFactory() {
+  IFactory<BossBar, IMetaStation<ITrackableProgressMeta>> getViewFactory() {
     return data -> {
       BossBar bossBar = BossBar.bossBar(Component.empty(), 0, DEFAULT_BOSS_BAR_COLOR,
           Overlay.PROGRESS);
@@ -94,12 +93,12 @@ public final class ProgressBarViewModel extends
   }
 
   @Override
-  @NotNull UUID modelToKey(@NotNull IMetaStation<TrackableProgressMeta> model) {
+  @NotNull UUID modelToKey(@NotNull IMetaStation<ITrackableProgressMeta> model) {
     return model.getId();
   }
 
-  private void updateBossBar(@NotNull BossBar reference, IMetaStation<TrackableProgressMeta> station) {
-    final TrackableProgressMeta meta = station.getMeta();
+  private void updateBossBar(@NotNull BossBar reference, IMetaStation<ITrackableProgressMeta> station) {
+    final ITrackableProgressMeta meta = station.getMeta();
     try {
       final String recipeKey = meta.getRecipeKey();
       if (recipeKey == null) {

@@ -19,9 +19,11 @@
 
 package org.aincraft.inject.implementation.viewmodel;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.display.IViewModel;
@@ -30,11 +32,13 @@ import org.jetbrains.annotations.NotNull;
 
 public abstract class AbstractViewModelController<M> implements IViewModelController<M> {
 
-  protected final Map<Key, IViewModel<M>> viewModels = new HashMap<>();
+  protected final Map<Key, List<IViewModel<M>>> viewModels = new HashMap<>();
 
   @Override
   public void register(@NotNull Key stationKey, @NotNull IViewModel<M> viewModel) {
-    viewModels.put(stationKey, viewModel);
+    List<IViewModel<M>> vms = viewModels.getOrDefault(stationKey, new ArrayList<>());
+    vms.add(viewModel);
+    viewModels.put(stationKey,vms);
   }
 
   @Override
@@ -43,18 +47,7 @@ public abstract class AbstractViewModelController<M> implements IViewModelContro
   }
 
   @Override
-  public IViewModel<M> get(@NotNull Key stationKey) {
+  public List<IViewModel<M>> get(@NotNull Key stationKey) {
     return viewModels.get(stationKey);
-  }
-
-  @Override
-  public Collection<IViewModel<M>> getAll() {
-    return viewModels.values();
-  }
-
-  @NotNull
-  @Override
-  public Iterator<IViewModel<M>> iterator() {
-    return viewModels.values().iterator();
   }
 }

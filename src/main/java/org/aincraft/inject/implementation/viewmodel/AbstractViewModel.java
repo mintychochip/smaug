@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 abstract class AbstractViewModel<M, V, K> implements IViewModel<M> {
 
-  private final Map<K, IViewModelBinding> bindings = new HashMap<>();
+  protected final Map<K, IViewModelBinding> bindings = new HashMap<>();
 
   @NotNull
   abstract Class<? extends IViewModelBinding> getBindingClass();

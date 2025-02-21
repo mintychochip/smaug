@@ -21,31 +21,37 @@ package org.aincraft;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import java.util.List;
 import net.kyori.adventure.key.Key;
+import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.api.event.TrackableProgressUpdateEvent;
 import org.aincraft.commands.IngredientCommand;
 import org.aincraft.commands.SmithCommand;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.gui.GuiListener;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.meta.ITrackableProgressMeta;
 import org.aincraft.database.model.meta.ICauldronMeta;
 import org.aincraft.database.storage.CachedMutableStationDatabaseService;
 import org.aincraft.database.storage.CachedStationDatabaseService;
 import org.aincraft.database.storage.IStorage;
 import org.aincraft.handler.AnvilStationHandler;
+import org.aincraft.handler.IStationHandler;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.inject.implementation.viewmodel.MetaListener;
+import org.aincraft.inject.implementation.view.AnvilGuiProxyFactory;
+import org.aincraft.inject.implementation.viewmodel.AnvilGuiViewModel;
+import org.aincraft.inject.implementation.viewmodel.StationModelViewController;
 import org.aincraft.inject.implementation.viewmodel.AnvilViewModel;
 import org.aincraft.inject.implementation.viewmodel.ProgressBarViewModel;
+import org.aincraft.inject.implementation.viewmodel.StationPlayerProxyViewController;
 import org.aincraft.listener.IMetaStationDatabaseService;
+import org.aincraft.listener.MutableListener;
 import org.aincraft.listener.StationListener;
 import org.aincraft.listener.StationServiceLocator;
 import org.aincraft.listener.StationServiceLocator.StationFacadeImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -76,9 +82,9 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     registerListeners(new Listener[]{
         new GuiListener()}, bootstrap);
     CachedStationDatabaseService stationService = new CachedStationDatabaseService(storage);
-    IMetaStationDatabaseService<TrackableProgressMeta> trackableProgressService = new CachedMutableStationDatabaseService<>(
+    IMetaStationDatabaseService<ITrackableProgressMeta> trackableProgressService = new CachedMutableStationDatabaseService<>(
         stationService,
-        TrackableProgressMeta.createMapping(storage.getExecutor()));
+        ITrackableProgressMeta.createMapping(storage.getSource()));
     IMetaStationDatabaseService<ICauldronMeta> cauldronService = new CachedMutableStationDatabaseService<>(
         stationService,
         ICauldronMeta.createMapping(storage.getSource()));
@@ -86,28 +92,45 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
       jp.getCommand("smith").setExecutor(new SmithCommand(trackableProgressService));
       jp.getCommand("test").setExecutor(injector.getInstance(IngredientCommand.class));
     }
+    AnvilGuiViewModel anvilGuiViewModel = new AnvilGuiViewModel(
+        new AnvilGuiProxyFactory(trackableProgressService, bootstrap));
     ProgressBarViewModel viewModel = new ProgressBarViewModel();
     StationServiceLocator serviceLocator = new StationServiceLocator.Builder(stationService)
         .setService(Key.key("smaug:anvil"), new StationFacadeImpl(
             new AnvilStationHandler(new NamespacedKey(bootstrap, "id"),
                 event -> trackableProgressService.getStation(
-                    event.getClickedBlock().getLocation()), viewModel),
+                    event.getClickedBlock().getLocation()), viewModel, anvilGuiViewModel),
             trackableProgressService))
         .setService(Key.key("smaug:cauldron"), new StationFacadeImpl(
-            event -> {
+            new IStationHandler() {
+              @Override
+              public void handle(PlayerInteractEvent event) {
 
+              }
+
+              @Override
+              public <E extends StationUpdateEvent<?>> Class<E> getEventClass() {
+                return null;
+              }
             }, cauldronService
         ))
         .build();
-    MetaListener<TrackableProgressMeta, TrackableProgressUpdateEvent> listener = new MetaListener<>(
-        TrackableProgressMeta.class, trackableProgressService);
-    listener.register(Key.key("smaug:anvil"),
-        List.of(new AnvilViewModel(), viewModel));
+    StationModelViewController<ITrackableProgressMeta, TrackableProgressUpdateEvent> controller =
+        new StationModelViewController<>(
+        ITrackableProgressMeta.class);
+    StationPlayerProxyViewController<ITrackableProgressMeta, TrackableProgressUpdateEvent> playerController =
+        new StationPlayerProxyViewController<>();
+    playerController.register(Key.key("smaug:anvil"),anvilGuiViewModel
+        );
+    controller.register(Key.key("smaug:anvil"), new AnvilViewModel());
+    controller.register(Key.key("smaug:anvil"), viewModel);
     StationListener stationListener = new StationListener(bootstrap,
         new NamespacedKey(bootstrap, "station"), serviceLocator, storage);
 
     Bukkit.getPluginManager().registerEvents(stationListener, bootstrap);
-    Bukkit.getPluginManager().registerEvents(listener, bootstrap);
+    Bukkit.getPluginManager().registerEvents(controller, bootstrap);
+    Bukkit.getPluginManager().registerEvents(playerController,bootstrap);
+    Bukkit.getPluginManager().registerEvents(new MutableListener<ITrackableProgressMeta,TrackableProgressUpdateEvent>(trackableProgressService), bootstrap);
   }
 
   private static void registerListeners(Listener[] listeners, Plugin plugin) {

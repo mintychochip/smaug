@@ -24,7 +24,8 @@ import java.util.List;
 import java.util.function.Predicate;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.SmaugRecipe;
-import org.aincraft.database.model.meta.TrackableProgressMeta;
+import org.aincraft.database.model.meta.ITrackableProgressMeta;
+import org.aincraft.database.model.meta.TrackableProgressMetaImpl;
 import org.aincraft.database.model.test.IMetaStation;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
@@ -58,7 +59,7 @@ public final class Smaug {
   }
 
   public static List<SmaugRecipe> fetchAllRecipes(
-      IMetaStation<TrackableProgressMeta> mutableStation,
+      IMetaStation<ITrackableProgressMeta> mutableStation,
       @Nullable List<ItemStack> externalStacks) {
     Preconditions.checkNotNull(mutableStation);
 

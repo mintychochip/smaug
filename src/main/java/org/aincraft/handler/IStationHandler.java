@@ -19,6 +19,7 @@
 
 package org.aincraft.handler;
 
+import org.aincraft.api.event.StationUpdateEvent;
 import org.aincraft.database.model.test.IStation;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -26,4 +27,5 @@ import org.jetbrains.annotations.NotNull;
 
 public interface IStationHandler {
   void handle(PlayerInteractEvent event);
+  <E extends StationUpdateEvent<?>> Class<E> getEventClass();
 }
