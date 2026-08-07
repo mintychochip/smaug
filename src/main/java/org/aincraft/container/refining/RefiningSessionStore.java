@@ -34,6 +34,15 @@ public final class RefiningSessionStore {
         current.stationKey(), recipeKey, batch, current.executing()));
   }
 
+  public synchronized void setBatch(Player player, Station station, int batch) {
+    if (batch < 1) {
+      throw new IllegalArgumentException("batch must be positive");
+    }
+    RefiningSession current = open(player, station);
+    sessions.put(key(player, station), new RefiningSession(current.playerId(), current.stationId(),
+        current.stationKey(), current.selectedRecipeKey(), batch, current.executing()));
+  }
+
   public synchronized boolean beginExecution(Player player, Station station) {
     RefiningSession current = open(player, station);
     if (current.executing()) {

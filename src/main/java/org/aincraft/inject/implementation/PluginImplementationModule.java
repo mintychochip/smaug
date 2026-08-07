@@ -38,6 +38,8 @@ import org.aincraft.container.refining.RefiningService;
 import org.aincraft.container.refining.RefiningSessionStore;
 import org.aincraft.container.refining.RefiningYieldCalculator;
 import org.aincraft.database.storage.SqlConfig;
+import org.aincraft.inject.implementation.view.RefiningGuiProxyFactory;
+import org.aincraft.inject.implementation.viewmodel.RefiningGuiViewModel;
 import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
@@ -74,6 +76,8 @@ public final class PluginImplementationModule extends AbstractModule {
     bind(RefiningSessionStore.class).in(Singleton.class);
     bind(RefiningYieldCalculator.class).toInstance(RefiningYieldCalculator.standard());
     bind(RefiningService.class).in(Singleton.class);
+    bind(RefiningGuiProxyFactory.class).in(Singleton.class);
+    bind(RefiningGuiViewModel.class).in(Singleton.class);
     bind(IItemRegistry.class).toProvider(itemRegistryProviderClazz).in(Singleton.class);
     bind(IStorage.class).toProvider(storageProviderClazz).in(Singleton.class);
     bind(SqlConfig.class).toProvider(sqlConfigProviderClazz).in(Singleton.class);
