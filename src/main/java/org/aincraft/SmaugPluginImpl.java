@@ -113,11 +113,10 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
             this.guiController.get(Key.key("smaug:anvil")), this.bossBarController.get(Key.key("smaug:anvil"))));
 
     this.registerHandler(new CauldronHandler(Key.key("smaug:cauldron")));
-    RefiningGuiViewModel refiningGuiViewModel = injector.getInstance(RefiningGuiViewModel.class);
     RefiningService refiningService = injector.getInstance(RefiningService.class);
     for (RefiningStationType stationType : RefiningStationType.values()) {
       handlers.put(stationType.key(),
-          new RefiningStationHandler(stationType.key(), refiningGuiViewModel, refiningService));
+          new RefiningStationHandler(stationType.key(), this.refiningGuiViewModel, refiningService));
     }
   }
 
