@@ -29,6 +29,8 @@ import org.jetbrains.annotations.Nullable;
 
 public interface Ingredient {
 
+  boolean matches(ItemStack stack);
+
   boolean test(List<ItemStack> stacks);
 
   void add( Inventory inventory);

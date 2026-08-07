@@ -69,6 +69,11 @@ public final class ItemIngredient implements Ingredient {
   }
 
   @Override
+  public boolean matches(ItemStack stack) {
+    return stack != null && !stack.getType().isAir() && this.stackIsEqual(stack);
+  }
+
+  @Override
   public void add(Inventory inventory) {
 
   }

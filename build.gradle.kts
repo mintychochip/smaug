@@ -94,6 +94,11 @@ publishing {
         }
     }
 }
+configurations {
+    named("testRuntimeClasspath") {
+        exclude(group = "io.papermc.paper", module = "paper-server")
+    }
+}
 dependencies {
     paperweight.paperDevBundle("1.21.1-R0.1-SNAPSHOT")
     implementation("org.postgresql:postgresql:42.7.4")
@@ -110,5 +115,6 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.0.0")
+    testRuntimeOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 }
 

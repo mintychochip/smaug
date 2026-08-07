@@ -102,6 +102,10 @@ class SmaugRecipeRefiningTest {
   private static Ingredient ingredient(String name, int amount, boolean available) {
     return new Ingredient() {
       @Override
+      public boolean matches(ItemStack stack) {
+        return available && stack != null;
+      }
+      @Override
       public boolean test(List<ItemStack> stacks) {
         return available;
       }
