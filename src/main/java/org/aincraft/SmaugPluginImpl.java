@@ -40,10 +40,14 @@ import org.aincraft.database.storage.IStorage;
 import org.aincraft.api.refining.ProfessionGateway;
 import org.aincraft.api.refining.RefiningStationAccess;
 import org.aincraft.container.refining.RefiningIntegrationRegistry;
+import org.aincraft.container.refining.RefiningService;
+import org.aincraft.container.refining.RefiningStationType;
 import org.aincraft.handler.AnvilStationHandler;
+import org.aincraft.handler.RefiningStationHandler;
 import org.aincraft.handler.CauldronHandler;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
+import org.aincraft.inject.implementation.viewmodel.RefiningGuiViewModel;
 import org.aincraft.listener.IStationService;
 import org.aincraft.listener.PlayerListener;
 import org.aincraft.listener.StationListener;
@@ -106,6 +110,12 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
             this.guiController.get(Key.key("smaug:anvil")), this.bossBarController.get(Key.key("smaug:anvil"))));
 
     this.registerHandler(new CauldronHandler(Key.key("smaug:cauldron")));
+    RefiningGuiViewModel refiningGuiViewModel = injector.getInstance(RefiningGuiViewModel.class);
+    RefiningService refiningService = injector.getInstance(RefiningService.class);
+    for (RefiningStationType stationType : RefiningStationType.values()) {
+      handlers.put(stationType.key(),
+          new RefiningStationHandler(stationType.key(), refiningGuiViewModel, refiningService));
+    }
   }
 
   private static void registerListeners(Listener[] listeners, Plugin plugin) {

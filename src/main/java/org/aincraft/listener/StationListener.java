@@ -84,16 +84,24 @@ public class StationListener implements Listener {
     this.stationKey = stationKey;
   }
 
-  @EventHandler(priority = EventPriority.MONITOR)
-  private void onPlaceStation(final BlockPlaceEvent event) {
+  @EventHandler(priority = EventPriority.HIGHEST)
+  private void gateStationPlacement(final BlockPlaceEvent event) {
+    if (event.isCancelled()) {
+      return;
+    }
     ItemStack itemInHand = event.getItemInHand();
     ItemMeta itemMeta = itemInHand.getItemMeta();
     if (itemMeta == null) {
       return;
     }
     PersistentDataContainer pdc = itemMeta.getPersistentDataContainer();
-    String stationKey = pdc.getOrDefault(this.stationKey, PersistentDataType.STRING, "");
-    if (stationKey.isEmpty()) {
+    String stationKeyString = pdc.getOrDefault(this.stationKey, PersistentDataType.STRING, "");
+    if (stationKeyString.isEmpty()) {
+      return;
+    }
+    NamespacedKey parsedStationKey = NamespacedKey.fromString(stationKeyString);
+    if (parsedStationKey == null || !handlers.containsKey(parsedStationKey)) {
+      event.setCancelled(true);
       return;
     }
     Block block = event.getBlockPlaced();
@@ -105,11 +113,33 @@ public class StationListener implements Listener {
     Block blockBelow = world.getBlockAt(blockLocation.clone().add(0, -1, 0));
     if (IS_FALLING_BLOCK_TYPE.test(block) && blockBelow.getType().isAir()) {
       event.setCancelled(true);
+    }
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  private void onPlaceStation(final BlockPlaceEvent event) {
+    if (event.isCancelled()) {
       return;
     }
-    Player player = event.getPlayer();
-    stationService.createStation(NamespacedKey.fromString(stationKey),
-        blockLocation);
+    ItemStack itemInHand = event.getItemInHand();
+    ItemMeta itemMeta = itemInHand.getItemMeta();
+    if (itemMeta == null) {
+      return;
+    }
+    PersistentDataContainer pdc = itemMeta.getPersistentDataContainer();
+    String stationKeyString = pdc.getOrDefault(this.stationKey, PersistentDataType.STRING, "");
+    if (stationKeyString.isEmpty()) {
+      return;
+    }
+    NamespacedKey parsedStationKey = NamespacedKey.fromString(stationKeyString);
+    if (parsedStationKey == null || !handlers.containsKey(parsedStationKey)) {
+      return;
+    }
+    Location blockLocation = event.getBlockPlaced().getLocation();
+    if (blockLocation.getWorld() == null) {
+      return;
+    }
+    stationService.createStation(parsedStationKey, blockLocation);
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
