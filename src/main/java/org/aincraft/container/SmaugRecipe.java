@@ -20,11 +20,13 @@
 package org.aincraft.container;
 
 import io.papermc.paper.datacomponent.item.ItemLore;
+import java.util.Optional;
 import java.util.List;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.Result.Status;
 import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientList;
+import org.aincraft.container.refining.RefiningMetadata;
 import org.aincraft.container.item.IKeyedItem;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -61,6 +63,8 @@ public final class SmaugRecipe {
   private final IKeyedItem output;
   private final int amount;
   private final IngredientList ingredientList;
+  private final IngredientList reagents;
+  private final @Nullable RefiningMetadata refiningMetadata;
   private final String recipeKey;
   private final Key stationKey;
   private final @Nullable String permission;
@@ -69,6 +73,14 @@ public final class SmaugRecipe {
   public SmaugRecipe(IKeyedItem output, int amount, IngredientList ingredientList,
       String recipeKey, Key stationKey,
       @Nullable String permission, float actions) {
+    this(output, amount, ingredientList, recipeKey, stationKey, permission, actions,
+        IngredientList.empty(), null);
+  }
+
+  public SmaugRecipe(IKeyedItem output, int amount, IngredientList ingredientList,
+      String recipeKey, Key stationKey,
+      @Nullable String permission, float actions, IngredientList reagents,
+      @Nullable RefiningMetadata refiningMetadata) {
     this.output = output;
     this.amount = amount;
     this.ingredientList = ingredientList;
@@ -76,6 +88,8 @@ public final class SmaugRecipe {
     this.stationKey = stationKey;
     this.permission = permission;
     this.actions = actions;
+    this.reagents = reagents;
+    this.refiningMetadata = refiningMetadata;
   }
 
   public ItemStack craft() {
@@ -87,10 +101,11 @@ public final class SmaugRecipe {
 
   public RecipeResult test(
       List<ItemStack> stacks) {
-    for (Ingredient ingredient : ingredientList) {
+    IngredientList allIngredients = allIngredients();
+    for (Ingredient ingredient : allIngredients) {
       if (!ingredient.test(stacks)) {
         return new RecipeResult(Status.FAILURE,
-            ingredientList.findMissing(stacks),
+            allIngredients.findMissing(stacks),
             "missing ingredients");
       }
     }
@@ -118,9 +133,25 @@ public final class SmaugRecipe {
     return ingredientList;
   }
 
+  public IngredientList getReagents() {
+    return reagents;
+  }
+
+  public IngredientList allIngredients() {
+    return ingredientList.combinedWith(reagents);
+  }
+
+  public Optional<RefiningMetadata> getRefiningMetadata() {
+    return Optional.ofNullable(refiningMetadata);
+  }
+
+  public boolean isRefining() {
+    return refiningMetadata != null;
+  }
+
   @SuppressWarnings("UnstableApiUsage")
   public ItemLore lore() {
-    return ItemLore.lore(ingredientList.components());
+    return ItemLore.lore(allIngredients().components());
   }
 
   public IKeyedItem getOutput() {

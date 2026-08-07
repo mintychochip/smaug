@@ -32,6 +32,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class IngredientList implements Iterable<Ingredient> {
+  public static IngredientList empty() {
+    return new IngredientList(new ArrayList<>());
+  }
 
   private List<Ingredient> delegate;
 
@@ -51,6 +54,27 @@ public final class IngredientList implements Iterable<Ingredient> {
 
   public IngredientList(List<Ingredient> ingredients) {
     this.delegate = ingredients;
+  }
+
+  public IngredientList scaled(int multiplier) {
+    if (multiplier < 0) {
+      throw new IllegalArgumentException("multiplier is negative");
+    }
+    List<Ingredient> scaled = new ArrayList<>(delegate.size());
+    for (Ingredient ingredient : delegate) {
+      scaled.add(ingredient.copy(ingredient.getRequired().intValue() * multiplier));
+    }
+    return new IngredientList(scaled);
+  }
+
+  public List<Ingredient> asList() {
+    return List.copyOf(delegate);
+  }
+
+  public IngredientList combinedWith(IngredientList other) {
+    List<Ingredient> combined = new ArrayList<>(delegate);
+    combined.addAll(other.delegate);
+    return new IngredientList(combined);
   }
 
   public void addIngredient(Ingredient ingredient) {

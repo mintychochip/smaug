@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import net.kyori.adventure.key.Key;
 import java.util.List;
 import org.aincraft.Smaug;
 import org.aincraft.container.IRegistry.IItemRegistry;
@@ -30,6 +31,9 @@ import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientFactory;
 import org.aincraft.container.ingredient.IngredientList;
+import org.aincraft.container.refining.EfficiencyProfile;
+import org.aincraft.container.refining.RefiningMetadata;
+import org.aincraft.container.refining.RefiningStationType;
 import org.aincraft.container.item.IKeyedItem;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.inject.IKeyFactory;
@@ -79,10 +83,49 @@ final class RecipeParserImpl implements IRecipeParser {
     NamespacedKey stationKey = keyFactory.resolveKey(typeString, false);
     String permissionString = recipeSection.getString("permission", null);
     float actions = (float) recipeSection.getDouble("actions", 1);
+
+    String profession = recipeSection.getString("profession", null);
+    ConfigurationSection reagentSection = recipeSection.getConfigurationSection("reagents");
+    if (profession == null && reagentSection != null) {
+      return null;
+    }
+    IngredientList reagents = IngredientList.empty();
+    if (reagentSection != null) {
+      List<Ingredient> parsedReagents = new IngredientParser(itemRegistry,
+          ingredientFactory).parseIngredients(reagentSection);
+      if (!parsedReagents.isEmpty()) {
+        reagents = new IngredientList(parsedReagents);
+      }
+    }
+
+    RefiningMetadata refiningMetadata = null;
+    if (profession != null) {
+      if (stationKey == null || RefiningStationType.fromKey(
+          Key.key(stationKey.getNamespace(), stationKey.getKey())).isEmpty()) {
+        return null;
+      }
+      try {
+        ConfigurationSection efficiency = recipeSection.getConfigurationSection("efficiency");
+        String profileKey = recipeSection.getString("efficiency-profile",
+            profession + "_default");
+        int minimumLevel = efficiency == null ? 0 : efficiency.getInt("minimum-level", 0);
+        double chancePerLevel = efficiency == null
+            ? 0 : efficiency.getDouble("chance-per-level", 0);
+        int maximumBonus = efficiency == null ? 0 : efficiency.getInt("maximum-bonus", 0);
+        refiningMetadata = new RefiningMetadata(profession,
+            recipeSection.getInt("required-level", 0),
+            recipeSection.getInt("required-station-tier", 1),
+            recipeSection.getInt("profession-xp", 0),
+            new EfficiencyProfile(profileKey, minimumLevel, chancePerLevel, maximumBonus));
+      } catch (IllegalArgumentException exception) {
+        return null;
+      }
+    }
+
     return new SmaugRecipe(output, amount,
         new IngredientList(ingredients),
         recipeSection.getName(),
-        stationKey, permissionString, actions);
+        stationKey, permissionString, actions, reagents, refiningMetadata);
   }
 
   static final class IngredientParser {
