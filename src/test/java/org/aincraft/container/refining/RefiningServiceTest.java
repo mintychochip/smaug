@@ -85,6 +85,19 @@ class RefiningServiceTest {
   }
 
   @Test
+  void nullStationAccessAfterOpenGateReturnsNoRecipes() {
+    int[] calls = {0};
+    integrations.registerStationAccess((ignoredPlayer, ignoredStation) ->
+        ++calls[0] == 1 ? new RefiningStationAccessResult(true, 3) : null);
+    SmaugRecipe recipe = recipe("steel_ingot", SMELTER, 1, 1, 1, 1, Material.RAW_IRON, 1,
+        null, 0);
+    recipes.put(recipe);
+    player.getInventory().setItem(0, new ItemStack(Material.RAW_IRON, 1));
+
+    assertTrue(service.availableRecipes(player, station).isEmpty());
+  }
+
+  @Test
   void previewScalesPrimaryAndReagentInputsAndShowsEfficientOutput() {
     SmaugRecipe recipe = recipe("steel_ingot", SMELTER, 1, 5, 2, 7, Material.RAW_IRON, 2,
         Material.COAL, 1);

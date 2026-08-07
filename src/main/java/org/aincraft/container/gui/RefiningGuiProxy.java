@@ -33,7 +33,6 @@ public class RefiningGuiProxy {
 
   private static final int MIN_BATCH = 1;
   private static final int MAX_BATCH = 64;
-  private static final int RECIPE_PAGE_SIZE = 36;
 
   private final Gui mainGui;
   private final PaginatedGui recipeSelector;
@@ -43,6 +42,7 @@ public class RefiningGuiProxy {
   private final @Nullable RefiningSessionStore sessions;
   private final @Nullable IRecipeFetcher recipeFetcher;
   private boolean switchingGui;
+  private @Nullable Runnable closeCleanup;
 
   public RefiningGuiProxy(@Nullable Gui mainGui, @Nullable PaginatedGui recipeSelector) {
     this.mainGui = mainGui;
@@ -73,6 +73,10 @@ public class RefiningGuiProxy {
 
   public PaginatedGui getRecipeSelector() {
     return recipeSelector;
+  }
+
+  public void setCloseCleanup(@Nullable Runnable closeCleanup) {
+    this.closeCleanup = closeCleanup;
   }
 
   public void open(Player target) {
@@ -215,6 +219,11 @@ public class RefiningGuiProxy {
   private void closeSession(HumanEntity entity) {
     if (entity instanceof Player closingPlayer && closingPlayer.equals(player)) {
       sessions.close(closingPlayer, station);
+      Runnable cleanup = closeCleanup;
+      closeCleanup = null;
+      if (cleanup != null) {
+        cleanup.run();
+      }
     }
   }
 

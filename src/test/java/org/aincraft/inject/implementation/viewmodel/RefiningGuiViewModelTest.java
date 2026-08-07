@@ -76,6 +76,22 @@ class RefiningGuiViewModelTest {
   }
 
   @Test
+  void inventoryCloseRemovesBindingWithoutClosingAgain() {
+    TrackingProxy tracking = new TrackingProxy();
+    RefiningGuiViewModel viewModel = new RefiningGuiViewModel(
+        ignored -> tracking, sessions);
+    RefiningPlayerStationProxy proxy = new RefiningPlayerStationProxy(player, station);
+
+    viewModel.open(proxy);
+    tracking.triggerInventoryClose();
+
+    assertFalse(viewModel.isBound(proxy));
+    assertTrue(sessions.get(player, station).isEmpty());
+    assertEquals(0, tracking.closeCount);
+  }
+
+
+  @Test
   void sessionBatchHasPositiveBoundsAndDoesNotStoreItems() {
     sessions.open(player, station);
     sessions.setBatch(player, station, 64);
@@ -98,6 +114,7 @@ class RefiningGuiViewModelTest {
   private static final class TrackingProxy extends RefiningGuiProxy {
     private int refreshCount;
     private int closeCount;
+    private Runnable closeCleanup;
 
     private TrackingProxy() {
       super(null, null);
@@ -111,6 +128,16 @@ class RefiningGuiViewModelTest {
     @Override
     public void close(Player player) {
       closeCount++;
+    }
+
+    @Override
+    public void setCloseCleanup(Runnable closeCleanup) {
+      this.closeCleanup = closeCleanup;
+      super.setCloseCleanup(closeCleanup);
+    }
+
+    private void triggerInventoryClose() {
+      closeCleanup.run();
     }
   }
 }

@@ -55,6 +55,9 @@ public final class RefiningService {
       return List.of();
     }
     RefiningStationAccessResult access = integrations.stationAccess().check(player, station);
+    if (access == null || !access.allowed()) {
+      return List.of();
+    }
     return recipeFetcher.all(recipe -> {
       if (!eligibleRecipe(player, station, access, recipe)) {
         return false;
