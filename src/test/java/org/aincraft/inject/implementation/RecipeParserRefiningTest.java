@@ -83,6 +83,14 @@ class RecipeParserRefiningTest {
   }
 
   @Test
+  void rejectsProfessionThatDoesNotMatchStationCapability() throws Exception {
+    ConfigurationSection mismatch = recipe("smaug:smelter");
+    mismatch.set("profession", "tanning");
+
+    assertNull(parser.parse(mismatch));
+  }
+
+  @Test
   void parsesEveryCanonicalRefiningRecipe() throws Exception {
     YamlConfiguration root = loadResource("recipe.yml");
 

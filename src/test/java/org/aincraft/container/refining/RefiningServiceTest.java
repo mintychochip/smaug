@@ -1,6 +1,7 @@
 package org.aincraft.container.refining;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.LinkedHashMap;
@@ -98,6 +99,22 @@ class RefiningServiceTest {
   }
 
   @Test
+  void mismatchedProfessionRecipeIsNotExecutable() {
+    SmaugRecipe base = recipe("mismatched", SMELTER, 1, 1, 1, 1, Material.RAW_IRON, 1,
+        null, 0);
+    SmaugRecipe mismatch = new SmaugRecipe(base.getOutput(), base.getAmount(),
+        base.getIngredients(), base.getKey(), base.getStationKey(), base.getPermission(),
+        base.getActions(), base.getReagents(),
+        new RefiningMetadata("tanning", 1, 1, 1,
+            new EfficiencyProfile("tanning_test", 0, 1.0, 1)));
+    recipes.put(mismatch);
+    player.getInventory().setItem(0, new ItemStack(Material.RAW_IRON, 1));
+
+    assertEquals(RefiningResult.Status.UNKNOWN_RECIPE,
+        service.preview(player, station, "mismatched", 1).status());
+  }
+
+  @Test
   void previewScalesPrimaryAndReagentInputsAndShowsEfficientOutput() {
     SmaugRecipe recipe = recipe("steel_ingot", SMELTER, 1, 5, 2, 7, Material.RAW_IRON, 2,
         Material.COAL, 1);
@@ -146,6 +163,21 @@ class RefiningServiceTest {
     assertEquals(7, professions.awardedXp);
     assertEquals(Material.IRON_INGOT, player.getInventory().getItem(0).getType());
   }
+
+  @Test
+  void gatewayXpFailureIsNotReportedAsInvalidBatchAfterCommit() {
+    SmaugRecipe recipe = recipe("steel_ingot", SMELTER, 1, 5, 2, 7, Material.RAW_IRON, 2,
+        null, 0);
+    recipes.put(recipe);
+    player.getInventory().setItem(0, new ItemStack(Material.RAW_IRON, 2));
+    professions.failOnAward = true;
+
+    assertThrows(IllegalArgumentException.class,
+        () -> service.refine(player, station, "steel_ingot", 1));
+    assertEquals(Material.IRON_INGOT, player.getInventory().getItem(0).getType());
+    assertEquals(0, professions.awardedXp);
+  }
+
 
   @Test
   void outputFullRefineLeavesInputsAndXpUntouched() {
@@ -273,6 +305,7 @@ class RefiningServiceTest {
   private static final class FakeProfessionGateway implements ProfessionGateway {
     private ProfessionState state = new ProfessionState(true, 10);
     private int awardedXp;
+    private boolean failOnAward;
 
     @Override
     public ProfessionState state(Player player, SmaugRecipe recipe) {
@@ -281,6 +314,9 @@ class RefiningServiceTest {
 
     @Override
     public void awardXp(Player player, SmaugRecipe recipe, int amount) {
+      if (failOnAward) {
+        throw new IllegalArgumentException("gateway failure");
+      }
       awardedXp += amount;
     }
   }

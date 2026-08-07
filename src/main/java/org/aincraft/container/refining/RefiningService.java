@@ -179,42 +179,47 @@ public final class RefiningService {
       return RefiningResult.failure(RefiningResult.Status.ALREADY_EXECUTING);
     }
 
+    RefiningYieldResult yield;
+    ItemStack output;
+    InventoryPlanResult plan;
+    int awardedXp;
     try {
       IngredientList primary = recipe.getIngredients().scaled(batch);
       IngredientList reagents = recipe.getReagents().scaled(batch);
       int baseAmount = Math.multiplyExact(recipe.getAmount(), batch);
-      int awardedXp = Math.multiplyExact(metadata.professionXp(), batch);
-      RefiningYieldResult yield = yieldCalculator.calculate(metadata, profession.level(),
+      awardedXp = Math.multiplyExact(metadata.professionXp(), batch);
+      yield = yieldCalculator.calculate(metadata, profession.level(),
           baseAmount, randomUnit.getAsDouble());
-      ItemStack output = recipe.craft();
+      output = recipe.craft();
       output.setAmount(yield.finalAmount());
-      InventoryPlanResult plan = transaction.planStorage(player.getInventory(),
+      plan = transaction.planStorage(player.getInventory(),
           primary.combinedWith(reagents).asList(), output);
-      RefiningResult.Status planStatus = planStatus(plan.status());
-      if (planStatus != RefiningResult.Status.SUCCESS) {
-        return RefiningResult.failure(planStatus);
-      }
-
-      sessions.select(player, station, recipeKey, batch);
-      if (!sessions.beginExecution(player, station)) {
-        return RefiningResult.failure(RefiningResult.Status.ALREADY_EXECUTING);
-      }
-      try {
-        InventoryTransactionResult applied = transaction.applyStorage(player.getInventory(),
-            plan.plan().orElseThrow());
-        if (applied.status() == InventoryTransactionResult.Status.STALE_INVENTORY) {
-          return RefiningResult.failure(RefiningResult.Status.STALE_INVENTORY);
-        }
-        if (applied.status() == InventoryTransactionResult.Status.OUTPUT_INSERTION_FAILED) {
-          return RefiningResult.failure(RefiningResult.Status.OUTPUT_FULL);
-        }
-        integrations.professionGateway().awardXp(player, recipe, awardedXp);
-        return new RefiningResult(RefiningResult.Status.SUCCESS, yield.finalAmount(), awardedXp);
-      } finally {
-        sessions.endExecution(player, station);
-      }
     } catch (ArithmeticException | IllegalArgumentException exception) {
       return RefiningResult.failure(RefiningResult.Status.INVALID_BATCH);
+    }
+
+    RefiningResult.Status planStatus = planStatus(plan.status());
+    if (planStatus != RefiningResult.Status.SUCCESS) {
+      return RefiningResult.failure(planStatus);
+    }
+
+    sessions.select(player, station, recipeKey, batch);
+    if (!sessions.beginExecution(player, station)) {
+      return RefiningResult.failure(RefiningResult.Status.ALREADY_EXECUTING);
+    }
+    try {
+      InventoryTransactionResult applied = transaction.applyStorage(player.getInventory(),
+          plan.plan().orElseThrow());
+      if (applied.status() == InventoryTransactionResult.Status.STALE_INVENTORY) {
+        return RefiningResult.failure(RefiningResult.Status.STALE_INVENTORY);
+      }
+      if (applied.status() == InventoryTransactionResult.Status.OUTPUT_INSERTION_FAILED) {
+        return RefiningResult.failure(RefiningResult.Status.OUTPUT_FULL);
+      }
+      integrations.professionGateway().awardXp(player, recipe, awardedXp);
+      return new RefiningResult(RefiningResult.Status.SUCCESS, yield.finalAmount(), awardedXp);
+    } finally {
+      sessions.endExecution(player, station);
     }
   }
 
@@ -233,8 +238,16 @@ public final class RefiningService {
   }
 
   private static boolean eligibleStationRecipe(Station station, SmaugRecipe recipe) {
-    return recipe != null && recipe.isRefining() && recipe.getStationKey().equals(station.stationKey());
+    if (station == null || recipe == null || !recipe.isRefining()
+        || !Objects.equals(recipe.getStationKey(), station.stationKey())) {
+      return false;
+    }
+    RefiningMetadata metadata = recipe.getRefiningMetadata().orElse(null);
+    RefiningStationType stationType = RefiningStationType.fromKey(station.stationKey()).orElse(null);
+    return metadata != null && stationType != null
+        && stationType.professionKey().equals(metadata.professionKey());
   }
+
 
   private Optional<SmaugRecipe> fetch(String recipeKey) {
     if (recipeKey == null || recipeKey.isBlank()) {

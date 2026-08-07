@@ -100,8 +100,10 @@ final class RecipeParserImpl implements IRecipeParser {
 
     RefiningMetadata refiningMetadata = null;
     if (profession != null) {
-      if (stationKey == null || RefiningStationType.fromKey(
-          Key.key(stationKey.getNamespace(), stationKey.getKey())).isEmpty()) {
+      RefiningStationType stationType = stationKey == null ? null
+          : RefiningStationType.fromKey(Key.key(stationKey.getNamespace(), stationKey.getKey()))
+              .orElse(null);
+      if (stationType == null || !stationType.professionKey().equals(profession)) {
         return null;
       }
       try {
