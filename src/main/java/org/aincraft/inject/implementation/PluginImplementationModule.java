@@ -32,6 +32,7 @@ import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.item.IKeyedItemFactory;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.storage.IStorage;
+import org.aincraft.container.refining.RefiningIntegrationRegistry;
 import org.aincraft.database.storage.SqlConfig;
 import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
@@ -64,6 +65,7 @@ public final class PluginImplementationModule extends AbstractModule {
     bind(IRecipeFetcher.class).to(recipeFetcherClazz).in(Singleton.class);
     bind(IRecipeParser.class).to(recipeParserClazz).in(Singleton.class);
     bind(IStationService.class).to(stationServiceClazz).in(Singleton.class);
+    bind(RefiningIntegrationRegistry.class).in(Singleton.class);
     bind(IItemRegistry.class).toProvider(itemRegistryProviderClazz).in(Singleton.class);
     bind(IStorage.class).toProvider(storageProviderClazz).in(Singleton.class);
     bind(SqlConfig.class).toProvider(sqlConfigProviderClazz).in(Singleton.class);

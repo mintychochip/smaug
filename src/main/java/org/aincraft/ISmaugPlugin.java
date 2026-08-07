@@ -20,6 +20,8 @@
 package org.aincraft;
 
 import org.aincraft.container.IRegistry.IItemRegistry;
+import org.aincraft.api.refining.ProfessionGateway;
+import org.aincraft.api.refining.RefiningStationAccess;
 import org.aincraft.handler.StationHandler;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
@@ -33,4 +35,6 @@ public interface ISmaugPlugin {
   IStationService getStationService();
   IItemRegistry getItemRegistry();
   void registerHandler(StationHandler handler);
+  void registerStationAccess(RefiningStationAccess access);
+  void registerProfessionGateway(ProfessionGateway gateway);
 }

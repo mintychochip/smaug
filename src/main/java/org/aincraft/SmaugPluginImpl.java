@@ -37,6 +37,9 @@ import org.aincraft.container.display.IViewModelController;
 import org.aincraft.container.gui.GuiListener;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.storage.IStorage;
+import org.aincraft.api.refining.ProfessionGateway;
+import org.aincraft.api.refining.RefiningStationAccess;
+import org.aincraft.container.refining.RefiningIntegrationRegistry;
 import org.aincraft.handler.AnvilStationHandler;
 import org.aincraft.handler.CauldronHandler;
 import org.aincraft.inject.IKeyFactory;
@@ -64,6 +67,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   private final IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController;
   private final IStationService stationService;
   private final IItemRegistry itemRegistry;
+  private final RefiningIntegrationRegistry refiningIntegrationRegistry;
 
   @Inject
   SmaugPluginImpl(Plugin bootstrap, IStorage storage,
@@ -72,7 +76,8 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
       IViewModelController<Station, BossBar> bossBarController,
       IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController,
       IStationService stationService,
-      IItemRegistry itemRegistry) {
+      IItemRegistry itemRegistry,
+      RefiningIntegrationRegistry refiningIntegrationRegistry) {
     this.bootstrap = bootstrap;
     this.storage = storage;
     this.injector = injector;
@@ -83,6 +88,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     this.guiController = guiController;
     this.stationService = stationService;
     this.itemRegistry = itemRegistry;
+    this.refiningIntegrationRegistry = refiningIntegrationRegistry;
   }
 
   void enable() {
@@ -143,5 +149,15 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   @Override
   public void registerHandler(StationHandler handler) {
     handlers.put(handler.key(),handler);
+  }
+
+  @Override
+  public void registerStationAccess(RefiningStationAccess access) {
+    refiningIntegrationRegistry.registerStationAccess(access);
+  }
+
+  @Override
+  public void registerProfessionGateway(ProfessionGateway gateway) {
+    refiningIntegrationRegistry.registerProfessionGateway(gateway);
   }
 }
