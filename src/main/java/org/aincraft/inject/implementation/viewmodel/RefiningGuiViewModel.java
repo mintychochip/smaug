@@ -1,7 +1,9 @@
 package org.aincraft.inject.implementation.viewmodel;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -16,7 +18,7 @@ public final class RefiningGuiViewModel {
 
   private final Function<RefiningPlayerStationProxy, RefiningGuiProxy> factory;
   private final RefiningSessionStore sessions;
-  private final Map<RefiningPlayerStationProxy.BindingKey, RefiningGuiProxy> bindings =
+  private final Map<RefiningPlayerStationProxy.BindingKey, Binding> bindings =
       new HashMap<>();
 
   @Inject
@@ -34,18 +36,19 @@ public final class RefiningGuiViewModel {
   public synchronized void open(@NotNull RefiningPlayerStationProxy proxy) {
     Objects.requireNonNull(proxy, "proxy");
     sessions.open(proxy.player(), proxy.station());
-    RefiningGuiProxy binding = bindings.computeIfAbsent(proxy.bindingKey(),
-        ignored -> Objects.requireNonNull(factory.apply(proxy), "factory returned null"));
-    binding.setCloseCleanup(() -> onGuiClosed(proxy, binding));
-    binding.refresh();
-    binding.open(proxy.player());
+    Binding binding = bindings.computeIfAbsent(proxy.bindingKey(),
+        ignored -> new Binding(proxy,
+            Objects.requireNonNull(factory.apply(proxy), "factory returned null")));
+    binding.gui().setCloseCleanup(() -> onGuiClosed(binding));
+    binding.gui().refresh();
+    binding.gui().open(proxy.player());
   }
 
   public synchronized void refresh(@NotNull RefiningPlayerStationProxy proxy) {
     Objects.requireNonNull(proxy, "proxy");
-    RefiningGuiProxy binding = bindings.get(proxy.bindingKey());
+    Binding binding = bindings.get(proxy.bindingKey());
     if (binding != null) {
-      binding.refresh();
+      binding.gui().refresh();
     }
   }
 
@@ -57,21 +60,37 @@ public final class RefiningGuiViewModel {
   /** Closes the view and removes its control-only session. */
   public synchronized void close(@NotNull RefiningPlayerStationProxy proxy) {
     Objects.requireNonNull(proxy, "proxy");
-    RefiningGuiProxy binding = bindings.remove(proxy.bindingKey());
+    Binding binding = bindings.remove(proxy.bindingKey());
     if (binding != null) {
-      binding.setCloseCleanup(null);
-      binding.close(proxy.player());
+      binding.gui().setCloseCleanup(null);
+      binding.gui().close(binding.proxy().player());
     }
     sessions.close(proxy.player(), proxy.station());
   }
 
-  private synchronized void onGuiClosed(RefiningPlayerStationProxy proxy,
-      RefiningGuiProxy binding) {
-    if (bindings.get(proxy.bindingKey()) != binding) {
+  /** Closes every open refining view and drops every control-only session. */
+  public synchronized void clearAll() {
+    List<Binding> active = new ArrayList<>(bindings.values());
+    bindings.clear();
+    try {
+      for (Binding binding : active) {
+        binding.gui().setCloseCleanup(null);
+        binding.gui().close(binding.proxy().player());
+      }
+    } finally {
+      sessions.clearAll();
+    }
+  }
+
+  private synchronized void onGuiClosed(Binding binding) {
+    if (bindings.get(binding.proxy().bindingKey()) != binding) {
       return;
     }
-    bindings.remove(proxy.bindingKey());
-    binding.setCloseCleanup(null);
-    sessions.close(proxy.player(), proxy.station());
+    bindings.remove(binding.proxy().bindingKey());
+    binding.gui().setCloseCleanup(null);
+    sessions.close(binding.proxy().player(), binding.proxy().station());
+  }
+
+  private record Binding(RefiningPlayerStationProxy proxy, RefiningGuiProxy gui) {
   }
 }

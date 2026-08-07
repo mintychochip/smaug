@@ -74,6 +74,10 @@ public final class RefiningSessionStore {
     sessions.keySet().removeIf(key -> key.playerId().equals(playerId));
   }
 
+  public synchronized void clearAll() {
+    sessions.clear();
+  }
+
   private static SessionKey key(Player player, Station station) {
     return new SessionKey(player.getUniqueId(), station.id());
   }

@@ -90,6 +90,26 @@ class RefiningGuiViewModelTest {
     assertEquals(0, tracking.closeCount);
   }
 
+  @Test
+  void clearAllClosesBoundGuisAndEverySession() {
+    TrackingProxy tracking = new TrackingProxy();
+    RefiningGuiViewModel viewModel = new RefiningGuiViewModel(
+        ignored -> tracking, sessions);
+    RefiningPlayerStationProxy proxy = new RefiningPlayerStationProxy(player, station);
+    Player otherPlayer = server.addPlayer("Bob");
+    Station otherStation = station("smaug:loom");
+
+    viewModel.open(proxy);
+    sessions.open(otherPlayer, otherStation);
+
+    viewModel.clearAll();
+
+    assertFalse(viewModel.isBound(proxy));
+    assertTrue(sessions.get(player, station).isEmpty());
+    assertTrue(sessions.get(otherPlayer, otherStation).isEmpty());
+    assertEquals(1, tracking.closeCount);
+  }
+
 
   @Test
   void sessionBatchHasPositiveBoundsAndDoesNotStoreItems() {

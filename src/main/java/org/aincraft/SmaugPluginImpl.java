@@ -72,6 +72,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   private final IStationService stationService;
   private final IItemRegistry itemRegistry;
   private final RefiningIntegrationRegistry refiningIntegrationRegistry;
+  private final RefiningGuiViewModel refiningGuiViewModel;
 
   @Inject
   SmaugPluginImpl(Plugin bootstrap, IStorage storage,
@@ -81,7 +82,8 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
       IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController,
       IStationService stationService,
       IItemRegistry itemRegistry,
-      RefiningIntegrationRegistry refiningIntegrationRegistry) {
+      RefiningIntegrationRegistry refiningIntegrationRegistry,
+      RefiningGuiViewModel refiningGuiViewModel) {
     this.bootstrap = bootstrap;
     this.storage = storage;
     this.injector = injector;
@@ -93,6 +95,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     this.stationService = stationService;
     this.itemRegistry = itemRegistry;
     this.refiningIntegrationRegistry = refiningIntegrationRegistry;
+    this.refiningGuiViewModel = refiningGuiViewModel;
   }
 
   void enable() {
@@ -129,6 +132,8 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
     if (controller != null) {
       controller.forEach(IViewModel::removeAll);
     }
+    refiningGuiViewModel.clearAll();
+    handlers.clear();
   }
 
   @Override
