@@ -1,0 +1,209 @@
+steel_ingot:
+  output: minecraft:iron_ingot
+  amount: 1
+  type: smaug:smelter
+  actions: 0
+  profession: smelting
+  required-level: 1
+  required-station-tier: 1
+  profession-xp: 5
+  efficiency-profile: smelting_standard
+  efficiency:
+    minimum-level: 10
+    chance-per-level: 0.1
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:raw_iron: 1
+  reagents:
+    items:
+      minecraft:coal: 1
+
+gold_ingot:
+  output: minecraft:gold_ingot
+  amount: 1
+  type: smaug:smelter
+  actions: 0
+  profession: smelting
+  required-level: 3
+  required-station-tier: 1
+  profession-xp: 7
+  efficiency-profile: smelting_standard
+  efficiency:
+    minimum-level: 12
+    chance-per-level: 0.08
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:raw_gold: 1
+  reagents:
+    items:
+      minecraft:coal: 1
+
+stone_bricks:
+  output: minecraft:stone_bricks
+  amount: 4
+  type: smaug:stonecutting_table
+  actions: 0
+  profession: stonecutting
+  required-level: 1
+  required-station-tier: 1
+  profession-xp: 4
+  efficiency-profile: stonecutting_standard
+  efficiency:
+    minimum-level: 8
+    chance-per-level: 0.1
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:stone: 4
+  reagents:
+    items:
+      minecraft:quartz: 1
+
+cut_sandstone:
+  output: minecraft:cut_sandstone
+  amount: 4
+  type: smaug:stonecutting_table
+  actions: 0
+  profession: stonecutting
+  required-level: 2
+  required-station-tier: 1
+  profession-xp: 5
+  efficiency-profile: stonecutting_standard
+  efficiency:
+    minimum-level: 10
+    chance-per-level: 0.08
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:sandstone: 4
+  reagents:
+    items:
+      minecraft:quartz: 1
+
+oak_planks:
+  output: minecraft:oak_planks
+  amount: 4
+  type: smaug:woodshop
+  actions: 0
+  profession: woodworking
+  required-level: 1
+  required-station-tier: 1
+  profession-xp: 4
+  efficiency-profile: woodworking_standard
+  efficiency:
+    minimum-level: 8
+    chance-per-level: 0.1
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:oak_log: 1
+  reagents:
+    items:
+      minecraft:paper: 1
+
+barrel:
+  output: minecraft:barrel
+  amount: 1
+  type: smaug:woodshop
+  actions: 0
+  profession: woodworking
+  required-level: 3
+  required-station-tier: 1
+  profession-xp: 6
+  efficiency-profile: woodworking_standard
+  efficiency:
+    minimum-level: 12
+    chance-per-level: 0.08
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:oak_planks: 6
+  reagents:
+    items:
+      minecraft:paper: 1
+
+gently_tanned_leather:
+  output: minecraft:leather
+  amount: 1
+  type: smaug:tannery
+  actions: 0
+  profession: tanning
+  required-level: 1
+  required-station-tier: 1
+  profession-xp: 5
+  efficiency-profile: tanning_standard
+  efficiency:
+    minimum-level: 8
+    chance-per-level: 0.1
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:rotten_flesh: 4
+  reagents:
+    items:
+      minecraft:slime_ball: 1
+
+tough_leather:
+  output: minecraft:leather
+  amount: 2
+  type: smaug:tannery
+  actions: 0
+  profession: tanning
+  required-level: 3
+  required-station-tier: 1
+  profession-xp: 8
+  efficiency-profile: tanning_standard
+  efficiency:
+    minimum-level: 12
+    chance-per-level: 0.08
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:rabbit_hide: 4
+  reagents:
+    items:
+      minecraft:slime_ball: 1
+
+white_wool:
+  output: minecraft:white_wool
+  amount: 1
+  type: smaug:loom
+  actions: 0
+  profession: weaving
+  required-level: 1
+  required-station-tier: 1
+  profession-xp: 4
+  efficiency-profile: weaving_standard
+  efficiency:
+    minimum-level: 8
+    chance-per-level: 0.1
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:string: 4
+  reagents:
+    items:
+      minecraft:paper: 1
+
+white_banner:
+  output: minecraft:white_banner
+  amount: 1
+  type: smaug:loom
+  actions: 0
+  profession: weaving
+  required-level: 3
+  required-station-tier: 1
+  profession-xp: 6
+  efficiency-profile: weaving_standard
+  efficiency:
+    minimum-level: 12
+    chance-per-level: 0.08
+    maximum-bonus: 1
+  ingredients:
+    items:
+      minecraft:white_wool: 6
+  reagents:
+    items:
+      minecraft:paper: 1

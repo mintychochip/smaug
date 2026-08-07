@@ -1,0 +1,20 @@
+smaug:smelter:
+  material: FURNACE
+  display-name: "<gold>Smelter"
+  station: true
+smaug:stonecutting_table:
+  material: STONECUTTER
+  display-name: "<gray>Stonecutting Table"
+  station: true
+smaug:woodshop:
+  material: CRAFTING_TABLE
+  display-name: "<dark_green>Woodshop"
+  station: true
+smaug:tannery:
+  material: CAULDRON
+  display-name: "<gold>Tannery"
+  station: true
+smaug:loom:
+  material: LOOM
+  display-name: "<light_purple>Loom"
+  station: true

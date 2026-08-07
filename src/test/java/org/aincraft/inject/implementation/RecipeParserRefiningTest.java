@@ -3,8 +3,14 @@ package org.aincraft.inject.implementation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -74,6 +80,28 @@ class RecipeParserRefiningTest {
     invalidTier.set("profession", "smelting");
     invalidTier.set("required-station-tier", 0);
     assertNull(parser.parse(invalidTier));
+  }
+
+  @Test
+  void parsesEveryCanonicalRefiningRecipe() throws Exception {
+    YamlConfiguration root = loadResource("recipe.yml");
+
+    for (String key : root.getKeys(false)) {
+      SmaugRecipe parsed = parser.parse(root.getConfigurationSection(key));
+      assertNotNull(parsed, key);
+      assertTrue(parsed.isRefining(), key);
+      assertTrue(parsed.getRefiningMetadata().isPresent(), key);
+      assertFalse(parsed.getReagents().isEmpty(), key);
+    }
+  }
+
+  private static YamlConfiguration loadResource(String name) throws IOException {
+    InputStream stream = RecipeParserRefiningTest.class.getClassLoader()
+        .getResourceAsStream(name);
+    assertNotNull(stream, name);
+    try (Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+      return YamlConfiguration.loadConfiguration(reader);
+    }
   }
 
   private static ConfigurationSection recipe(String station) {
