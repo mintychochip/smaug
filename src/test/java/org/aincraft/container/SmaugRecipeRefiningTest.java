@@ -11,10 +11,14 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.aincraft.container.ingredient.Ingredient;
 import org.aincraft.container.ingredient.IngredientList;
+import org.aincraft.container.ingredient.IngredientFactory;
 import org.aincraft.container.item.IKeyedItem;
+import org.aincraft.container.item.IKeyedItemFactory;
+import org.aincraft.container.item.ItemIdentifier;
 import org.aincraft.container.refining.EfficiencyProfile;
 import org.aincraft.container.refining.RefiningMetadata;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Inventory;
 import org.junit.jupiter.api.Test;
@@ -50,6 +54,13 @@ class SmaugRecipeRefiningTest {
   }
 
   @Test
+  void ingredientScalingRejectsIntegerOverflow() {
+    IngredientList primary = new IngredientList(List.of(ingredient("ore", 2, true)));
+
+    assertThrows(ArithmeticException.class, () -> primary.scaled(Integer.MAX_VALUE));
+  }
+
+  @Test
   void refiningRecipeExposesMetadataAndTestsReagents() {
     IngredientList primary = new IngredientList(List.of(ingredient("ore", 1, true)));
     IngredientList reagents = new IngredientList(List.of(ingredient("flux", 1, false)));
@@ -62,6 +73,23 @@ class SmaugRecipeRefiningTest {
     assertEquals(metadata, recipe.getRefiningMetadata().orElseThrow());
     assertEquals(2, recipe.allIngredients().asList().size());
     assertEquals(Result.Status.FAILURE, recipe.test(List.of()).getStatus());
+  }
+
+  @Test
+  void testDoesNotDoubleCountSharedInventoryAcrossPrimaryAndReagents() {
+    Ingredient primary = minecraftIngredient(Material.RAW_IRON, 2);
+    Ingredient reagent = minecraftIngredient(Material.RAW_IRON, 2);
+    SmaugRecipe recipe = new SmaugRecipe(item(), 1,
+        new IngredientList(List.of(primary)), "duplicate_iron",
+        Key.key("smaug:smelter"), null, 0,
+        new IngredientList(List.of(reagent)),
+        new RefiningMetadata("smelting", 0, 1, 0,
+            new EfficiencyProfile("smelting_test", 0, 0, 0)));
+
+    ItemStack available = new ItemStack(Material.RAW_IRON, 2);
+
+    assertEquals(Result.Status.FAILURE, recipe.test(List.of(available)).getStatus());
+    assertEquals(2, available.getAmount());
   }
 
   @Test
@@ -97,6 +125,43 @@ class SmaugRecipeRefiningTest {
         return reference;
       }
     };
+  }
+
+  private static IKeyedItem item(Material material) {
+    return new IKeyedItem() {
+      private final NamespacedKey key =
+          NamespacedKey.minecraft(material.name().toLowerCase());
+      private final ItemStack reference = new ItemStack(material);
+
+      @Override
+      public NamespacedKey getKey() {
+        return key;
+      }
+
+      @Override
+      public ItemStack getReference() {
+        return reference;
+      }
+    };
+  }
+
+  private static Ingredient minecraftIngredient(Material material, int amount) {
+    return new IngredientFactory(new IKeyedItemFactory() {
+      @Override
+      public IKeyedItem create(ItemStack itemStack, NamespacedKey key) {
+        return item(itemStack.getType());
+      }
+
+      @Override
+      public IKeyedItem create(ItemStack stack, ItemIdentifier identifier) {
+        return item(stack.getType());
+      }
+
+      @Override
+      public NamespacedKey getIdentifierKey() {
+        return new NamespacedKey("smaug", "id");
+      }
+    }).item(item(material), amount);
   }
 
   private static Ingredient ingredient(String name, int amount, boolean available) {

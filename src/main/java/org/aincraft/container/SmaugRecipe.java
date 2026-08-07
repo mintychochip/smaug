@@ -20,6 +20,7 @@
 package org.aincraft.container;
 
 import io.papermc.paper.datacomponent.item.ItemLore;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.List;
 import net.kyori.adventure.key.Key;
@@ -102,12 +103,26 @@ public final class SmaugRecipe {
   public RecipeResult test(
       List<ItemStack> stacks) {
     IngredientList allIngredients = allIngredients();
-    for (Ingredient ingredient : allIngredients) {
-      if (!ingredient.test(stacks)) {
-        return new RecipeResult(Status.FAILURE,
-            allIngredients.findMissing(stacks),
-            "missing ingredients");
+    List<ItemStack> remaining = new ArrayList<>();
+    for (ItemStack stack : stacks) {
+      if (stack != null && !stack.getType().isAir()) {
+        remaining.add(stack.clone());
       }
+    }
+
+    List<Ingredient> missing = new ArrayList<>();
+    for (Ingredient ingredient : allIngredients) {
+      if (!ingredient.test(remaining)) {
+        double missingAmount = ingredient.getRequired().doubleValue()
+            - ingredient.getCurrentAmount(remaining).doubleValue();
+        missing.add(ingredient.copy(Math.max(0, missingAmount)));
+        continue;
+      }
+      ingredient.remove(remaining);
+    }
+    if (!missing.isEmpty()) {
+      return new RecipeResult(Status.FAILURE, new IngredientList(missing),
+          "missing ingredients");
     }
     return new RecipeResult(Status.SUCCESS, null, null);
   }

@@ -62,7 +62,8 @@ public final class IngredientList implements Iterable<Ingredient> {
     }
     List<Ingredient> scaled = new ArrayList<>(delegate.size());
     for (Ingredient ingredient : delegate) {
-      scaled.add(ingredient.copy(ingredient.getRequired().intValue() * multiplier));
+      scaled.add(ingredient.copy(
+          Math.multiplyExact(ingredient.getRequired().intValue(), multiplier)));
     }
     return new IngredientList(scaled);
   }
