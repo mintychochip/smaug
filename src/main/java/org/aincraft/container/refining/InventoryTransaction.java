@@ -11,6 +11,19 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 public final class InventoryTransaction {
+  public InventoryPlanResult planStorage(
+      org.bukkit.inventory.PlayerInventory inventory,
+      List<Ingredient> ingredients,
+      ItemStack output) {
+    return plan(inventory == null ? null : new StorageInventoryView(inventory),
+        ingredients, output);
+  }
+
+  public InventoryTransactionResult applyStorage(
+      org.bukkit.inventory.PlayerInventory inventory,
+      InventoryPlan plan) {
+    return apply(inventory == null ? null : new StorageInventoryView(inventory), plan);
+  }
 
   public InventoryPlanResult plan(
       Inventory inventory,
