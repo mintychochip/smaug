@@ -23,12 +23,9 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
-import net.kyori.adventure.bossbar.BossBar;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.container.gui.AnvilGuiProxy;
-import org.aincraft.container.display.AnvilItemDisplayView;
-import org.aincraft.container.display.IViewModelController;
+import org.aincraft.container.display.ViewModelController;
 import org.aincraft.container.item.IKeyedItemFactory;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.storage.IStorage;
@@ -44,9 +41,12 @@ import org.aincraft.inject.IItemParser;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
 import org.aincraft.inject.implementation.viewmodel.AnvilGuiControllerProvider;
-import org.aincraft.inject.implementation.viewmodel.ProgressBarControllerProvider;
+import org.aincraft.inject.implementation.viewmodel.AnvilGuiViewModel.AnvilGuiBinding;
+import org.aincraft.inject.implementation.viewmodel.AnvilViewModel.AnvilDisplayBinding;
 import org.aincraft.inject.implementation.viewmodel.ItemDisplayControllerProvider;
-import org.aincraft.listener.IStationService;
+import org.aincraft.inject.implementation.viewmodel.ProgressBarControllerProvider;
+import org.aincraft.inject.implementation.viewmodel.ProgressBarViewModel.BossBarBinding;
+import org.aincraft.listener.StationService;
 
 public final class PluginImplementationModule extends AbstractModule {
 
@@ -55,13 +55,13 @@ public final class PluginImplementationModule extends AbstractModule {
   private Class<? extends IItemParser> itemParserClazz = ItemParserImpl.class;
   private Class<? extends IRecipeFetcher> recipeFetcherClazz = RecipeFetcherImpl.class;
   private Class<? extends IRecipeParser> recipeParserClazz = RecipeParserImpl.class;
-  private Class<? extends IStationService> stationServiceClazz = StationServiceImpl.class;
+  private Class<? extends StationService> stationServiceClazz = StationService.class;
   private Class<? extends Provider<IItemRegistry>> itemRegistryProviderClazz = ItemRegistryProvider.class;
   private Class<? extends Provider<IStorage>> storageProviderClazz = StorageProvider.class;
   private Class<? extends Provider<SqlConfig>> sqlConfigProviderClazz = SqlConfigProvider.class;
-  private Class<? extends Provider<IViewModelController<Station, AnvilItemDisplayView>>> stationViewModelControllerClazz = ItemDisplayControllerProvider.class;
-  private Class<? extends Provider<IViewModelController<Station, BossBar>>> barViewControllerClazz = ProgressBarControllerProvider.class;
-  private Class<? extends Provider<IViewModelController<StationPlayerModelProxy, AnvilGuiProxy>>> guiControllerClazz = AnvilGuiControllerProvider.class;
+  private Class<? extends Provider<ViewModelController<Station, AnvilDisplayBinding>>> stationViewModelControllerClazz = ItemDisplayControllerProvider.class;
+  private Class<? extends Provider<ViewModelController<Station, BossBarBinding>>> barViewControllerClazz = ProgressBarControllerProvider.class;
+  private Class<? extends Provider<ViewModelController<StationPlayerModelProxy, AnvilGuiBinding>>> guiControllerClazz = AnvilGuiControllerProvider.class;
 
   @Override
   protected void configure() {
@@ -70,7 +70,7 @@ public final class PluginImplementationModule extends AbstractModule {
     bind(IItemParser.class).to(itemParserClazz).in(Singleton.class);
     bind(IRecipeFetcher.class).to(recipeFetcherClazz).in(Singleton.class);
     bind(IRecipeParser.class).to(recipeParserClazz).in(Singleton.class);
-    bind(IStationService.class).to(stationServiceClazz).in(Singleton.class);
+    bind(StationService.class).to(stationServiceClazz).in(Singleton.class);
     bind(RefiningIntegrationRegistry.class).in(Singleton.class);
     bind(InventoryTransaction.class).in(Singleton.class);
     bind(RefiningSessionStore.class).in(Singleton.class);
@@ -81,12 +81,12 @@ public final class PluginImplementationModule extends AbstractModule {
     bind(IItemRegistry.class).toProvider(itemRegistryProviderClazz).in(Singleton.class);
     bind(IStorage.class).toProvider(storageProviderClazz).in(Singleton.class);
     bind(SqlConfig.class).toProvider(sqlConfigProviderClazz).in(Singleton.class);
-    bind(new TypeLiteral<IViewModelController<Station, AnvilItemDisplayView>>() {
+    bind(new TypeLiteral<ViewModelController<Station, AnvilDisplayBinding>>() {
     }).toProvider(stationViewModelControllerClazz)
         .in(Singleton.class);
-    bind(new TypeLiteral<IViewModelController<Station, BossBar>>() {
+    bind(new TypeLiteral<ViewModelController<Station, BossBarBinding>>() {
     }).toProvider(barViewControllerClazz).in(Singleton.class);
-    bind(new TypeLiteral<IViewModelController<StationPlayerModelProxy, AnvilGuiProxy>>() {
+    bind(new TypeLiteral<ViewModelController<StationPlayerModelProxy, AnvilGuiBinding>>() {
     }).toProvider(guiControllerClazz).in(Singleton.class);
   }
 
@@ -126,7 +126,7 @@ public final class PluginImplementationModule extends AbstractModule {
   }
 
   public void setStationServiceClazz(
-      Class<? extends IStationService> stationServiceClazz) {
+      Class<? extends StationService> stationServiceClazz) {
     this.stationServiceClazz = stationServiceClazz;
   }
 
@@ -136,17 +136,17 @@ public final class PluginImplementationModule extends AbstractModule {
   }
 
   public void setStationViewModelControllerClazz(
-      Class<? extends Provider<IViewModelController<Station, AnvilItemDisplayView>>> stationViewModelControllerClazz) {
+      Class<? extends Provider<ViewModelController<Station, AnvilDisplayBinding>>> stationViewModelControllerClazz) {
     this.stationViewModelControllerClazz = stationViewModelControllerClazz;
   }
 
   public void setBarViewControllerClazz(
-      Class<? extends Provider<IViewModelController<Station, BossBar>>> barViewControllerClazz) {
+      Class<? extends Provider<ViewModelController<Station, BossBarBinding>>> barViewControllerClazz) {
     this.barViewControllerClazz = barViewControllerClazz;
   }
 
   public void setGuiControllerClazz(
-      Class<? extends Provider<IViewModelController<StationPlayerModelProxy, AnvilGuiProxy>>> guiControllerClazz) {
+      Class<? extends Provider<ViewModelController<StationPlayerModelProxy, AnvilGuiBinding>>> guiControllerClazz) {
     this.guiControllerClazz = guiControllerClazz;
   }
 }

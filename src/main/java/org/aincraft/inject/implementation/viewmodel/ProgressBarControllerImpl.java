@@ -20,16 +20,21 @@
 package org.aincraft.inject.implementation.viewmodel;
 
 import com.google.inject.Singleton;
-import net.kyori.adventure.bossbar.BossBar;
+import org.aincraft.api.event.StationRemoveEvent;
 import org.aincraft.api.event.StationUpdateEvent;
-import org.aincraft.container.display.IViewModel;
+import org.aincraft.container.display.ViewModel;
+import org.aincraft.container.display.ViewModelController;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationMeta;
+import org.aincraft.inject.implementation.viewmodel.ProgressBarViewModel.BossBarBinding;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 
+/**
+ * Event fan for progress boss bars: state sync only if already shown (bound).
+ */
 @Singleton
-final class ProgressBarControllerImpl extends AbstractViewModelController<Station, BossBar> {
+public final class ProgressBarControllerImpl extends ViewModelController<Station, BossBarBinding> {
 
   @EventHandler(priority = EventPriority.MONITOR)
   private void handleUpdate(final StationUpdateEvent event) {
@@ -42,11 +47,24 @@ final class ProgressBarControllerImpl extends AbstractViewModelController<Statio
     if (recipeKey == null) {
       return;
     }
-    IViewModel<Station, BossBar> viewModel = this.get(
-        model.stationKey());
+    ViewModel<Station, BossBarBinding> viewModel = this.get(model.stationKey());
     if (viewModel == null) {
       return;
     }
-    viewModel.update(model);
+    viewModel.updateIfBound(model);
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  private void handleRemove(final StationRemoveEvent event) {
+    if (event.isCancelled()) {
+      return;
+    }
+    Station station = event.getStation();
+    ViewModel<Station, BossBarBinding> viewModel = this.get(station.stationKey());
+    if (viewModel instanceof ProgressBarViewModel progressBarViewModel) {
+      progressBarViewModel.removeStation(station);
+    } else if (viewModel != null) {
+      viewModel.remove(station);
+    }
   }
 }

@@ -71,12 +71,12 @@ public class StationListener implements Listener {
   };
   private final Map<Key, StationHandler> handlers;
   private final Plugin plugin;
-  private final IStationService stationService;
+  private final StationService stationService;
   private final NamespacedKey stationKey;
 
   @Inject
   public StationListener(Map<Key, StationHandler> handlers,
-      Plugin plugin, IStationService stationService,
+      Plugin plugin, StationService stationService,
       @Named("station") NamespacedKey stationKey) {
     this.handlers = handlers;
     this.plugin = plugin;

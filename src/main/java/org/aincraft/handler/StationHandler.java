@@ -21,44 +21,66 @@ package org.aincraft.handler;
 
 import com.google.common.base.Preconditions;
 import net.kyori.adventure.key.Keyed;
-import org.aincraft.handler.AbstractStationHandler.ContextImpl;
 import org.aincraft.database.model.Station;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Station interaction handler keyed by station type. Multiple station types may register handlers.
+ */
 public interface StationHandler extends Keyed {
 
-  interface Context {
+  /**
+   * Interaction context for a station handler. Plain data — not an interface hierarchy.
+   */
+  record Context(@NotNull Station station, @NotNull PlayerInteractEvent event) {
 
-    @NotNull
-    static Context create(@NotNull Station station, @NotNull PlayerInteractEvent event) {
+    public Context {
       Preconditions.checkNotNull(station);
       Preconditions.checkNotNull(event);
-      return new ContextImpl(station, event);
     }
 
-    @NotNull
-    Station getStation();
+    public static @NotNull Context create(@NotNull Station station,
+        @NotNull PlayerInteractEvent event) {
+      return new Context(station, event);
+    }
 
-    @NotNull
-    PlayerInteractEvent getEvent();
+    public @NotNull Station getStation() {
+      return station;
+    }
 
-    boolean isRightClick();
+    public @NotNull PlayerInteractEvent getEvent() {
+      return event;
+    }
 
-    default boolean isLeftClick() {
+    public boolean isRightClick() {
+      final Action a = event.getAction();
+      return a.isRightClick();
+    }
+
+    public boolean isLeftClick() {
       return !isRightClick();
     }
 
-    Player getPlayer();
+    public Player getPlayer() {
+      return event.getPlayer();
+    }
 
-    ItemStack getItem();
+    public ItemStack getItem() {
+      return event.getItem();
+    }
 
-    void cancel();
+    public void cancel() {
+      event.setCancelled(true);
+    }
 
-    Block getClickedBlock();
+    public Block getClickedBlock() {
+      return event.getClickedBlock();
+    }
   }
 
   void handle(Context ctx);

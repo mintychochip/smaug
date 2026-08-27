@@ -22,11 +22,10 @@ package org.aincraft.inject.implementation.viewmodel;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
 import java.util.List;
-
 import org.aincraft.Smaug;
-import org.aincraft.container.IFactory;
 import org.aincraft.container.SmaugRecipe;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
+import org.aincraft.container.display.ViewModel;
 import org.aincraft.container.gui.AnvilGuiProxy;
 import org.aincraft.container.gui.AnvilGuiProxy.RecipeSelectorItem;
 import org.aincraft.database.model.Station.StationMeta;
@@ -36,40 +35,62 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 
-public final class AnvilGuiViewModel extends
-    AbstractViewModel<StationPlayerModelProxy, AnvilGuiProxy, Integer> {
+/**
+ * Per player×station GUI projection. Bindings are created only on intentional open
+ * ({@link #openMain}, {@link #openRecipeSelector}); event fans use {@link #updateIfBound}.
+ */
+public final class AnvilGuiViewModel extends ViewModel<StationPlayerModelProxy, AnvilGuiViewModel.AnvilGuiBinding> {
 
   private final AnvilGuiProxyFactory factory;
 
-  AnvilGuiViewModel(AnvilGuiProxyFactory factory) {
+  public AnvilGuiViewModel(AnvilGuiProxyFactory factory) {
     this.factory = factory;
   }
 
-  static final class AnvilGuiBinding extends AbstractBinding {
+  /** Direct typed binding — live Triumph GUI handles. */
+  public record AnvilGuiBinding(Gui mainGui, RecipeSelectorItem recipeSelectorItem) {}
 
-    @ExposedProperty("gui")
-    private final Gui mainGui;
+  @Override
+  protected @NotNull Object keyOf(@NotNull StationPlayerModelProxy model) {
+    return model.bindingKey();
+  }
 
-    @ExposedProperty("recipe-selector")
-    private final RecipeSelectorItem recipeSelectorItem;
+  @Override
+  protected @NotNull AnvilGuiBinding createBinding(@NotNull StationPlayerModelProxy model) {
+    AnvilGuiProxy view = factory.create(model);
+    return new AnvilGuiBinding(view.getMainGui(), view.getRecipeSelectorItem());
+  }
 
-    AnvilGuiBinding(Gui mainGui, RecipeSelectorItem recipeSelectorItem) {
-      this.mainGui = mainGui;
-      this.recipeSelectorItem = recipeSelectorItem;
+  /**
+   * Ensure binding, refresh content, open main GUI. Intentional create path.
+   */
+  public void openMain(@NotNull StationPlayerModelProxy proxy) {
+    AnvilGuiBinding binding = getBinding(proxy);
+    update(proxy);
+    Gui gui = binding.mainGui();
+    if (gui != null) {
+      gui.open(proxy.player());
     }
+  }
 
-    public Gui mainGui() {
-      return mainGui;
-    }
-
-    public RecipeSelectorItem recipeSelectorItem() {
-      return recipeSelectorItem;
+  /**
+   * Ensure binding, refresh content, open recipe selector. Intentional create path.
+   */
+  public void openRecipeSelector(@NotNull StationPlayerModelProxy proxy) {
+    AnvilGuiBinding binding = getBinding(proxy);
+    update(proxy);
+    RecipeSelectorItem selectorItem = binding.recipeSelectorItem();
+    if (selectorItem != null) {
+      selectorItem.recipeSelectorGui().open(proxy.player());
     }
   }
 
   @Override
   public void update(@NotNull StationPlayerModelProxy model) {
-    final AnvilGuiBinding binding = (AnvilGuiBinding) this.getBinding(model);
+    final AnvilGuiBinding binding = this.findBinding(model);
+    if (binding == null) {
+      return;
+    }
 
     final RecipeSelectorItem recipeSelectorItem = binding.recipeSelectorItem();
     final Gui mainGui = binding.mainGui();
@@ -86,30 +107,6 @@ public final class AnvilGuiViewModel extends
         recipeSelectorItem.codexGui().getGui())) {
       playerIsViewingUpdate(player, gui);
     }
-  }
-
-  @Override
-  @NotNull
-  Class<? extends IViewModelBinding> getBindingClass() {
-    return AnvilGuiBinding.class;
-  }
-
-  @Override
-  @NotNull
-  IFactory<AnvilGuiProxy, StationPlayerModelProxy> getViewFactory() {
-    return factory;
-  }
-
-  @Override
-  @NotNull
-  IViewModelBinding viewToBinding(@NotNull AnvilGuiProxy view) {
-    return new AnvilGuiBinding(view.getMainGui(), view.getRecipeSelectorItem());
-  }
-
-  @Override
-  @NotNull
-  Integer modelToKey(@NotNull StationPlayerModelProxy model) {
-    return model.hashCode();
   }
 
   private static void playerIsViewingUpdate(HumanEntity entity, BaseGui gui) {

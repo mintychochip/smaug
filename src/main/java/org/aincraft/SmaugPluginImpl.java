@@ -23,17 +23,13 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.util.HashMap;
 import java.util.Map;
-import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import org.aincraft.commands.IngredientCommand;
 import org.aincraft.commands.SmithCommand;
 import org.aincraft.container.IRegistry.IItemRegistry;
 import org.aincraft.handler.StationHandler;
 import org.aincraft.container.anvil.StationPlayerModelProxy;
-import org.aincraft.container.gui.AnvilGuiProxy;
-import org.aincraft.container.display.AnvilItemDisplayView;
-import org.aincraft.container.display.IViewModel;
-import org.aincraft.container.display.IViewModelController;
+import org.aincraft.container.display.ViewModelController;
 import org.aincraft.container.gui.GuiListener;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.storage.IStorage;
@@ -44,14 +40,18 @@ import org.aincraft.container.refining.RefiningService;
 import org.aincraft.container.refining.RefiningStationType;
 import org.aincraft.handler.AnvilStationHandler;
 import org.aincraft.handler.RefiningStationHandler;
-import org.aincraft.handler.CauldronHandler;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
+import org.aincraft.inject.implementation.viewmodel.AnvilGuiViewModel;
+import org.aincraft.inject.implementation.viewmodel.AnvilGuiViewModel.AnvilGuiBinding;
+import org.aincraft.inject.implementation.viewmodel.AnvilViewModel.AnvilDisplayBinding;
+import org.aincraft.inject.implementation.viewmodel.ProgressBarViewModel;
+import org.aincraft.inject.implementation.viewmodel.ProgressBarViewModel.BossBarBinding;
 import org.aincraft.inject.implementation.viewmodel.RefiningGuiViewModel;
-import org.aincraft.listener.IStationService;
 import org.aincraft.listener.PlayerListener;
 import org.aincraft.listener.StationListener;
 import org.aincraft.listener.StationModule;
+import org.aincraft.listener.StationService;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.Listener;
@@ -66,10 +66,10 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   private final IKeyFactory keyFactory;
   private final Map<Key, StationHandler> handlers = new HashMap<>();
   private final IRecipeFetcher recipeFetcher;
-  private final IViewModelController<Station, AnvilItemDisplayView> controller;
-  private final IViewModelController<Station, BossBar> bossBarController;
-  private final IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController;
-  private final IStationService stationService;
+  private final ViewModelController<Station, AnvilDisplayBinding> controller;
+  private final ViewModelController<Station, BossBarBinding> bossBarController;
+  private final ViewModelController<StationPlayerModelProxy, AnvilGuiBinding> guiController;
+  private final StationService stationService;
   private final IItemRegistry itemRegistry;
   private final RefiningIntegrationRegistry refiningIntegrationRegistry;
   private final RefiningGuiViewModel refiningGuiViewModel;
@@ -77,10 +77,11 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   @Inject
   SmaugPluginImpl(Plugin bootstrap, IStorage storage,
       Injector injector, IKeyFactory keyFactory,
-      IRecipeFetcher recipeFetcher, IViewModelController<Station, AnvilItemDisplayView> controller,
-      IViewModelController<Station, BossBar> bossBarController,
-      IViewModelController<StationPlayerModelProxy, AnvilGuiProxy> guiController,
-      IStationService stationService,
+      IRecipeFetcher recipeFetcher,
+      ViewModelController<Station, AnvilDisplayBinding> controller,
+      ViewModelController<Station, BossBarBinding> bossBarController,
+      ViewModelController<StationPlayerModelProxy, AnvilGuiBinding> guiController,
+      StationService stationService,
       IItemRegistry itemRegistry,
       RefiningIntegrationRegistry refiningIntegrationRegistry,
       RefiningGuiViewModel refiningGuiViewModel) {
@@ -108,11 +109,14 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
       jp.getCommand("smith").setExecutor(injector.getInstance(SmithCommand.class));
       jp.getCommand("test").setExecutor(injector.getInstance(IngredientCommand.class));
     }
-    handlers.put(new NamespacedKey(bootstrap, "anvil"),
-        new AnvilStationHandler(stationService, new NamespacedKey(bootstrap, "id"),
-            this.guiController.get(Key.key("smaug:anvil")), this.bossBarController.get(Key.key("smaug:anvil"))));
-
-    this.registerHandler(new CauldronHandler(Key.key("smaug:cauldron")));
+    Key anvilKey = new NamespacedKey(bootstrap, "anvil");
+    AnvilGuiViewModel guiViewModel =
+        (AnvilGuiViewModel) this.guiController.get(Key.key("smaug:anvil"));
+    ProgressBarViewModel progressBarViewModel =
+        (ProgressBarViewModel) this.bossBarController.get(Key.key("smaug:anvil"));
+    handlers.put(anvilKey,
+        new AnvilStationHandler(anvilKey, new NamespacedKey(bootstrap, "id"),
+            guiViewModel, progressBarViewModel));
     RefiningService refiningService = injector.getInstance(RefiningService.class);
     for (RefiningStationType stationType : RefiningStationType.values()) {
       handlers.put(stationType.key(),
@@ -128,8 +132,15 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
 
   void disable() {
     storage.close();
+    // Drop projections and free world entities / hide tasks
     if (controller != null) {
-      controller.forEach(IViewModel::removeAll);
+      controller.clearAll();
+    }
+    if (bossBarController != null) {
+      bossBarController.clearAll();
+    }
+    if (guiController != null) {
+      guiController.clearAll();
     }
     refiningGuiViewModel.clearAll();
     handlers.clear();
@@ -151,7 +162,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
   }
 
   @Override
-  public IStationService getStationService() {
+  public StationService getStationService() {
     return stationService;
   }
 
@@ -162,7 +173,7 @@ public final class SmaugPluginImpl implements ISmaugPlugin {
 
   @Override
   public void registerHandler(StationHandler handler) {
-    handlers.put(handler.key(),handler);
+    handlers.put(handler.key(), handler);
   }
 
   @Override

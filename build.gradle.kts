@@ -58,7 +58,8 @@ allprojects {
         shadowJar {
             archiveClassifier.set("")
             archiveFileName.set("${project.property("artifactName")}-${project.version}.jar")
-            destinationDirectory.set(file("C:\\Users\\justi\\Desktop\\paper\\plugins"))
+            // Local build output (was a machine-specific Windows path)
+            destinationDirectory.set(layout.buildDirectory.dir("libs"))
             relocate("dev.triumphteam.gui","org.aincraft.gui")
         }
         build {
@@ -69,10 +70,10 @@ allprojects {
         }
         processResources {
             filesMatching("plugin.yml") {
-                expand(
+                expand(mapOf(
                     "version" to project.version,
                     "name" to project.findProperty("artifactName")
-                )
+                ))
             }
         }
     }
@@ -114,6 +115,7 @@ dependencies {
     compileOnly("org.jetbrains:annotations:23.0.0")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.0.0")
     testRuntimeOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 }

@@ -19,13 +19,29 @@
 
 package org.aincraft.container.anvil;
 
+import java.util.Objects;
+import java.util.UUID;
 import org.aincraft.database.model.Station;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-public record StationPlayerModelProxy(Player player, Station station){
+/**
+ * Player viewing a station (GUI is per player × station).
+ * Identity for binding maps is {@link #bindingKey()}.
+ */
+public record StationPlayerModelProxy(@NotNull Player player, @NotNull Station station) {
 
-  @Override
-  public int hashCode() {
-    return player.hashCode() + station.id().hashCode();
+  public StationPlayerModelProxy {
+    Objects.requireNonNull(player, "player");
+    Objects.requireNonNull(station, "station");
   }
+
+  /**
+   * Stable map key: player UUID + station UUID.
+   */
+  public @NotNull Object bindingKey() {
+    return new BindingKey(player.getUniqueId(), station.id());
+  }
+
+  private record BindingKey(UUID playerId, UUID stationId) {}
 }

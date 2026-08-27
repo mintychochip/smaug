@@ -17,44 +17,52 @@
  *
  */
 
-package org.aincraft.inject.implementation.viewmodel;
+package org.aincraft.container.display;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import net.kyori.adventure.key.Key;
-import org.aincraft.container.display.IViewModel;
-import org.aincraft.container.display.IViewModelController;
+import org.bukkit.event.Listener;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractViewModelController<M, V> implements IViewModelController<M, V> {
+/**
+ * Station-type key → projection registry. Subclasses listen for domain events and
+ * fan out to the registered {@link ViewModel}. Not an MVC/MVVM "controller" in the
+ * UI-framework sense — interaction logic lives in {@code StationHandler}.
+ */
+public class ViewModelController<M, B> implements Iterable<ViewModel<M, B>>, Listener {
 
-  protected final Map<Key, IViewModel<M, V>> viewModels = new HashMap<>();
+  protected final Map<Key, ViewModel<M, B>> viewModels = new HashMap<>();
 
-  @Override
-  public void register(@NotNull Key stationKey, @NotNull IViewModel<M, V> viewModel) {
+  public void register(@NotNull Key stationKey, @NotNull ViewModel<M, B> viewModel) {
     viewModels.put(stationKey, viewModel);
   }
 
-  @Override
   public boolean isRegistered(@NotNull Key stationKey) {
     return viewModels.containsKey(stationKey);
   }
 
-  @Override
-  public IViewModel<M, V> get(@NotNull Key stationKey) {
+  public @Nullable ViewModel<M, B> get(@NotNull Key stationKey) {
     return viewModels.get(stationKey);
   }
 
-  @Override
-  public Collection<IViewModel<M, V>> getAll() {
+  public Collection<ViewModel<M, B>> getAll() {
     return viewModels.values();
+  }
+
+  /** Drop every binding on every registered projection (plugin disable). */
+  public void clearAll() {
+    for (ViewModel<M, B> viewModel : viewModels.values()) {
+      viewModel.removeAll();
+    }
   }
 
   @NotNull
   @Override
-  public Iterator<IViewModel<M, V>> iterator() {
+  public Iterator<ViewModel<M, B>> iterator() {
     return viewModels.values().iterator();
   }
 }

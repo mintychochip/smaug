@@ -20,96 +20,144 @@
 package org.aincraft.inject.implementation.viewmodel;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
-
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.bossbar.BossBar.Color;
 import net.kyori.adventure.bossbar.BossBar.Overlay;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import org.aincraft.container.IFactory;
+import org.aincraft.Smaug;
 import org.aincraft.container.SmaugRecipe;
-import org.aincraft.container.display.PropertyNotFoundException;
+import org.aincraft.container.display.ViewModel;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationMeta;
 import org.aincraft.exception.ForwardReferenceException;
 import org.aincraft.exception.UndefinedRecipeException;
 import org.aincraft.inject.IRecipeFetcher;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-final class ProgressBarViewModel extends AbstractViewModel<Station, BossBar, UUID> {
+/**
+ * Station progress boss bar projection.
+ * <ul>
+ *   <li>State → look: {@link #update} / event fan via controller</li>
+ *   <li>Intent → show: {@link #showTemporarily} after a successful hammer action</li>
+ * </ul>
+ */
+public final class ProgressBarViewModel extends ViewModel<Station, ProgressBarViewModel.BossBarBinding> {
 
   private static final Color DEFAULT_BOSS_BAR_COLOR = Color.BLUE;
+  private static final long SHOW_TICKS = 20L;
 
   private final IRecipeFetcher recipeFetcher;
+  /** player UUID + station UUID → hide task id */
+  private final Map<ShowKey, Integer> hideTasks = new HashMap<>();
 
-  ProgressBarViewModel(IRecipeFetcher recipeFetcher) {
+  public ProgressBarViewModel(IRecipeFetcher recipeFetcher) {
     this.recipeFetcher = recipeFetcher;
   }
 
-  static final class BossBarViewModelBinding extends AbstractBinding {
+  /** Direct typed binding for a station's progress boss bar. */
+  public record BossBarBinding(BossBar bossBar) {}
 
-    @ExposedProperty("bossbar")
-    private final BossBar bossBar;
+  private record ShowKey(UUID playerId, UUID stationId) {}
 
-    BossBarViewModelBinding(BossBar bossBar) {
-      this.bossBar = bossBar;
-    }
+  @Override
+  protected @NotNull Object keyOf(@NotNull Station model) {
+    return model.id();
+  }
 
-    public BossBar getBossBar() {
-      return bossBar;
-    }
+  @Override
+  protected @NotNull BossBarBinding createBinding(@NotNull Station model) {
+    BossBar bossBar = BossBar.bossBar(Component.empty(), 0, DEFAULT_BOSS_BAR_COLOR,
+        Overlay.PROGRESS);
+    updateBossBar(bossBar, model);
+    return new BossBarBinding(bossBar);
   }
 
   @Override
   public void update(@NotNull Station model) {
-    try {
-      final BossBar reference = this.getBinding(model).getProperty("bossbar", BossBar.class);
-      updateBossBar(reference, model);
-    } catch (PropertyNotFoundException e) {
-      throw new RuntimeException(e);
+    final BossBarBinding binding = this.findBinding(model);
+    if (binding == null) {
+      return;
     }
+    updateBossBar(binding.bossBar(), model);
   }
 
-  @Override
-  @NotNull Class<? extends IViewModelBinding> getBindingClass() {
-    return BossBarViewModelBinding.class;
-  }
-
-  @Override
-  @NotNull
-  IFactory<BossBar, Station> getViewFactory() {
-    return data -> {
-      BossBar bossBar = BossBar.bossBar(Component.empty(), 0, DEFAULT_BOSS_BAR_COLOR,
-          Overlay.PROGRESS);
-      if (data == null) {
-        return bossBar;
+  /**
+   * Intentional show path: ensure binding, project state, show bar briefly to the player.
+   */
+  public void showTemporarily(@NotNull Player player, @NotNull Station station) {
+    Objects.requireNonNull(player, "player");
+    Objects.requireNonNull(station, "station");
+    BossBarBinding binding = getBinding(station);
+    updateBossBar(binding.bossBar(), station);
+    BossBar bossBar = binding.bossBar();
+    if (bossBar == null) {
+      return;
+    }
+    if (!playerIsViewingBossBar(player, bossBar)) {
+      player.showBossBar(bossBar);
+    }
+    ShowKey key = new ShowKey(player.getUniqueId(), station.id());
+    Integer previousTaskId = hideTasks.remove(key);
+    if (previousTaskId != null) {
+      Bukkit.getScheduler().cancelTask(previousTaskId);
+    }
+    Plugin plugin = Smaug.getPlugin();
+    int taskId = new BukkitRunnable() {
+      @Override
+      public void run() {
+        hideTasks.remove(key);
+        player.hideBossBar(bossBar);
       }
-      updateBossBar(bossBar, data);
-      return bossBar;
-    };
+    }.runTaskLater(plugin, SHOW_TICKS).getTaskId();
+    hideTasks.put(key, taskId);
   }
 
   @Override
-  @NotNull
-  IViewModelBinding viewToBinding(@NotNull BossBar view) {
-    return new BossBarViewModelBinding(view);
+  public void removeAll() {
+    for (Integer taskId : hideTasks.values()) {
+      if (taskId != null) {
+        Bukkit.getScheduler().cancelTask(taskId);
+      }
+    }
+    hideTasks.clear();
+    super.removeAll();
   }
 
-  @Override
-  @NotNull UUID modelToKey(@NotNull Station model) {
-    return model.id();
+  /**
+   * Cancel hide tasks for one station; bar itself is not player-owned after remove.
+   */
+  public void removeStation(@NotNull Station station) {
+    UUID stationId = station.id();
+    hideTasks.entrySet().removeIf(e -> {
+      if (!e.getKey().stationId().equals(stationId)) {
+        return false;
+      }
+      Integer taskId = e.getValue();
+      if (taskId != null) {
+        Bukkit.getScheduler().cancelTask(taskId);
+      }
+      return true;
+    });
+    remove(station);
   }
 
   private void updateBossBar(@NotNull BossBar reference, Station station) {
     final StationMeta meta = station.getMeta();
     try {
       final String recipeKey = meta.getRecipeKey();
-      if(recipeKey == null) {
+      if (recipeKey == null) {
         return;
       }
       final SmaugRecipe recipe = recipeFetcher.fetch(recipeKey);
@@ -137,4 +185,12 @@ final class ProgressBarViewModel extends AbstractViewModel<Station, BossBar, UUI
     return itemName;
   }
 
+  private static boolean playerIsViewingBossBar(Player player, BossBar bossBar) {
+    for (BossBar activeBossBar : player.activeBossBars()) {
+      if (activeBossBar.equals(bossBar)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

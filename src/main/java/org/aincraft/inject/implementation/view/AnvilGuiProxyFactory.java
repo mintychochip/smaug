@@ -38,7 +38,7 @@ import org.aincraft.container.gui.ItemFactory.Builder;
 import org.aincraft.container.item.ItemStackBuilder;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationMeta;
-import org.aincraft.listener.IStationService;
+import org.aincraft.listener.StationService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
@@ -53,10 +53,10 @@ public final class AnvilGuiProxyFactory implements
 
   private static final int ROWS = 4;
 
-  private final IStationService stationService;
+  private final StationService stationService;
   private final Plugin plugin;
 
-  public AnvilGuiProxyFactory(IStationService stationService, Plugin plugin) {
+  public AnvilGuiProxyFactory(StationService stationService, Plugin plugin) {
     this.stationService = stationService;
     this.plugin = plugin;
   }
@@ -126,9 +126,9 @@ public final class AnvilGuiProxyFactory implements
 
   static final class StorageItemFactory implements IFactory<BasicStationItem, Station> {
 
-    private final IStationService stationService;
+    private final StationService stationService;
 
-    StorageItemFactory(IStationService stationService) {
+    StorageItemFactory(StationService stationService) {
       this.stationService = stationService;
     }
 

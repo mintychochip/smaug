@@ -25,14 +25,14 @@ import org.aincraft.api.refining.RefiningStationAccess;
 import org.aincraft.handler.StationHandler;
 import org.aincraft.inject.IKeyFactory;
 import org.aincraft.inject.IRecipeFetcher;
-import org.aincraft.listener.IStationService;
+import org.aincraft.listener.StationService;
 import org.bukkit.plugin.Plugin;
 
 public interface ISmaugPlugin {
   IRecipeFetcher getRecipeFetcher();
   IKeyFactory getKeyFactory();
   Plugin getPlugin();
-  IStationService getStationService();
+  StationService getStationService();
   IItemRegistry getItemRegistry();
   void registerHandler(StationHandler handler);
   void registerStationAccess(RefiningStationAccess access);

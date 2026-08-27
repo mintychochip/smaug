@@ -21,11 +21,7 @@ package org.aincraft.commands;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import net.kyori.adventure.key.Key;
 import org.aincraft.container.item.ItemStackBuilder;
-import org.aincraft.listener.IStationService;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -40,27 +36,25 @@ import org.jetbrains.annotations.NotNull;
 
 public class SmithCommand implements CommandExecutor {
 
-  private final IStationService service;
   private final NamespacedKey stationKey;
 
   @Inject
-  public SmithCommand(
-      IStationService service, @Named("station") NamespacedKey stationKey) {
-    this.service = service;
+  public SmithCommand(@Named("station") NamespacedKey stationKey) {
     this.stationKey = stationKey;
   }
 
   @Override
   public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command,
       @NotNull String s, @NotNull String[] strings) {
-    Player mintychochip = Bukkit.getPlayer("mintychochip");
-    ItemStack build = ItemStackBuilder.create(Material.CAULDRON).build();
+    if (!(commandSender instanceof Player player)) {
+      return true;
+    }
+    ItemStack build = ItemStackBuilder.create(Material.ANVIL).build();
     ItemMeta meta = build.getItemMeta();
     PersistentDataContainer pdc = meta.getPersistentDataContainer();
-    pdc.set(stationKey, PersistentDataType.STRING,"smaug:cauldron");
+    pdc.set(stationKey, PersistentDataType.STRING, "smaug:anvil");
     build.setItemMeta(meta);
-    mintychochip.getInventory().addItem(build);
+    player.getInventory().addItem(build);
     return true;
   }
 }
-

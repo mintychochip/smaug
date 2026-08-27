@@ -17,7 +17,7 @@
  *
  */
 
-package org.aincraft.inject.implementation;
+package org.aincraft.listener;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -29,19 +29,20 @@ import java.util.UUID;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.StationUser;
 import org.aincraft.database.storage.IStorage;
-import org.aincraft.listener.IStationService;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+/**
+ * Station CRUD and cache. Single concrete service — no interface indirection.
+ */
 @Singleton
-final class StationServiceImpl implements IStationService {
+public final class StationService {
 
   private final IStorage storage;
   private final Plugin plugin;
-  //merge these two caches
   private final Cache<UUID, Station> station2Cache;
   private final Cache<Location, Station> stationCache;
   private final Cache<Player, StationUser> userCache;
@@ -51,7 +52,7 @@ final class StationServiceImpl implements IStationService {
   }
 
   @Inject
-  public StationServiceImpl(Plugin plugin, IStorage storage) {
+  public StationService(Plugin plugin, IStorage storage) {
     this.plugin = plugin;
     this.storage = storage;
     station2Cache = createCache();
@@ -59,7 +60,6 @@ final class StationServiceImpl implements IStationService {
     userCache = createCache();
   }
 
-  @Override
   public List<Station> getAllStations() {
     List<Station> stations = storage.getAllStations();
     for (Station station : stations) {
@@ -69,14 +69,12 @@ final class StationServiceImpl implements IStationService {
     return stations;
   }
 
-  @Override
   public void updateStation(Station station) {
     stationCache.put(station.blockLocation(), station);
     station2Cache.put(station.id(), station);
     storage.updateStation(station);
   }
 
-  @Override
   public Station createStation(NamespacedKey stationKey, Location location) {
     World world = location.getWorld();
     if (world == null) {
@@ -90,12 +88,10 @@ final class StationServiceImpl implements IStationService {
     return station;
   }
 
-  @Override
   public Station getStation(UUID stationId) {
     return station2Cache.get(stationId, k -> storage.getStation(stationId.toString()));
   }
 
-  @Override
   public void deleteStation(Location location) {
     World world = location.getWorld();
     if (world == null) {
@@ -106,7 +102,6 @@ final class StationServiceImpl implements IStationService {
     stationCache.invalidate(location);
   }
 
-  @Override
   public Station getStation(Location location) {
     return stationCache.get(location, k -> {
       World world = k.getWorld();
@@ -118,17 +113,14 @@ final class StationServiceImpl implements IStationService {
     });
   }
 
-  @Override
   public boolean hasStation(Location location) {
     return this.getStation(location) != null;
   }
 
-  @Override
   public boolean hasStationUser(Player player) {
     return this.getStationUser(player) != null;
   }
 
-  @Override
   public StationUser createStationUser(Player player) {
     StationUser user = storage.createStationUser(player.getUniqueId().toString(),
         player.getName());
@@ -136,13 +128,11 @@ final class StationServiceImpl implements IStationService {
     return user;
   }
 
-  @Override
   public StationUser getStationUser(Player player) {
     return userCache.get(player,
         k -> storage.getStationUser(k.getUniqueId().toString()));
   }
 
-  @Override
   public boolean updateStationUser(Player player) {
     StationUser user = this.getStationUser(player);
     if (user == null) {

@@ -32,13 +32,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import org.aincraft.container.Result;
 import org.aincraft.container.Result.Status;
-import org.aincraft.database.model.Station.StationMeta.Builder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -52,14 +50,41 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
-public record Station(String idString, String stationKeyString, String worldName,
-                      int x, int y, int z, UUID id, World world, Key stationKey,
-                      Location blockLocation,
-                      AtomicReference<org.aincraft.database.model.Station.StationMeta> metaReference) {
+/**
+ * A placed station block with simple mutable state (recipe, progress, inventory).
+ */
+public final class Station {
+
+  private final String idString;
+  private final String stationKeyString;
+  private final String worldName;
+  private final int x;
+  private final int y;
+  private final int z;
+  private final UUID id;
+  private final World world;
+  private final Key stationKey;
+  private final Location blockLocation;
+  private final StationMeta meta;
+
+  public Station(String idString, String stationKeyString, String worldName,
+      int x, int y, int z, UUID id, World world, Key stationKey,
+      Location blockLocation, StationMeta meta) {
+    this.idString = idString;
+    this.stationKeyString = stationKeyString;
+    this.worldName = worldName;
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.id = id;
+    this.world = world;
+    this.stationKey = stationKey;
+    this.blockLocation = blockLocation;
+    this.meta = meta;
+  }
 
   public static Station create(@NotNull String idString, @NotNull String stationKeyString,
-      @NotNull String worldName, int x, int y, int z,
-      org.aincraft.database.model.Station.StationMeta meta) {
+      @NotNull String worldName, int x, int y, int z, @NotNull StationMeta meta) {
     Preconditions.checkArgument(
         !(idString == null || stationKeyString == null || worldName == null));
     final World world = Bukkit.getWorld(worldName);
@@ -70,11 +95,50 @@ public record Station(String idString, String stationKeyString, String worldName
     try {
       UUID id = UUID.fromString(idString);
       return new Station(idString, stationKeyString, worldName, x, y, z,
-          id, world, stationkey, new Location(world, x, y, z),
-          new AtomicReference<>(meta));
+          id, world, stationkey, new Location(world, x, y, z), meta);
     } catch (IllegalArgumentException e) {
       return null;
     }
+  }
+
+  public String idString() {
+    return idString;
+  }
+
+  public String stationKeyString() {
+    return stationKeyString;
+  }
+
+  public String worldName() {
+    return worldName;
+  }
+
+  public int x() {
+    return x;
+  }
+
+  public int y() {
+    return y;
+  }
+
+  public int z() {
+    return z;
+  }
+
+  public UUID id() {
+    return id;
+  }
+
+  public World world() {
+    return world;
+  }
+
+  public Key stationKey() {
+    return stationKey;
+  }
+
+  public Location blockLocation() {
+    return blockLocation;
   }
 
   @NotNull
@@ -82,22 +146,16 @@ public record Station(String idString, String stationKeyString, String worldName
     return world.getBlockAt(blockLocation);
   }
 
-  public Station setMeta(StationMeta meta) {
-    metaReference.set(meta);
+  /**
+   * Mutates station state in place via the given consumer.
+   */
+  public Station setMeta(Consumer<StationMeta> metaConsumer) {
+    metaConsumer.accept(meta);
     return this;
   }
 
-  public Station setMeta(Consumer<StationMeta.Builder> metaConsumer) {
-    final StationMeta meta = this.getMeta();
-    Builder builder = new Builder(meta.getRecipeKey(), meta.getProgress(), meta.getInventory());
-    metaConsumer.accept(builder);
-    return setMeta(builder.build());
-  }
-
   public StationMeta getMeta() {
-    StationMeta meta = metaReference.get();
-    return new StationMeta(meta.getRecipeKey(), meta.getProgress(),
-        meta.getInventory());
+    return meta;
   }
 
   @NotNull
@@ -204,6 +262,7 @@ public record Station(String idString, String stationKeyString, String worldName
     public ItemAddResult add(ItemStack stack) {
       return add(List.of(stack));
     }
+
     public ItemAddResult add(List<ItemStack> stacks) {
       Map<Integer, ItemStack> stackMap = getItems();
       List<ItemStack> remaining = new ArrayList<>();
@@ -298,85 +357,58 @@ public record Station(String idString, String stationKeyString, String worldName
 
   }
 
+  /**
+   * Plain station state: selected recipe key, forge progress, and inventory.
+   * No atomic-ref-per-field bags — simple mutable fields with fluent setters.
+   */
   public static final class StationMeta {
 
-
-    private final AtomicReference<String> recipeKeyReference;
-    private final AtomicReference<Float> progressReference;
-    private final AtomicReference<StationInventory> inventoryReference;
+    private String recipeKey;
+    private float progress;
+    private StationInventory inventory;
 
     public static StationMeta create(String recipeKey, float progress) {
       return new StationMeta(recipeKey, progress, StationInventory.create());
     }
 
     public StationMeta(String recipeKey, float progress, StationInventory inventory) {
-      recipeKeyReference = new AtomicReference<>(recipeKey);
-      progressReference = new AtomicReference<>(progress);
-      inventoryReference = new AtomicReference<>(inventory);
-    }
-
-    public void setProgress(float progress) {
-      progressReference.set(progress);
-    }
-
-    public void setRecipeKey(String recipeKey) {
-      recipeKeyReference.set(recipeKey);
-    }
-
-    public void setInventory(StationInventory inventory) {
-      inventoryReference.set(inventory);
+      this.recipeKey = recipeKey;
+      this.progress = progress;
+      this.inventory = inventory != null ? inventory : StationInventory.create();
     }
 
     public float getProgress() {
-      return progressReference.get();
+      return progress;
+    }
+
+    public StationMeta setProgress(float progress) {
+      this.progress = progress;
+      return this;
+    }
+
+    public StationMeta setProgress(Function<Float, Float> progressFunction) {
+      this.progress = progressFunction.apply(this.progress);
+      return this;
     }
 
     @Nullable
     public String getRecipeKey() {
-      return recipeKeyReference.get();
+      return recipeKey;
+    }
+
+    public StationMeta setRecipeKey(String recipeKey) {
+      this.recipeKey = recipeKey;
+      return this;
     }
 
     @NotNull
     public StationInventory getInventory() {
-      return inventoryReference.get();
+      return inventory;
     }
 
-    public static final class Builder {
-
-      private String recipeKey;
-      private float progress;
-      private StationInventory stationInventory;
-
-      Builder(String recipeKey, float progress, StationInventory stationInventory) {
-        this.recipeKey = recipeKey;
-        this.progress = progress;
-        this.stationInventory = stationInventory;
-      }
-
-      public Builder setRecipeKey(String recipeKey) {
-        this.recipeKey = recipeKey;
-        return this;
-      }
-
-      public Builder setProgress(float progress) {
-        this.progress = progress;
-        return this;
-      }
-
-      public Builder setProgress(Function<Float, Float> progressFunction) {
-        this.progress = progressFunction.apply(progress);
-        return this;
-      }
-
-      public Builder setInventory(
-          StationInventory stationInventory) {
-        this.stationInventory = stationInventory;
-        return this;
-      }
-
-      public StationMeta build() {
-        return new StationMeta(recipeKey, progress, stationInventory);
-      }
+    public StationMeta setInventory(StationInventory inventory) {
+      this.inventory = inventory;
+      return this;
     }
   }
 }

@@ -29,14 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
-import org.aincraft.container.IFactory;
-import org.aincraft.container.display.AnvilItemDisplayView;
-import org.aincraft.container.display.PropertyNotFoundException;
+import org.aincraft.container.display.ViewModel;
 import org.aincraft.database.model.Station;
 import org.aincraft.database.model.Station.StationInventory;
 import org.aincraft.database.model.Station.StationMeta;
@@ -57,15 +53,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayView, UUID> {
-
-  static final class AnvilItemDisplayFactory implements IFactory<AnvilItemDisplayView, Station> {
-
-    @Override
-    public @NotNull AnvilItemDisplayView create(@NotNull Station data) {
-      return new AnvilItemDisplayView();
-    }
-  }
+public final class AnvilViewModel extends ViewModel<Station, AnvilViewModel.AnvilDisplayBinding> {
 
   private static int MAX_DISPLAY = 3;
   private static int DEFAULT_WEIGHT = 1;
@@ -150,17 +138,6 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
     return modelWeights;
   }
 
-  private static final Consumer<IViewModelBinding> REMOVE_ENTITY_CONSUMER = binding -> {
-    try {
-      @SuppressWarnings("unchecked")
-      List<Display> displays = (List<Display>) binding.getProperty(
-          "displays", List.class);
-      displays.forEach(Entity::remove);
-    } catch (PropertyNotFoundException e) {
-      throw new RuntimeException(e);
-    }
-  };
-
   private static Collection<Material> containsWord(String... words) {
     Predicate<Material> parent = material -> false;
 
@@ -178,13 +155,13 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
     return subset;
   }
 
-  static final class AnvilDisplayBinding extends AbstractBinding {
+  /** Direct typed binding for item displays above an anvil. */
+  public static final class AnvilDisplayBinding {
 
-    @ExposedProperty("displays")
     private Collection<Display> displays;
 
-    AnvilDisplayBinding(Collection<Display> displays) {
-      this.displays = displays;
+    public AnvilDisplayBinding(Collection<Display> displays) {
+      this.displays = displays != null ? displays : new ArrayList<>();
     }
 
     public void setDisplays(Collection<Display> displays) {
@@ -197,18 +174,35 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
   }
 
   @Override
+  protected @NotNull Object keyOf(@NotNull Station model) {
+    return model.id();
+  }
+
+  @Override
+  protected @NotNull AnvilDisplayBinding createBinding(@NotNull Station model) {
+    return new AnvilDisplayBinding(new ArrayList<>());
+  }
+
+  @Override
+  protected void onRemove(@NotNull AnvilDisplayBinding binding) {
+    binding.getDisplays().forEach(Entity::remove);
+    binding.setDisplays(new ArrayList<>());
+  }
+
+  /**
+   * World item-display renderer for anvil inventory contents.
+   * Creates a binding on first non-empty update; removes entities when empty.
+   */
+  @Override
   public void update(@NotNull Station model) {
-    if (!this.isBound(model)) {
-      this.bind(model, new AnvilItemDisplayView());
-    }
-    AnvilDisplayBinding binding = (AnvilDisplayBinding) this.getBinding(model);
     StationMeta meta = model.getMeta();
     StationInventory inventory = meta.getInventory();
     List<ItemStack> contents = inventory.getContents();
     if (contents.isEmpty()) {
-      this.remove(model, REMOVE_ENTITY_CONSUMER);
+      this.remove(model);
       return;
     }
+    AnvilDisplayBinding binding = this.getBinding(model);
     Map<ItemStack, Number> weightedItems = createWeightedItems(inventory.getContents());
     if (weightedItems.isEmpty()) {
       return;
@@ -226,30 +220,7 @@ final class AnvilViewModel extends AbstractViewModel<Station, AnvilItemDisplayVi
     binding.getDisplays().forEach(Entity::remove);
     binding.setDisplays(displays);
     displays.forEach(world::addEntity);
-    this.updateBinding(model, binding);
-  }
-
-  @Override
-  @NotNull
-  Class<? extends IViewModelBinding> getBindingClass() {
-    return AnvilDisplayBinding.class;
-  }
-
-  @Override
-  @NotNull
-  IFactory<AnvilItemDisplayView, Station> getViewFactory() {
-    return new AnvilItemDisplayFactory();
-  }
-
-  @Override
-  @NotNull
-  IViewModelBinding viewToBinding(@NotNull AnvilItemDisplayView view) {
-    return new AnvilDisplayBinding(view.getDisplays());
-  }
-
-  @Override
-  @NotNull UUID modelToKey(@NotNull Station model) {
-    return model.id();
+    this.putBinding(model, binding);
   }
 
 
